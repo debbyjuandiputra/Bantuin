@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Konversi Dokumen</title>
+<link rel="icon" href="../assets/icon.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../home.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Konversi Dokumen</h2>
+</div>
+
+<div class="page-body">
+  <div class="tab-row">
+    <button class="active" id="tabPdfBtn" onclick="switchGroup('pdf')">PDF ⇄ DOCX</button>
+    <button id="tabXlsxBtn" onclick="switchGroup('xlsx')">XLSX ⇄ CSV</button>
+  </div>
+
+  <!-- GROUP PDF <-> DOCX -->
+  <div id="groupPdf">
+    <div class="card">
+      <h3>PDF ke DOCX</h3>
+      <p class="desc">Mengambil teks dari PDF dan menyusunnya menjadi dokumen Word (.doc). Format &amp; tata letak asli tidak selalu terjaga sempurna.</p>
+      <div class="dropzone" onclick="document.getElementById('pdfInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div id="pdfLabel">Ketuk untuk pilih file PDF</div>
+      </div>
+      <input type="file" id="pdfInput" class="hidden" accept=".pdf">
+      <button class="btn" style="margin-top:12px" onclick="convertPdfToDocx()">Konversi ke DOCX</button>
+      <div class="form-msg" id="pdfMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3>DOCX ke PDF</h3>
+      <p class="desc">Mengubah dokumen Word menjadi file PDF.</p>
+      <div class="dropzone" onclick="document.getElementById('docxInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div id="docxLabel">Ketuk untuk pilih file DOCX</div>
+      </div>
+      <input type="file" id="docxInput" class="hidden" accept=".docx">
+      <button class="btn" style="margin-top:12px" onclick="convertDocxToPdf()">Konversi ke PDF</button>
+      <div class="form-msg" id="docxMsg"></div>
+    </div>
+  </div>
+
+  <!-- GROUP XLSX <-> CSV -->
+  <div id="groupXlsx" class="hidden">
+    <div class="card">
+      <h3>XLSX ke CSV</h3>
+      <p class="desc">Mengubah sheet pertama pada file Excel menjadi file CSV.</p>
+      <div class="dropzone" onclick="document.getElementById('xlsxInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div id="xlsxLabel">Ketuk untuk pilih file XLSX</div>
+      </div>
+      <input type="file" id="xlsxInput" class="hidden" accept=".xlsx,.xls">
+      <button class="btn" style="margin-top:12px" onclick="convertXlsxToCsv()">Konversi ke CSV</button>
+      <div class="form-msg" id="xlsxMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3>CSV ke XLSX</h3>
+      <p class="desc">Mengubah file CSV menjadi file Excel (.xlsx).</p>
+      <div class="dropzone" onclick="document.getElementById('csvInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div id="csvLabel">Ketuk untuk pilih file CSV</div>
+      </div>
+      <input type="file" id="csvInput" class="hidden" accept=".csv">
+      <button class="btn" style="margin-top:12px" onclick="convertCsvToXlsx()">Konversi ke XLSX</button>
+      <div class="form-msg" id="csvMsg"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+requireAuth();
+applyStoredTheme();
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+function switchGroup(g){
+  document.getElementById('tabPdfBtn').classList.toggle('active', g==='pdf');
+  document.getElementById('tabXlsxBtn').classList.toggle('active', g==='xlsx');
+  document.getElementById('groupPdf').classList.toggle('hidden', g!=='pdf');
+  document.getElementById('groupXlsx').classList.toggle('hidden', g!=='xlsx');
+}
+
+document.getElementById('pdfInput').addEventListener('change', function(){
+  document.getElementById('pdfLabel').textContent = this.files[0] ? this.files[0].name : 'Ketuk untuk pilih file PDF';
+});
+document.getElementById('docxInput').addEventListener('change', function(){
+  document.getElementById('docxLabel').textContent = this.files[0] ? this.files[0].name : 'Ketuk untuk pilih file DOCX';
+});
+document.getElementById('xlsxInput').addEventListener('change', function(){
+  document.getElementById('xlsxLabel').textContent = this.files[0] ? this.files[0].name : 'Ketuk untuk pilih file XLSX';
+});
+document.getElementById('csvInput').addEventListener('change', function(){
+  document.getElementById('csvLabel').textContent = this.files[0] ? this.files[0].name : 'Ketuk untuk pilih file CSV';
+});
+
+// ---------------- PDF -> DOCX (dihasilkan sebagai .doc kompatibel Word) ----------------
+async function convertPdfToDocx(){
+  const file = document.getElementById('pdfInput').files[0];
+  const msg = document.getElementById('pdfMsg');
+  if(!file){ msg.textContent = 'Pilih file PDF terlebih dahulu.'; return; }
+  msg.textContent = 'Memproses...';
+  try{
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    let html = '';
+    for(let i=1;i<=pdf.numPages;i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items.map(it => it.str).join(' ');
+      html += `<p>${pageText.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</p>`;
+    }
+    const docHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`;
+    const blob = new Blob(['\ufeff', docHtml], {type: 'application/msword'});
+    downloadBlob(blob, file.name.replace(/\.pdf$/i,'') + '.doc');
+    msg.textContent = 'Berhasil! File .doc telah diunduh.';
+  }catch(err){
+    msg.textContent = 'Gagal mengonversi file ini.';
+  }
+}
+
+// ---------------- DOCX -> PDF ----------------
+async function convertDocxToPdf(){
+  const file = document.getElementById('docxInput').files[0];
+  const msg = document.getElementById('docxMsg');
+  if(!file){ msg.textContent = 'Pilih file DOCX terlebih dahulu.'; return; }
+  msg.textContent = 'Memproses...';
+  try{
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.convertToHtml({arrayBuffer});
+    const wrapper = document.createElement('div');
+    wrapper.style.padding = '20px';
+    wrapper.style.fontFamily = 'Arial, sans-serif';
+    wrapper.innerHTML = result.value;
+
+    const filename = file.name.replace(/\.docx$/i,'') + '.pdf';
+    await html2pdf().set({filename, margin:10}).from(wrapper).save();
+    msg.textContent = 'Berhasil! File PDF telah diunduh.';
+  }catch(err){
+    msg.textContent = 'Gagal mengonversi file ini.';
+  }
+}
+
+// ---------------- XLSX -> CSV ----------------
+function convertXlsxToCsv(){
+  const file = document.getElementById('xlsxInput').files[0];
+  const msg = document.getElementById('xlsxMsg');
+  if(!file){ msg.textContent = 'Pilih file XLSX terlebih dahulu.'; return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const csv = XLSX.utils.sheet_to_csv(sheet);
+      const blob = new Blob([csv], {type:'text/csv'});
+      downloadBlob(blob, file.name.replace(/\.(xlsx|xls)$/i,'') + '.csv');
+      msg.textContent = 'Berhasil! File CSV telah diunduh.';
+    }catch(err){
+      msg.textContent = 'Gagal mengonversi file ini.';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ---------------- CSV -> XLSX ----------------
+function convertCsvToXlsx(){
+  const file = document.getElementById('csvInput').files[0];
+  const msg = document.getElementById('csvMsg');
+  if(!file){ msg.textContent = 'Pilih file CSV terlebih dahulu.'; return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, {type:'string'});
+      const out = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+      const blob = new Blob([out], {type:'application/octet-stream'});
+      downloadBlob(blob, file.name.replace(/\.csv$/i,'') + '.xlsx');
+      msg.textContent = 'Berhasil! File XLSX telah diunduh.';
+    }catch(err){
+      msg.textContent = 'Gagal mengonversi file ini.';
+    }
+  };
+  reader.readAsText(file);
+}
+</script>
+</body>
+</html>

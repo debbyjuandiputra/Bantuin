@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Cek Panjang Karakter</title>
+<link rel="icon" href="../assets/icon.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../home.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Cek Panjang Karakter</h2>
+</div>
+
+<div class="page-body">
+  <div class="card">
+    <div class="tab-row">
+      <button class="active" id="tabTextBtn" onclick="switchSource('text')">Via Teks</button>
+      <button id="tabFileBtn" onclick="switchSource('file')">Via File</button>
+    </div>
+
+    <div id="srcText">
+      <div class="field">
+        <textarea id="textInput" rows="7" placeholder="Tempel atau ketik teks di sini..."></textarea>
+      </div>
+      <button class="btn" onclick="processText()">Analisis Teks</button>
+    </div>
+
+    <div id="srcFile" class="hidden">
+      <div class="dropzone" onclick="document.getElementById('fileInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div id="fileLabel">Ketuk untuk pilih file (.txt, .docx, .pdf, dll)</div>
+      </div>
+      <input type="file" id="fileInput" class="hidden" accept=".txt,.docx,.pdf,.csv,.md,.rtf">
+    </div>
+
+    <div class="form-msg" id="charMsg"></div>
+  </div>
+
+  <div class="card hidden" id="statCard">
+    <h3>Hasil Analisis</h3>
+    <div class="stat-grid">
+      <div class="stat-item"><b id="stChar">0</b><span>Karakter</span></div>
+      <div class="stat-item"><b id="stSentence">0</b><span>Kalimat</span></div>
+      <div class="stat-item"><b id="stPara">0</b><span>Paragraf</span></div>
+    </div>
+
+    <div class="field" style="margin-top:16px">
+      <label>Cari Teks / Kalimat</label>
+      <input type="text" id="searchInput" placeholder="Ketik kata atau frasa..." oninput="doSearch()">
+    </div>
+    <div class="form-msg" id="searchResultMsg" style="color:var(--text)"></div>
+
+    <div class="result-box" id="previewBox" style="max-height:260px;overflow:auto"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+requireAuth();
+applyStoredTheme();
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let currentSource = 'text';
+let fullText = '';
+
+function switchSource(mode){
+  currentSource = mode;
+  document.getElementById('tabTextBtn').classList.toggle('active', mode==='text');
+  document.getElementById('tabFileBtn').classList.toggle('active', mode==='file');
+  document.getElementById('srcText').classList.toggle('hidden', mode!=='text');
+  document.getElementById('srcFile').classList.toggle('hidden', mode!=='file');
+}
+
+function processText(){
+  const text = document.getElementById('textInput').value;
+  if(!text.trim()){ document.getElementById('charMsg').textContent = 'Masukkan teks terlebih dahulu.'; return; }
+  document.getElementById('charMsg').textContent = '';
+  analyze(text);
+}
+
+function analyze(text){
+  fullText = text;
+  const chars = text.length;
+  const sentences = (text.match(/[^.!?]+[.!?]+/g) || (text.trim() ? [text] : [])).length;
+  const paragraphs = text.split(/\n\s*\n/).map(p=>p.trim()).filter(p=>p.length>0).length || (text.trim() ? 1 : 0);
+
+  document.getElementById('stChar').textContent = chars;
+  document.getElementById('stSentence').textContent = sentences;
+  document.getElementById('stPara').textContent = paragraphs;
+  document.getElementById('statCard').classList.remove('hidden');
+  document.getElementById('previewBox').textContent = text.slice(0, 3000) + (text.length>3000 ? '...' : '');
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResultMsg').textContent = '';
+}
+
+function doSearch(){
+  const q = document.getElementById('searchInput').value;
+  const msg = document.getElementById('searchResultMsg');
+  if(!q){ msg.textContent = ''; document.getElementById('previewBox').innerHTML = escapeHtml(fullText.slice(0,3000)); return; }
+  const regex = new RegExp(escapeRegex(q), 'gi');
+  const matches = fullText.match(regex);
+  const count = matches ? matches.length : 0;
+  msg.textContent = `Ditemukan ${count} kecocokan untuk "${q}"`;
+  const highlighted = escapeHtml(fullText.slice(0,3000)).replace(new RegExp(escapeRegex(escapeHtml(q)),'gi'), m => `<mark style="background:var(--orange-light);color:#1f2430;border-radius:3px">${m}</mark>`);
+  document.getElementById('previewBox').innerHTML = highlighted;
+}
+
+function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('fileInput').addEventListener('change', async function(){
+  const file = this.files[0];
+  if(!file) return;
+  document.getElementById('fileLabel').textContent = file.name;
+  document.getElementById('charMsg').textContent = 'Memproses file...';
+
+  try{
+    const ext = file.name.split('.').pop().toLowerCase();
+    let text = '';
+
+    if(ext === 'docx'){
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({arrayBuffer});
+      text = result.value;
+    } else if(ext === 'pdf'){
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+      let full = '';
+      for(let i=1;i<=pdf.numPages;i++){
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        full += content.items.map(it => it.str).join(' ') + '\n\n';
+      }
+      text = full;
+    } else {
+      text = await file.text();
+    }
+
+    document.getElementById('charMsg').textContent = '';
+    analyze(text);
+  }catch(err){
+    document.getElementById('charMsg').textContent = 'Gagal membaca file ini. Coba format lain (.txt, .docx, .pdf).';
+  }
+});
+</script>
+</body>
+</html>

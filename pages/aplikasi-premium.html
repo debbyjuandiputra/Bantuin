@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Aplikasi Premium</title>
+<link rel="icon" href="../assets/icon.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../home.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Aplikasi Premium</h2>
+</div>
+
+<div class="page-body">
+  <div class="card">
+    <h3>CapCut Pro</h3>
+    <p class="desc">Pilih durasi akses premium CapCut.</p>
+    <button class="btn outline" onclick="toggle('capcutOpt')">Lihat Pilihan</button>
+    <div id="capcutOpt" class="hidden">
+      <div class="premium-opt">
+        <div><b>7 Hari</b><br><span>Akses premium 1 minggu</span></div>
+        <a class="btn small" href="https://lynk.id/yorpedia/d5nw5ox55qmy" target="_blank" rel="noopener">Pilih</a>
+      </div>
+      <div class="premium-opt">
+        <div><b>1 Bulan</b><br><span>Akses premium 30 hari</span></div>
+        <a class="btn small" href="https://lynk.id/yorpedia/wexoe4wl1xeo" target="_blank" rel="noopener">Pilih</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Canva Pro</h3>
+    <p class="desc">Pilih durasi akses premium Canva.</p>
+    <button class="btn outline" onclick="toggle('canvaOpt')">Lihat Pilihan</button>
+    <div id="canvaOpt" class="hidden">
+      <div class="premium-opt">
+        <div><b>7 Hari</b><br><span>Akses premium 1 minggu</span></div>
+        <a class="btn small" href="https://lynk.id/yorpedia/pg05gpwx1lol" target="_blank" rel="noopener">Pilih</a>
+      </div>
+      <div class="premium-opt">
+        <div><b>1 Bulan</b><br><span>Akses premium 30 hari</span></div>
+        <a class="btn small" href="https://lynk.id/yorpedia/9dqpvkqvzmdk" target="_blank" rel="noopener">Pilih</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+requireAuth();
+applyStoredTheme();
+function toggle(id){ document.getElementById(id).classList.toggle('hidden'); }
+</script>
+</body>
+</html>

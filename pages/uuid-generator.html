@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — UUID Generator</title>
+<link rel="icon" href="../assets/icon.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../home.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>UUID Generator</h2>
+</div>
+
+<div class="page-body">
+  <div class="card">
+    <h3>Buat UUID v4</h3>
+    <p class="desc">Hasilkan ID unik acak (UUID versi 4) untuk kebutuhan pemrograman.</p>
+
+    <div class="copy-row">
+      <input type="text" id="uuidOut" readonly value="Tekan Generate untuk membuat UUID">
+      <button class="icon-btn" onclick="copyText(document.getElementById('uuidOut').value)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+    </div>
+
+    <button class="btn" style="margin-top:14px" onclick="generateUUID()">Generate UUID</button>
+  </div>
+
+  <div class="card">
+    <h3>Riwayat</h3>
+    <p class="desc">UUID yang baru dibuat pada sesi ini.</p>
+    <div id="historyList" class="result-box" style="max-height:220px;overflow:auto">Belum ada riwayat.</div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+requireAuth();
+applyStoredTheme();
+
+let history = [];
+
+function generateUUID(){
+  const id = (crypto.randomUUID) ? crypto.randomUUID() : fallbackUUID();
+  document.getElementById('uuidOut').value = id;
+  history.unshift(id);
+  if(history.length > 15) history.pop();
+  document.getElementById('historyList').innerHTML = history.map(h => `<div>${h}</div>`).join('');
+}
+
+function fallbackUUID(){
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8);
+    return v.toString(16);
+  });
+}
+</script>
+</body>
+</html>

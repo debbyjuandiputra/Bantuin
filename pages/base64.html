@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Base64 Encode & Decode</title>
+<link rel="icon" href="../assets/icon.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../home.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Base64 Encode &amp; Decode</h2>
+</div>
+
+<div class="page-body">
+  <div class="card">
+    <div class="tab-row">
+      <button class="active" id="tabEncodeBtn" onclick="switchMode('encode')">Encode</button>
+      <button id="tabDecodeBtn" onclick="switchMode('decode')">Decode</button>
+    </div>
+
+    <div class="field">
+      <label id="inputLabel">Teks Asli</label>
+      <textarea id="b64Input" rows="6" placeholder="Ketik atau tempel teks di sini..."></textarea>
+    </div>
+
+    <button class="btn" onclick="processBase64()">Proses</button>
+    <div class="form-msg" id="b64Msg"></div>
+
+    <div class="field" style="margin-top:16px">
+      <label id="outputLabel">Hasil Base64</label>
+      <div class="copy-row">
+        <input type="text" id="b64Output" readonly placeholder="Hasil akan tampil di sini">
+        <button class="icon-btn" onclick="copyText(document.getElementById('b64Output').value)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+requireAuth();
+applyStoredTheme();
+
+let mode = 'encode';
+
+function switchMode(m){
+  mode = m;
+  document.getElementById('tabEncodeBtn').classList.toggle('active', m==='encode');
+  document.getElementById('tabDecodeBtn').classList.toggle('active', m==='decode');
+  document.getElementById('inputLabel').textContent = m==='encode' ? 'Teks Asli' : 'Teks Base64';
+  document.getElementById('outputLabel').textContent = m==='encode' ? 'Hasil Base64' : 'Hasil Teks Asli';
+  document.getElementById('b64Input').value = '';
+  document.getElementById('b64Output').value = '';
+  document.getElementById('b64Msg').textContent = '';
+}
+
+// Encode/decode yang aman untuk karakter UTF-8 (emoji, huruf non-Latin, dll)
+function utf8ToBase64(str){
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary);
+}
+function base64ToUtf8(b64){
+  const binary = atob(b64);
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function processBase64(){
+  const input = document.getElementById('b64Input').value;
+  const msg = document.getElementById('b64Msg');
+  msg.textContent = '';
+
+  if(!input){ msg.textContent = 'Masukkan teks terlebih dahulu.'; return; }
+
+  try{
+    const result = mode === 'encode' ? utf8ToBase64(input) : base64ToUtf8(input.trim());
+    document.getElementById('b64Output').value = result;
+  }catch(err){
+    msg.textContent = mode === 'encode'
+      ? 'Gagal meng-encode teks ini.'
+      : 'Teks bukan format Base64 yang valid.';
+  }
+}
+</script>
+</body>
+</html>

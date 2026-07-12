@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Profil</title>
+<link rel="icon" href="assets/icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='home.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Profil Saya</h2>
+</div>
+
+<div class="page-body">
+  <div class="card" style="text-align:center">
+    <div style="width:72px;height:72px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--text-soft)">
+      <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+    </div>
+    <h3 id="pUsername">-</h3>
+    <p class="desc" id="pEmail">-</p>
+  </div>
+
+  <div class="card">
+    <h3>Data Akun</h3>
+    <div class="stat-grid" style="grid-template-columns:1fr">
+      <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center">
+        <span>Username</span><b style="font-size:14px" id="dUsername">-</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Data Tambahan (Opsional)</h3>
+    <p class="desc">Lengkapi data ini melalui menu Edit Profil.</p>
+    <div id="profileFieldsView"></div>
+    <button class="btn" style="margin-top:14px" onclick="window.location.href='edit-profil.html'">Edit Profil</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/util.js"></script>
+<script>
+applyStoredTheme();
+
+const labelMap = {
+  namaLengkap:'Nama Lengkap', namaPanggilan:'Nama Panggilan', asalInstansi:'Asal Instansi',
+  status:'Status', tglLahir:'Tanggal Lahir', nisNim:'NIS / NIM', bidang:'Bidang Keilmuan / Program Studi'
+};
+
+requireAuth(function(u){
+  document.getElementById('pUsername').textContent = u.username;
+  document.getElementById('pEmail').textContent = u.email;
+  document.getElementById('dUsername').textContent = u.username;
+
+  const holder = document.getElementById('profileFieldsView');
+  holder.innerHTML = Object.keys(labelMap).map(k => {
+    const val = u.profile && u.profile[k] ? u.profile[k] : '<span style="color:var(--text-soft)">Belum diisi</span>';
+    return `<div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px">
+      <span style="color:var(--text-soft)">${labelMap[k]}</span><span style="font-weight:600;text-align:right">${val}</span>
+    </div>`;
+  }).join('');
+});
+</script>
+</body>
+</html>

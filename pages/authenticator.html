@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Generate Kode Authenticator</title>
+<link rel="icon" href="../assets/icon.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../home.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Kode Authenticator</h2>
+</div>
+
+<div class="page-body">
+  <div class="card">
+    <h3>Masukkan Kunci (Secret)</h3>
+    <p class="desc">Masukkan kunci rahasia Base32 dari aplikasi/situs yang ingin diverifikasi (contoh: 2FA / Google Authenticator).</p>
+
+    <div class="field">
+      <label>Kunci (Secret Key)</label>
+      <input type="text" id="secretKey" placeholder="Contoh: JBSWY3DPEHPK3PXP" autocomplete="off">
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label>Jumlah Digit</label>
+        <select id="digits">
+          <option value="6" selected>6 digit</option>
+          <option value="8">8 digit</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Periode (detik)</label>
+        <select id="period">
+          <option value="30" selected>30 detik</option>
+          <option value="60">60 detik</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Algoritma</label>
+      <select id="algo">
+        <option value="SHA-1" selected>SHA1 (standar Google Authenticator)</option>
+        <option value="SHA-256">SHA256</option>
+        <option value="SHA-512">SHA512</option>
+      </select>
+    </div>
+
+    <button class="btn" onclick="startTotp()">Generate Kode</button>
+    <div class="form-msg" id="totpMsg"></div>
+  </div>
+
+  <div class="card hidden" id="resultCard">
+    <h3>Kode OTP Anda</h3>
+    <div class="totp-code" id="otpCode">------</div>
+    <div class="progress-bar"><i id="otpProgress" style="width:100%"></i></div>
+    <div class="totp-timer" id="otpTimerText">Refresh dalam 30 detik</div>
+    <button class="btn secondary" style="margin-top:14px" onclick="copyText(document.getElementById('otpCode').textContent)">Salin Kode</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+requireAuth();
+applyStoredTheme();
+
+let totpTimer = null;
+let currentSettings = null;
+
+function base32Decode(str){
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const clean = str.toUpperCase().replace(/[^A-Z2-7]/g,'');
+  let bits = '';
+  for(const ch of clean){
+    const idx = alphabet.indexOf(ch);
+    if(idx === -1) continue;
+    bits += idx.toString(2).padStart(5,'0');
+  }
+  const bytes = [];
+  for(let i=0;i+8<=bits.length;i+=8){
+    bytes.push(parseInt(bits.substring(i,i+8),2));
+  }
+  return new Uint8Array(bytes);
+}
+
+function intToBuffer(num){
+  const buf = new ArrayBuffer(8);
+  const view = new DataView(buf);
+  // JS number aman sampai 2^53, cukup untuk counter waktu unix
+  view.setUint32(4, num % 4294967296, false);
+  view.setUint32(0, Math.floor(num / 4294967296), false);
+  return buf;
+}
+
+async function computeTotp(secretRaw, digits, period, algo){
+  const keyBytes = base32Decode(secretRaw);
+  if(keyBytes.length === 0) throw new Error('empty');
+  const counter = Math.floor(Date.now()/1000/period);
+  const counterBuf = intToBuffer(counter);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', keyBytes, {name:'HMAC', hash:{name:algo}}, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', cryptoKey, counterBuf);
+  const hash = new Uint8Array(sig);
+
+  const offset = hash[hash.length-1] & 0xf;
+  const binary = ((hash[offset] & 0x7f) << 24) |
+                 ((hash[offset+1] & 0xff) << 16) |
+                 ((hash[offset+2] & 0xff) << 8) |
+                 (hash[offset+3] & 0xff);
+
+  const otp = (binary % (10 ** digits)).toString().padStart(digits, '0');
+  const secondsLeft = period - (Math.floor(Date.now()/1000) % period);
+  return {otp, secondsLeft, period};
+}
+
+async function refreshTotp(){
+  if(!currentSettings) return;
+  try{
+    const {secret, digits, period, algo} = currentSettings;
+    const res = await computeTotp(secret, digits, period, algo);
+    document.getElementById('otpCode').textContent = res.otp;
+    document.getElementById('otpTimerText').textContent = `Refresh dalam ${res.secondsLeft} detik`;
+    document.getElementById('otpProgress').style.width = (res.secondsLeft/res.period*100) + '%';
+  }catch(e){
+    document.getElementById('totpMsg').textContent = 'Kunci tidak valid. Gunakan format Base32 (huruf A-Z & angka 2-7).';
+  }
+}
+
+function startTotp(){
+  const secret = document.getElementById('secretKey').value.trim();
+  const digits = parseInt(document.getElementById('digits').value);
+  const period = parseInt(document.getElementById('period').value);
+  const algo = document.getElementById('algo').value;
+  const msg = document.getElementById('totpMsg');
+  msg.textContent = '';
+
+  if(!secret){ msg.textContent = 'Masukkan kunci terlebih dahulu.'; return; }
+
+  currentSettings = {secret, digits, period, algo};
+  document.getElementById('resultCard').classList.remove('hidden');
+  refreshTotp();
+
+  if(totpTimer) clearInterval(totpTimer);
+  totpTimer = setInterval(refreshTotp, 1000);
+}
+</script>
+</body>
+</html>
