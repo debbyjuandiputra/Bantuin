@@ -216,6 +216,11 @@ input, select, textarea{ font-family:'Inter', sans-serif; }
   background:var(--orange);
 }
 
+/* ---------- Fix: cat-tabs langsung setelah page-head ---------- */
+.page-head + .cat-tabs{
+  margin-top: 58px;
+}
+
 /* ---------- Feature grid ---------- */
 .section-title{ padding:18px 16px 4px; font-size:13px; color:var(--text-soft); font-weight:600; }
 .feature-grid{
