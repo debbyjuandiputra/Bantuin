@@ -10,7 +10,7 @@
 <body>
 
 <div class="page-head">
-  <button class="back-btn" onclick="window.location.href='home.html'">
+  <button class="back-btn" onclick="window.location.href='index.html'">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
   </button>
   <h2>Profil Saya</h2>
@@ -30,6 +30,10 @@
     <div class="stat-grid" style="grid-template-columns:1fr">
 
       <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <span>Nama Lengkap</span><b style="font-size:14px" id="dNama">-</b>
+      </div>
+
+      <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
         <span>Username</span>
         <span style="display:flex;align-items:center;gap:8px">
           <b style="font-size:14px" id="dUsername">********</b>
@@ -41,26 +45,29 @@
         </span>
       </div>
 
-      <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
-        <span>UID Publik</span><b style="font-size:14px" id="dUid">-</b>
-      </div>
-
-      <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
-        <span>Bergabung</span><b style="font-size:14px" id="dCreatedAt">-</b>
-      </div>
-
-      <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
-        <span>Nama Lengkap</span><b style="font-size:14px" id="dNama">-</b>
+      <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
+        <span>UID Publik</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <b style="font-size:14px" id="dUid">-</b>
+          <button type="button" class="icon-btn" id="copyUidBtn" aria-label="Salin UID Publik" style="width:28px;height:28px">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </span>
       </div>
 
       <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
         <span>Email</span><b style="font-size:14px" id="dEmail">-</b>
       </div>
 
+      <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
+        <span>Bergabung</span><b style="font-size:14px" id="dCreatedAt">-</b>
+      </div>
+
     </div>
   </div>
 
   <button class="btn outline" onclick="window.location.href='edit-profil.html'">Edit Profil</button>
+  <button class="btn outline" style="margin-top:10px;color:var(--danger);border-color:var(--danger)" onclick="doLogoutProfil()">Keluar</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -71,7 +78,13 @@
 applyStoredTheme();
 
 let realUsername = '';
+let realUid = '';
 let usernameVisible = false;
+
+function doLogoutProfil(){
+  logoutUser();
+  window.location.href = 'index.html';
+}
 
 function maskUsername(u){
   return '•'.repeat(Math.max(u.length, 4));
@@ -83,6 +96,7 @@ function renderUsername(){
 
 requireAuth(function(u){
   realUsername = u.username;
+  realUid = String(u.user_id);
   document.getElementById('pUid').textContent = '#' + u.user_id;
   document.getElementById('dUid').textContent = '#' + u.user_id;
   renderUsername();
@@ -99,6 +113,10 @@ requireAuth(function(u){
 document.getElementById('toggleUsernameBtn').addEventListener('click', function(){
   usernameVisible = !usernameVisible;
   renderUsername();
+});
+
+document.getElementById('copyUidBtn').addEventListener('click', function(){
+  copyText(realUid);
 });
 </script>
 </body>

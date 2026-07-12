@@ -3,7 +3,7 @@
 // ==========================================================
 // Cara kerja:
 // - Aplikasi bisa dipakai TANPA login (mode tamu) — semua fitur di
-//   home.html & halaman fitur bisa langsung diakses siapa saja.
+//   index.html (beranda) & halaman fitur bisa langsung diakses siapa saja.
 // - Kalau user memilih login/daftar, cukup ketik USERNAME (tanpa password).
 // - Username di-hash (SHA-256) sebelum dikirim/disimpan ke Supabase,
 //   jadi developer yang buka tabel di dashboard Supabase tidak
@@ -41,9 +41,20 @@ function normalizeUsername(username){
   return (username || '').trim().toLowerCase();
 }
 
-// ---------------- Generate UID publik 7 digit ----------------
-function generateUserId7(){
-  return Math.floor(1000000 + Math.random() * 9000000); // 1000000 - 9999999
+// ---------------- Generate UID publik sekuensial ----------------
+// UID = user_id terbesar di tabel + random(1..10)
+// Jika belum ada user sama sekali, mulai dari 1000001.
+async function generateNextUserId(){
+  const { data, error } = await sb
+    .from(TABLE_NAME)
+    .select('user_id')
+    .order('user_id', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const lastId = (data && !error) ? data.user_id : 1000000;
+  const randomStep = Math.floor(Math.random() * 10) + 1; // 1 – 10
+  return lastId + randomStep;
 }
 
 // ---------------- Pesan error Supabase → Bahasa Indonesia ----------------
@@ -86,10 +97,10 @@ async function registerUsername({username}){
     if(checkErr) return {ok:false, msg: mapSupabaseError(checkErr)};
     if(existing) return {ok:false, msg:'Username sudah digunakan.'};
 
-    // Coba insert dengan UID publik acak, retry jika bentrok (unique constraint)
+    // Ambil ID sekuensial (max user_id + random 1-10), retry jika bentrok
     let lastErr = null;
-    for(let i = 0; i < 5; i++){
-      const userId = generateUserId7();
+    for(let i = 0; i < 3; i++){
+      const userId = await generateNextUserId();
       const { data: inserted, error: insertErr } = await sb
         .from(TABLE_NAME)
         .insert({ username: hash, user_id: userId })
@@ -227,7 +238,7 @@ function toggleTheme(){
 
 // ---------------- Proteksi halaman ----------------
 // Dipakai HANYA di halaman yang benar-benar wajib login (mis. profil.html,
-// edit-profil.html). Halaman fitur & home.html TIDAK memakai ini lagi
+// edit-profil.html). Halaman fitur & index.html (beranda) TIDAK memakai ini lagi
 // karena sekarang bisa diakses tanpa login (mode tamu) — gunakan
 // getSession() langsung di sana untuk mengecek status login opsional.
 // Sinkron (baca localStorage langsung) — dipanggil dengan callback
@@ -235,13 +246,13 @@ function toggleTheme(){
 function requireAuth(onReady){
   const session = getSession();
   if(!session){
-    window.location.href = (location.pathname.includes('/pages/') ? '../index.html' : 'index.html');
+    window.location.href = (location.pathname.includes('/pages/') ? '../login.html' : 'login.html');
     return;
   }
   if(onReady) onReady(session);
 }
 
-// Dipakai di index.html: jika sudah login, langsung lempar ke home.html
+// Dipakai di login.html: jika sudah login, langsung lempar ke index.html (beranda)
 function redirectIfLoggedIn(target){
   if(getSession()) window.location.href = target;
 }

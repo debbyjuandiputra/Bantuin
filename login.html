@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Masuk / Daftar</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-wrap">
+  <div class="auth-logo">
+    <img src="assets/icon.png" alt="Logo Bantuin">
+    <h1>Bantuin</h1>
+    <p>Alat Bantu Siswa &amp; Mahasiswa</p>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLoginBtn" onclick="switchTab('login')">Masuk</button>
+      <button class="auth-tab" id="tabRegisterBtn" onclick="switchTab('register')">Daftar</button>
+    </div>
+
+    <!-- LOGIN -->
+    <form id="loginForm" onsubmit="return handleLogin(event)">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="loginUsername" placeholder="Masukkan username" required minlength="3">
+        <div class="field-hint">Username Anda bersifat privat &amp; tidak disimpan dalam bentuk asli.</div>
+      </div>
+
+      <div class="check-row">
+        <input type="checkbox" id="agreePolicyLogin">
+        <span>Saya menyetujui <a href="javascript:void(0)" onclick="openPolicyModal()">Kebijakan &amp; Syarat Penggunaan</a> Bantuin.</span>
+      </div>
+
+      <button type="submit" class="btn" id="loginBtn" disabled>Masuk</button>
+      <div class="form-msg" id="loginMsg"></div>
+    </form>
+
+    <!-- REGISTER -->
+    <form id="registerForm" class="hidden" onsubmit="return handleRegister(event)">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="regUsername" placeholder="Buat username" required minlength="3">
+        <div class="field-hint">Hanya huruf, angka, _ dan titik. Bersifat privat &amp; tidak perlu password.</div>
+      </div>
+
+      <div class="check-row">
+        <input type="checkbox" id="agreePolicy">
+        <span>Saya menyetujui <a href="javascript:void(0)" onclick="openPolicyModal()">Kebijakan &amp; Syarat Penggunaan</a> Bantuin.</span>
+      </div>
+
+      <button type="submit" class="btn" id="registerBtn" disabled>Daftar</button>
+      <div class="form-msg" id="registerMsg"></div>
+    </form>
+  </div>
+
+  <button type="button" class="btn outline" style="max-width:400px" onclick="continueAsGuest()">Lanjutkan tanpa akun</button>
+</div>
+
+<!-- Modal Kebijakan -->
+<div class="modal-bg" id="policyModal">
+  <div class="modal-box">
+    <h3>Kebijakan &amp; Syarat Penggunaan</h3>
+    <div class="legal-text" id="legalTextHolder"></div>
+    <button class="btn" style="margin-top:16px" onclick="closePolicyModal()">Tutup</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/legal.js"></script>
+<script src="js/store.js"></script>
+<script src="js/util.js"></script>
+<script>
+applyStoredTheme();
+// Jika sudah login, langsung ke home
+redirectIfLoggedIn('index.html');
+
+function switchTab(tab){
+  const isLogin = tab === 'login';
+  document.getElementById('tabLoginBtn').classList.toggle('active', isLogin);
+  document.getElementById('tabRegisterBtn').classList.toggle('active', !isLogin);
+  document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
+  document.getElementById('registerForm').classList.toggle('hidden', isLogin);
+}
+
+async function handleLogin(e){
+  e.preventDefault();
+  const username = document.getElementById('loginUsername').value.trim();
+  const msg = document.getElementById('loginMsg');
+  const btn = e.target.querySelector('button[type="submit"]');
+
+  if(!document.getElementById('agreePolicyLogin').checked){
+    msg.textContent = 'Anda harus menyetujui kebijakan terlebih dahulu.'; return false;
+  }
+
+  msg.textContent = '';
+  btn.disabled = true; btn.textContent = 'Memproses...';
+  const res = await loginUsername({username});
+  btn.disabled = false; btn.textContent = 'Masuk';
+
+  if(res.ok){
+    sessionStorage.setItem('bantuin_show_claim', '1');
+    window.location.href = 'index.html';
+  } else {
+    msg.textContent = res.msg;
+  }
+  return false;
+}
+
+function continueAsGuest(){
+  window.location.href = 'index.html';
+}
+
+async function handleRegister(e){
+  e.preventDefault();
+  const username = document.getElementById('regUsername').value.trim();
+  const msg = document.getElementById('registerMsg');
+
+  if(!/^[a-zA-Z0-9_.]+$/.test(username)){
+    msg.textContent = 'Username hanya boleh huruf, angka, _ dan titik.'; return false;
+  }
+  if(!document.getElementById('agreePolicy').checked){
+    msg.textContent = 'Anda harus menyetujui kebijakan terlebih dahulu.'; return false;
+  }
+
+  const btn = document.getElementById('registerBtn');
+  msg.textContent = '';
+  btn.disabled = true; btn.textContent = 'Memproses...';
+  const res = await registerUsername({username});
+  btn.disabled = false; btn.textContent = 'Daftar';
+
+  if(res.ok){
+    sessionStorage.setItem('bantuin_show_claim', '1');
+    window.location.href = 'index.html';
+  } else {
+    msg.textContent = res.msg;
+  }
+  return false;
+}
+
+document.getElementById('agreePolicyLogin').addEventListener('change', function(){
+  document.getElementById('loginBtn').disabled = !this.checked;
+});
+
+document.getElementById('agreePolicy').addEventListener('change', function(){
+  document.getElementById('registerBtn').disabled = !this.checked;
+});
+
+function openPolicyModal(){
+  document.getElementById('legalTextHolder').textContent = LEGAL_TEXT;
+  document.getElementById('policyModal').classList.add('show');
+}
+function closePolicyModal(){
+  document.getElementById('policyModal').classList.remove('show');
+}
+</script>
+</body>
+</html>
