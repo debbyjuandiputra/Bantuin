@@ -1,8 +1,10 @@
 // ==========================================================
-// BANTUIN — store.js (versi Supabase, login username-only)
+// BANTUIN — store.js (versi Supabase, login username-only, guest mode)
 // ==========================================================
 // Cara kerja:
-// - User hanya mengetik USERNAME (tanpa password).
+// - Aplikasi bisa dipakai TANPA login (mode tamu) — semua fitur di
+//   home.html & halaman fitur bisa langsung diakses siapa saja.
+// - Kalau user memilih login/daftar, cukup ketik USERNAME (tanpa password).
 // - Username di-hash (SHA-256) sebelum dikirim/disimpan ke Supabase,
 //   jadi developer yang buka tabel di dashboard Supabase tidak
 //   melihat username asli, hanya hash-nya.
@@ -14,9 +16,15 @@
 //   sungguhan — siapapun yang tahu/ketik username yang sama akan
 //   dianggap sebagai user yang sama.
 // - Tema (terang/gelap) tetap disimpan lokal di perangkat.
+// - User yang sudah login boleh menambahkan Nama Lengkap & Email
+//   (opsional) dan boleh klaim promo Canva Pro 1 Hari (1 email hanya
+//   bisa klaim 1 kali). Setiap klik fitur oleh user yang login dicatat
+//   ke tabel feature_clicks untuk kebutuhan statistik penggunaan.
 // ==========================================================
 
-const TABLE_NAME = 'users';       // sesuaikan jika nama tabel Anda berbeda
+const TABLE_NAME = 'users';                 // sesuaikan jika nama tabel Anda berbeda
+const TABLE_CLAIM = 'email_canva';
+const TABLE_CLICKS = 'feature_clicks';
 const SESSION_KEY = 'bantuin_session';
 const DB_THEME = 'bantuin_theme';
 
@@ -85,14 +93,16 @@ async function registerUsername({username}){
       const { data: inserted, error: insertErr } = await sb
         .from(TABLE_NAME)
         .insert({ username: hash, user_id: userId })
-        .select('user_id, created_at')
+        .select('user_id, created_at, nama, email')
         .single();
 
       if(!insertErr){
         saveSession({
           username: clean,
           user_id: inserted.user_id,
-          created_at: inserted.created_at
+          created_at: inserted.created_at,
+          nama: inserted.nama || '',
+          email: inserted.email || ''
         });
         return {ok:true};
       }
@@ -114,7 +124,7 @@ async function loginUsername({username}){
     const hash = await sha256Hex(clean);
     const { data, error } = await sb
       .from(TABLE_NAME)
-      .select('user_id, created_at')
+      .select('user_id, created_at, nama, email')
       .eq('username', hash)
       .maybeSingle();
 
@@ -124,7 +134,9 @@ async function loginUsername({username}){
     saveSession({
       username: clean,
       user_id: data.user_id,
-      created_at: data.created_at
+      created_at: data.created_at,
+      nama: data.nama || '',
+      email: data.email || ''
     });
     return {ok:true};
   }catch(err){
@@ -134,6 +146,66 @@ async function loginUsername({username}){
 
 function logoutUser(){
   clearSession();
+}
+
+// ---------------- Update profil (Nama Lengkap & Email, opsional) ----------------
+async function updateProfile({nama, email}){
+  const session = getSession();
+  if(!session) return {ok:false, msg:'Anda harus masuk terlebih dahulu.'};
+
+  try{
+    const { error } = await sb
+      .from(TABLE_NAME)
+      .update({ nama: nama || null, email: email || null })
+      .eq('user_id', session.user_id);
+
+    if(error) return {ok:false, msg: mapSupabaseError(error)};
+
+    session.nama = nama || '';
+    session.email = email || '';
+    saveSession(session);
+    return {ok:true};
+  }catch(err){
+    return {ok:false, msg: mapSupabaseError(err)};
+  }
+}
+
+// ---------------- Klaim promo Canva Pro 1 Hari ----------------
+// 1 email hanya berhak klaim 1 kali (email jadi primary key di tabel email_canva).
+// Hanya bisa dipakai oleh user yang sudah login.
+async function claimCanva(email){
+  const session = getSession();
+  if(!session) return {ok:false, msg:'Anda harus masuk terlebih dahulu.'};
+
+  const clean = (email || '').trim().toLowerCase();
+  if(!clean) return {ok:false, msg:'Email tidak boleh kosong.'};
+
+  try{
+    const { error } = await sb
+      .from(TABLE_CLAIM)
+      .insert({ email: clean, user_id: session.user_id });
+
+    if(error){
+      if(error.code === '23505') return {ok:false, msg:'Tidak bisa klaim dengan email ini.'};
+      return {ok:false, msg: mapSupabaseError(error)};
+    }
+    return {ok:true, msg:'Pengajuan berhasil! Tautan undangan akan dikirim melalui gmail!'};
+  }catch(err){
+    return {ok:false, msg: mapSupabaseError(err)};
+  }
+}
+
+// ---------------- Catat klik fitur ----------------
+// Hanya bekerja untuk user yang sudah login. Gagal diam-diam (silent fail)
+// supaya tidak mengganggu pengalaman pengguna kalau pencatatan gagal.
+async function logFeatureClick(feature){
+  const session = getSession();
+  if(!session) return;
+  try{
+    await sb.from(TABLE_CLICKS).insert({ user_id: session.user_id, feature: feature });
+  }catch(err){
+    // silent fail
+  }
 }
 
 // ---------------- Tema (tetap lokal) ----------------
@@ -154,8 +226,12 @@ function toggleTheme(){
 }
 
 // ---------------- Proteksi halaman ----------------
+// Dipakai HANYA di halaman yang benar-benar wajib login (mis. profil.html,
+// edit-profil.html). Halaman fitur & home.html TIDAK memakai ini lagi
+// karena sekarang bisa diakses tanpa login (mode tamu) — gunakan
+// getSession() langsung di sana untuk mengecek status login opsional.
 // Sinkron (baca localStorage langsung) — dipanggil dengan callback
-// opsional yang menerima {username, user_id, created_at}.
+// opsional yang menerima {username, user_id, created_at, nama, email}.
 function requireAuth(onReady){
   const session = getSession();
   if(!session){

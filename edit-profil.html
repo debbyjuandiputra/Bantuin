@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bantuin — Edit Profil</title>
-<link rel="icon" href="assets/icon.png">
+<link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -18,87 +18,56 @@
 
 <div class="page-body">
   <div class="card">
-    <p class="desc">Data ini bersifat opsional dan hanya disimpan di perangkat Anda.</p>
+    <p class="desc">Data ini bersifat opsional dan hanya dipakai untuk keperluan seperti klaim promo.</p>
     <form id="editForm">
       <div class="field">
         <label>Nama Lengkap</label>
         <input type="text" id="namaLengkap" placeholder="Nama lengkap Anda">
       </div>
       <div class="field">
-        <label>Nama Panggilan</label>
-        <input type="text" id="namaPanggilan" placeholder="Nama panggilan">
-      </div>
-      <div class="field">
-        <label>Asal Instansi</label>
-        <input type="text" id="asalInstansi" placeholder="Sekolah / Kampus / Perusahaan">
-      </div>
-      <div class="field">
-        <label>Status</label>
-        <select id="status">
-          <option value="">Pilih status</option>
-          <option value="Siswa">Siswa</option>
-          <option value="Mahasiswa">Mahasiswa</option>
-          <option value="Pekerja">Pekerja</option>
-          <option value="Umum">Umum</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Tanggal Lahir</label>
-        <input type="date" id="tglLahir">
-      </div>
-      <div class="field">
-        <label>NIS / NIM</label>
-        <input type="text" id="nisNim" placeholder="Nomor induk (jika ada)">
-      </div>
-      <div class="field">
-        <label>Bidang Keilmuan / Program Studi</label>
-        <input type="text" id="bidang" placeholder="Contoh: Teknik Informatika">
+        <label>Email</label>
+        <input type="email" id="emailField" placeholder="nama@email.com">
       </div>
 
-      <button type="submit" class="btn">Simpan Perubahan</button>
+      <button type="submit" class="btn" id="editBtn">Simpan Perubahan</button>
       <div class="form-msg" id="editMsg" style="color:var(--success)"></div>
     </form>
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/store.js"></script>
 <script src="js/util.js"></script>
 <script>
 applyStoredTheme();
 
 requireAuth(function(u){
-  const p = u.profile || {};
-  document.getElementById('namaLengkap').value = p.namaLengkap || '';
-  document.getElementById('namaPanggilan').value = p.namaPanggilan || '';
-  document.getElementById('asalInstansi').value = p.asalInstansi || '';
-  document.getElementById('status').value = p.status || '';
-  document.getElementById('tglLahir').value = p.tglLahir || '';
-  document.getElementById('nisNim').value = p.nisNim || '';
-  document.getElementById('bidang').value = p.bidang || '';
+  document.getElementById('namaLengkap').value = u.nama || '';
+  document.getElementById('emailField').value = u.email || '';
 });
 
 document.getElementById('editForm').addEventListener('submit', async function(e){
   e.preventDefault();
-  const btn = e.target.querySelector('button[type="submit"]');
+  const btn = document.getElementById('editBtn');
+  const msg = document.getElementById('editMsg');
+  msg.textContent = '';
   btn.disabled = true; btn.textContent = 'Menyimpan...';
 
-  await updateProfile({
-    namaLengkap: document.getElementById('namaLengkap').value.trim(),
-    namaPanggilan: document.getElementById('namaPanggilan').value.trim(),
-    asalInstansi: document.getElementById('asalInstansi').value.trim(),
-    status: document.getElementById('status').value,
-    tglLahir: document.getElementById('tglLahir').value,
-    nisNim: document.getElementById('nisNim').value.trim(),
-    bidang: document.getElementById('bidang').value.trim()
+  const res = await updateProfile({
+    nama: document.getElementById('namaLengkap').value.trim(),
+    email: document.getElementById('emailField').value.trim()
   });
 
   btn.disabled = false; btn.textContent = 'Simpan Perubahan';
-  showToast('Profil tersimpan');
-  setTimeout(()=> window.location.href = 'profil.html', 700);
+
+  if(res.ok){
+    showToast('Profil tersimpan');
+    setTimeout(()=> window.location.href = 'profil.html', 700);
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = res.msg;
+  }
 });
 </script>
 </body>

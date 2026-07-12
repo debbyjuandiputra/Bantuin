@@ -2,10 +2,24 @@
 // BANTUIN — home.js
 // ==========================================================
 applyStoredTheme();
-requireAuth(function(u){
-  // Dipanggil setelah login terverifikasi & data user siap
-  document.getElementById('profileNameTag').textContent = u.username;
-});
+
+// Home.html bisa diakses tanpa login (mode tamu). Sesi hanya dibaca,
+// tidak ada redirect paksa seperti requireAuth().
+const currentSession = getSession();
+
+if(currentSession){
+  document.getElementById('profileStatusLabel').textContent = 'Masuk sebagai';
+  document.getElementById('profileNameTag').textContent = currentSession.username;
+  document.getElementById('profileMenuLoggedIn').classList.remove('hidden');
+  document.getElementById('profileMenuGuest').classList.add('hidden');
+} else {
+  document.getElementById('profileStatusLabel').textContent = 'Status';
+  document.getElementById('profileNameTag').textContent = 'Tamu';
+  document.getElementById('profileMenuLoggedIn').classList.add('hidden');
+  document.getElementById('profileMenuGuest').classList.remove('hidden');
+}
+
+function goLoginPage(){ window.location.href = 'index.html'; }
 
 // ---------------- Data fitur ----------------
 const ICONS = {
@@ -50,13 +64,20 @@ function renderFeatures(){
     return;
   }
   grid.innerHTML = list.map(f => `
-    <div class="feature-card ${f.active ? '' : 'disabled'}" ${f.active ? `onclick="location.href='${f.page}'"` : ''}>
+    <div class="feature-card ${f.active ? '' : 'disabled'}" ${f.active ? `onclick="openFeature('${f.id}','${f.page}')"` : ''}>
       ${f.active ? '' : '<span class="badge-soon">Segera</span>'}
       <div class="ic">${f.icon}</div>
       <b>${f.title}</b>
       <small>${f.desc}</small>
     </div>
   `).join('');
+}
+
+// Dipanggil saat kartu fitur diklik: catat klik (kalau sudah login),
+// lalu buka halaman fiturnya. Tamu tetap bisa langsung membuka fitur.
+function openFeature(featureId, page){
+  logFeatureClick(featureId);
+  location.href = page;
 }
 
 function setCategory(cat, el){
@@ -133,3 +154,48 @@ function openKontak(){
   closeAllOverlays();
 }
 function closeKontakModal(){ document.getElementById('kontakModal').classList.remove('show'); }
+
+// ---------------- Modal Promo Login (tamu) ----------------
+function closeLoginPromoModal(){ document.getElementById('loginPromoModal').classList.remove('show'); }
+
+// Untuk tamu, sesekali (bukan setiap saat) tampilkan ajakan login
+// supaya bisa klaim Canva Pro 1 Hari.
+if(!currentSession && Math.random() < 0.5){
+  setTimeout(function(){
+    document.getElementById('loginPromoModal').classList.add('show');
+  }, 1800);
+}
+
+// ---------------- Modal Klaim Canva Pro (setelah login) ----------------
+function closeClaimCanvaModal(){ document.getElementById('claimCanvaModal').classList.remove('show'); }
+
+async function handleClaimCanva(e){
+  e.preventDefault();
+  const email = document.getElementById('claimCanvaEmail').value.trim();
+  const msg = document.getElementById('claimCanvaMsg');
+  const btn = document.getElementById('claimCanvaBtn');
+  msg.textContent = '';
+  btn.disabled = true; btn.textContent = 'Memproses...';
+
+  const res = await claimCanva(email);
+
+  btn.disabled = false; btn.textContent = 'Ajukan Klaim';
+
+  if(res.ok){
+    msg.style.color = 'var(--success)';
+    msg.textContent = res.msg;
+    setTimeout(closeClaimCanvaModal, 1600);
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = res.msg;
+  }
+  return false;
+}
+
+// Jika baru saja berhasil login/daftar, tampilkan pop-up klaim Canva Pro.
+if(currentSession && sessionStorage.getItem('bantuin_show_claim')){
+  sessionStorage.removeItem('bantuin_show_claim');
+  setTimeout(function(){
+    document.getElementById('claimCanvaModal').classList.add('show');
+  }, 600);
+}

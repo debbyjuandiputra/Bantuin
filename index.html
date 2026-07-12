@@ -56,6 +56,8 @@
       <div class="form-msg" id="registerMsg"></div>
     </form>
   </div>
+
+  <button type="button" class="btn outline" style="max-width:400px" onclick="continueAsGuest()">Lanjutkan tanpa akun</button>
 </div>
 
 <!-- Modal Kebijakan -->
@@ -101,11 +103,16 @@ async function handleLogin(e){
   btn.disabled = false; btn.textContent = 'Masuk';
 
   if(res.ok){
+    sessionStorage.setItem('bantuin_show_claim', '1');
     window.location.href = 'home.html';
   } else {
     msg.textContent = res.msg;
   }
   return false;
+}
+
+function continueAsGuest(){
+  window.location.href = 'home.html';
 }
 
 async function handleRegister(e){
@@ -127,6 +134,7 @@ async function handleRegister(e){
   btn.disabled = false; btn.textContent = 'Daftar';
 
   if(res.ok){
+    sessionStorage.setItem('bantuin_show_claim', '1');
     window.location.href = 'home.html';
   } else {
     msg.textContent = res.msg;

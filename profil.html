@@ -49,8 +49,18 @@
         <span>Bergabung</span><b style="font-size:14px" id="dCreatedAt">-</b>
       </div>
 
+      <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
+        <span>Nama Lengkap</span><b style="font-size:14px" id="dNama">-</b>
+      </div>
+
+      <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
+        <span>Email</span><b style="font-size:14px" id="dEmail">-</b>
+      </div>
+
     </div>
   </div>
+
+  <button class="btn outline" onclick="window.location.href='edit-profil.html'">Edit Profil</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -81,6 +91,9 @@ requireAuth(function(u){
     const d = new Date(u.created_at);
     document.getElementById('dCreatedAt').textContent = d.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
   }
+
+  document.getElementById('dNama').textContent = u.nama || '-';
+  document.getElementById('dEmail').textContent = u.email || '-';
 });
 
 document.getElementById('toggleUsernameBtn').addEventListener('click', function(){
