@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bantuin — Masuk / Daftar</title>
-<link rel="icon" href="assets/icon.png">
-<link rel="icon" type="image/webp" href="assets/Favicon Bantuin.webp">
+<link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -27,13 +26,16 @@
     <form id="loginForm" onsubmit="return handleLogin(event)">
       <div class="field">
         <label>Username</label>
-        <input type="text" id="loginUsername" placeholder="Masukkan username" required>
+        <input type="text" id="loginUsername" placeholder="Masukkan username" required minlength="3">
+        <div class="field-hint">Username Anda bersifat privat &amp; tidak disimpan dalam bentuk asli.</div>
       </div>
-      <div class="field">
-        <label>Password</label>
-        <input type="password" id="loginPassword" placeholder="Masukkan password" required>
+
+      <div class="check-row">
+        <input type="checkbox" id="agreePolicyLogin">
+        <span>Saya menyetujui <a href="javascript:void(0)" onclick="openPolicyModal()">Kebijakan &amp; Syarat Penggunaan</a> Bantuin.</span>
       </div>
-      <button type="submit" class="btn">Masuk</button>
+
+      <button type="submit" class="btn" id="loginBtn" disabled>Masuk</button>
       <div class="form-msg" id="loginMsg"></div>
     </form>
 
@@ -42,19 +44,7 @@
       <div class="field">
         <label>Username</label>
         <input type="text" id="regUsername" placeholder="Buat username" required minlength="3">
-      </div>
-      <div class="field">
-        <label>Email</label>
-        <input type="email" id="regEmail" placeholder="Masukkan email" required>
-      </div>
-      <div class="field">
-        <label>Password</label>
-        <input type="password" id="regPassword" placeholder="Buat password" required minlength="6">
-        <div class="field-hint">Minimal 6 karakter.</div>
-      </div>
-      <div class="field">
-        <label>Konfirmasi Password</label>
-        <input type="password" id="regPasswordConfirm" placeholder="Ulangi password" required minlength="6">
+        <div class="field-hint">Hanya huruf, angka, _ dan titik. Bersifat privat &amp; tidak perlu password.</div>
       </div>
 
       <div class="check-row">
@@ -77,10 +67,8 @@
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/legal.js"></script>
 <script src="js/store.js"></script>
 <script src="js/util.js"></script>
@@ -100,13 +88,16 @@ function switchTab(tab){
 async function handleLogin(e){
   e.preventDefault();
   const username = document.getElementById('loginUsername').value.trim();
-  const password = document.getElementById('loginPassword').value;
   const msg = document.getElementById('loginMsg');
   const btn = e.target.querySelector('button[type="submit"]');
 
+  if(!document.getElementById('agreePolicyLogin').checked){
+    msg.textContent = 'Anda harus menyetujui kebijakan terlebih dahulu.'; return false;
+  }
+
   msg.textContent = '';
   btn.disabled = true; btn.textContent = 'Memproses...';
-  const res = await loginUser({username, password});
+  const res = await loginUsername({username});
   btn.disabled = false; btn.textContent = 'Masuk';
 
   if(res.ok){
@@ -120,16 +111,10 @@ async function handleLogin(e){
 async function handleRegister(e){
   e.preventDefault();
   const username = document.getElementById('regUsername').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const password = document.getElementById('regPassword').value;
-  const confirm = document.getElementById('regPasswordConfirm').value;
   const msg = document.getElementById('registerMsg');
 
   if(!/^[a-zA-Z0-9_.]+$/.test(username)){
     msg.textContent = 'Username hanya boleh huruf, angka, _ dan titik.'; return false;
-  }
-  if(password !== confirm){
-    msg.textContent = 'Konfirmasi password tidak sama.'; return false;
   }
   if(!document.getElementById('agreePolicy').checked){
     msg.textContent = 'Anda harus menyetujui kebijakan terlebih dahulu.'; return false;
@@ -138,7 +123,7 @@ async function handleRegister(e){
   const btn = document.getElementById('registerBtn');
   msg.textContent = '';
   btn.disabled = true; btn.textContent = 'Memproses...';
-  const res = await registerUser({username, password, email});
+  const res = await registerUsername({username});
   btn.disabled = false; btn.textContent = 'Daftar';
 
   if(res.ok){
@@ -148,6 +133,10 @@ async function handleRegister(e){
   }
   return false;
 }
+
+document.getElementById('agreePolicyLogin').addEventListener('change', function(){
+  document.getElementById('loginBtn').disabled = !this.checked;
+});
 
 document.getElementById('agreePolicy').addEventListener('change', function(){
   document.getElementById('registerBtn').disabled = !this.checked;

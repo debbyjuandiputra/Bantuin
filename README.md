@@ -2,11 +2,12 @@
 
 Aplikasi web statis (HTML, CSS, JS murni — tanpa backend/server).
 
-## Setup Firebase (wajib sebelum dipakai)
-Akun & profil pengguna sekarang disimpan di Firebase (Authentication +
-Firestore), bukan lagi localStorage. **Ikuti `FIREBASE_SETUP.md` terlebih
-dahulu** untuk membuat project Firebase dan mengisi `js/firebase-config.js`
-sebelum di-hosting.
+## Setup Supabase (wajib sebelum dipakai)
+Login memakai username saja (tanpa password/email). Username di-hash sebelum
+disimpan ke Supabase, ditambah UID publik acak 7 digit dan tanggal dibuat.
+**Ikuti `SUPABASE_SETUP.md` terlebih dahulu** untuk membuat tabel & RLS di
+project Supabase Anda. Key di `js/supabase-config.js` sudah diisi (publishable
+key, aman untuk client-side).
 
 ## Cara Hosting (GitHub Pages)
 1. Buat repository baru di GitHub, misal `bantuin-app`.
@@ -21,9 +22,12 @@ sebelum di-hosting.
 4. Generate APK.
 
 ## Catatan Teknis
-- Data akun & profil disimpan di **Firebase Authentication + Firestore**
-  (lihat `FIREBASE_SETUP.md`). Tema terang/gelap tetap disimpan lokal
-  di perangkat (localStorage) karena sifatnya preferensi tampilan saja.
+- Login hanya pakai **username** (tanpa password). Username di-hash (SHA-256)
+  sebelum dikirim, sehingga developer tidak melihat username asli lewat
+  dashboard Supabase — lihat `SUPABASE_SETUP.md`. Sesi login disimpan lokal
+  di perangkat (localStorage), bukan cookie/token server, jadi sistem ini
+  bersifat identitas ringan (bukan akun dengan proteksi password sungguhan).
+  Tema terang/gelap juga tetap disimpan lokal di perangkat.
 - Fitur Konversi Dokumen, Cek Panjang Karakter, dan pembuatan PDF menggunakan
   pustaka pihak ketiga via CDN (mammoth.js, pdf.js, html2pdf.js, SheetJS) —
   pastikan APK memiliki izin akses internet agar pustaka ini dapat dimuat.

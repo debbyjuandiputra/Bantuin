@@ -11,8 +11,8 @@ Dengan membuat akun atau menggunakan aplikasi ini, Anda dianggap telah membaca, 
 Aplikasi ini menyediakan berbagai alat bantu bagi siswa, mahasiswa, dan pengguna umum, seperti konversi file, pemindaian dokumen, kalkulator, generator UUID, generator kode autentikator, pengingat, serta fitur lainnya.
 
 2. Akun Pengguna
-Pengguna bertanggung jawab atas keamanan akun dan password yang dimiliki.
-Pengguna wajib memberikan informasi yang benar dan tidak menggunakan identitas milik orang lain tanpa izin.
+Pengguna bertanggung jawab atas kerahasiaan username yang dimilikinya, karena username adalah satu-satunya identitas untuk masuk ke akun (aplikasi ini tidak menggunakan password).
+Pengguna wajib menggunakan username miliknya sendiri dan tidak menggunakan identitas milik orang lain tanpa izin.
 
 3. Kewajiban Pengguna
 Pengguna dilarang:
@@ -50,4 +50,10 @@ Syarat dan Ketentuan ini diatur sesuai dengan hukum yang berlaku di Republik Ind
 —
 
 Catatan Privasi Data
-Data akun (username, password, email) dan data profil opsional yang Anda isi disimpan secara lokal di perangkat Anda (local storage) untuk keperluan aplikasi ini berjalan. Data tersebut tidak dikirim ke server pihak ketiga mana pun oleh aplikasi ini.`;
+Aplikasi ini tidak mewajibkan data pribadi apa pun. Anda hanya perlu membuat username untuk masuk — tanpa nama lengkap, email, NIM, atau password. Username Anda diubah menjadi kode acak satu arah (hash) sebelum dikirim ke server, sehingga pengembang tidak dapat melihat username asli Anda. Sistem hanya menyimpan kode acak tersebut, sebuah UID publik 7 digit, dan tanggal akun dibuat, menggunakan layanan Supabase.
+
+Karena tidak menggunakan password, akun ini bersifat identitas ringan, bukan akun dengan proteksi penuh — siapa pun yang mengetik ulang username yang sama dapat masuk sebagai akun tersebut. Jangan gunakan username yang mudah ditebak orang lain jika Anda ingin menjaga privasi akun Anda.
+
+Sebagian preferensi tampilan (seperti mode terang/gelap) tetap disimpan secara lokal di perangkat (local storage) karena tidak memerlukan sinkronisasi ke akun Anda.
+
+Dengan menggunakan aplikasi ini, Anda menyetujui penyimpanan data sebagaimana dijelaskan di atas. Anda dapat menghubungi pengembang melalui menu Kontak apabila ingin data akun Anda dihapus dari sistem.`;

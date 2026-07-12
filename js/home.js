@@ -105,9 +105,9 @@ refreshThemeIcon();
 
 // ---------------- Profil aksi ----------------
 function goProfile(){ window.location.href = 'profil.html'; }
-function goEditProfile(){ window.location.href = 'edit-profil.html'; }
 function doLogout(){
-  logoutUser().then(() => window.location.href = 'index.html');
+  logoutUser();
+  window.location.href = 'index.html';
 }
 
 // ---------------- Modal Kebijakan ----------------
