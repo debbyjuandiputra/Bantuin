@@ -80,7 +80,7 @@ async function registerUsername({username}){
 
     const { data: existing, error: checkErr } = await sb
       .from(TABLE_NAME)
-      .select('id')
+      .select('user_id')
       .eq('username', hash)
       .maybeSingle();
     if(checkErr) return {ok:false, msg: mapSupabaseError(checkErr)};
