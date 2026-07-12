@@ -46,10 +46,22 @@
     <div class="field">
       <label>Algoritma</label>
       <select id="algo">
-        <option value="SHA-1" selected>SHA1 (standar Google Authenticator)</option>
+        <option value="SHA-1" selected>SHA1</option>
         <option value="SHA-256">SHA256</option>
         <option value="SHA-512">SHA512</option>
       </select>
+    </div>
+
+    <!-- Toggle Standar Google -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 4px;padding:12px 14px;background:var(--surface-2);border-radius:12px;border:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">Standar Google</div>
+        <div style="font-size:11px;color:var(--text-soft);margin-top:2px">SHA1 · 30 detik · 6 digit</div>
+      </div>
+      <button type="button" id="googleStdBtn" onclick="toggleGoogleStd()" aria-label="Aktifkan Standar Google"
+        style="width:52px;height:30px;border-radius:20px;background:var(--surface-2);border:1px solid var(--border);position:relative;flex-shrink:0;transition:.25s;cursor:pointer;">
+        <span id="googleStdKnob" style="position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--text-soft);transition:.25s;display:block;"></span>
+      </button>
     </div>
 
     <button class="btn" onclick="startTotp()">Generate Kode</button>
@@ -74,6 +86,44 @@ applyStoredTheme();
 
 let totpTimer = null;
 let currentSettings = null;
+let googleStdActive = false;
+
+function toggleGoogleStd(){
+  googleStdActive = !googleStdActive;
+
+  const btn  = document.getElementById('googleStdBtn');
+  const knob = document.getElementById('googleStdKnob');
+  const digitsEl = document.getElementById('digits');
+  const periodEl = document.getElementById('period');
+  const algoEl   = document.getElementById('algo');
+
+  if(googleStdActive){
+    // Aktifkan: kunci ke SHA1 + 30 detik + 6 digit
+    algoEl.value   = 'SHA-1';
+    periodEl.value = '30';
+    digitsEl.value = '6';
+    algoEl.disabled   = true;
+    periodEl.disabled = true;
+    digitsEl.disabled = true;
+
+    // Visual tombol ON
+    btn.style.background  = 'var(--orange)';
+    btn.style.borderColor = 'var(--orange)';
+    knob.style.left       = '26px';
+    knob.style.background = '#fff';
+  } else {
+    // Nonaktifkan: buka kembali semua pilihan
+    algoEl.disabled   = false;
+    periodEl.disabled = false;
+    digitsEl.disabled = false;
+
+    // Visual tombol OFF
+    btn.style.background  = 'var(--surface-2)';
+    btn.style.borderColor = 'var(--border)';
+    knob.style.left       = '2px';
+    knob.style.background = 'var(--text-soft)';
+  }
+}
 
 function base32Decode(str){
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
