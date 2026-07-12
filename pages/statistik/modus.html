@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Modus</title>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+.formula-block{
+  background:var(--surface-2); border-radius:14px; padding:20px 16px;
+  text-align:center; margin-bottom:18px;
+}
+.formula-main{
+  font-size:26px; font-weight:700; font-family:'Poppins',sans-serif;
+  color:var(--orange); line-height:1.4;
+}
+.formula-desc{
+  font-size:13px; color:var(--text-soft); margin-top:10px; line-height:1.6;
+}
+.formula-legend{
+  display:flex; flex-wrap:wrap; gap:8px 18px; justify-content:center;
+  font-size:12.5px; color:var(--text-soft); margin-top:8px;
+}
+.formula-legend span b{ color:var(--orange); font-style:italic; }
+
+.data-inputs{ display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+.data-row{ display:flex; align-items:center; gap:8px; }
+.data-row label{
+  font-size:12.5px; color:var(--text-soft); font-style:italic; font-weight:600;
+  min-width:24px; text-align:right; flex-shrink:0;
+}
+.data-row input{
+  flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px;
+  background:var(--surface); color:var(--text); font-size:14px; outline:none;
+  transition:border-color .2s;
+}
+.data-row input:focus{ border-color:var(--orange); }
+.data-row .rm-btn{
+  width:32px; height:32px; border-radius:8px; border:none;
+  background:var(--surface-2); color:var(--text-soft); font-size:18px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.data-row .rm-btn:hover{ background:var(--danger); color:#fff; }
+
+.add-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.add-btn{
+  flex:1; min-width:80px; padding:9px 0; border-radius:10px; border:1.5px dashed var(--border);
+  background:transparent; color:var(--text-soft); font-size:13px; font-weight:600; cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.add-btn:hover{ border-color:var(--orange); color:var(--orange); }
+
+.result-box{
+  background:var(--surface-2); border-radius:12px; padding:16px; text-align:center; margin-top:14px;
+}
+.result-label{ font-size:12px; color:var(--text-soft); margin-bottom:4px; }
+.result-value{ font-size:28px; font-weight:800; font-family:'Poppins',sans-serif; color:var(--orange); line-height:1.3; }
+.result-formula{ font-size:12.5px; color:var(--text-soft); margin-top:6px; word-break:break-all; }
+
+.freq-table{ width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; }
+.freq-table th{
+  background:var(--surface-2); color:var(--text-soft); font-weight:600;
+  padding:8px 10px; text-align:left; border-bottom:1px solid var(--border);
+}
+.freq-table td{ padding:7px 10px; border-bottom:1px solid var(--border); }
+.freq-table tr.is-modus td{ color:var(--orange); font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../statistik.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Modus</h2>
+</div>
+
+<div class="page-body">
+
+  <!-- Rumus -->
+  <div class="formula-block">
+    <div class="formula-main">
+      <span style="font-style:italic">Mo</span>
+      <span style="font-size:20px;color:var(--text);font-weight:500;margin:0 10px">=</span>
+      <span style="font-size:18px;font-style:italic;color:var(--text)">nilai dengan frekuensi</span>
+      <br>
+      <span style="font-size:18px;font-style:italic;color:var(--text)">kemunculan terbanyak</span>
+    </div>
+    <div class="formula-desc">
+      Modus adalah nilai yang paling sering muncul dalam sekumpulan data.
+      Data bisa memiliki lebih dari satu modus (bimodal / multimodal),
+      atau tidak memiliki modus jika semua nilai muncul sama banyak.
+    </div>
+    <div class="formula-legend">
+      <span><b>Mo</b> = modus</span>
+      <span><b>f</b> = frekuensi kemunculan</span>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="card">
+    <h3>Masukkan Data</h3>
+    <div class="data-inputs" id="dataInputs"></div>
+
+    <div class="add-row">
+      <button class="add-btn" onclick="addOne()">+ 1 data</button>
+      <button class="add-btn" onclick="addFive()">+ 5 data</button>
+      <button class="add-btn" onclick="addTen()">+ 10 data</button>
+    </div>
+
+    <div class="form-msg" id="calcMsg" style="margin-top:10px"></div>
+
+    <button class="btn" style="margin-top:14px" onclick="calculate()">Hitung Modus</button>
+    <button class="btn secondary" style="margin-top:8px" onclick="resetAll()">Reset</button>
+  </div>
+
+  <!-- Hasil -->
+  <div class="card hidden" id="resultCard">
+    <h3>Hasil</h3>
+
+    <table class="freq-table" id="freqTable">
+      <thead><tr><th>Nilai</th><th>Frekuensi (f)</th></tr></thead>
+      <tbody id="freqBody"></tbody>
+    </table>
+
+    <div class="result-box">
+      <div class="result-label">Modus (Mo)</div>
+      <div class="result-value" id="resultVal">—</div>
+      <div class="result-formula" id="resultFormula"></div>
+    </div>
+    <button class="btn secondary" style="margin-top:14px" onclick="copyText(document.getElementById('resultVal').textContent)">Salin Hasil</button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/supabase-config.js"></script>
+<script src="../../js/store.js"></script>
+<script src="../../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+let dataCount = 0;
+
+function addRow(){
+  dataCount++;
+  const wrap = document.getElementById('dataInputs');
+  const row = document.createElement('div');
+  row.className = 'data-row';
+  row.id = 'row-' + dataCount;
+  const idx = dataCount;
+  row.innerHTML = `
+    <label>x<sub style="font-size:9px">${idx}</sub></label>
+    <input type="number" id="xi-${idx}" placeholder="Nilai ke-${idx}" step="any">
+    <button class="rm-btn" onclick="removeRow(${idx})" title="Hapus">×</button>
+  `;
+  wrap.appendChild(row);
+  document.getElementById('xi-' + idx).focus();
+}
+
+function removeRow(idx){
+  const row = document.getElementById('row-' + idx);
+  if(row) row.remove();
+}
+
+function addOne(){ addRow(); }
+
+function addFive(){
+  const current = document.querySelectorAll('#dataInputs .data-row').length;
+  const toAdd = current === 1 ? 4 : 5;
+  for(let i = 0; i < toAdd; i++) addRow();
+}
+
+function addTen(){
+  const current = document.querySelectorAll('#dataInputs .data-row').length;
+  const toAdd = current === 1 ? 9 : 10;
+  for(let i = 0; i < toAdd; i++) addRow();
+}
+
+function getValues(){
+  const inputs = document.querySelectorAll('#dataInputs input[type="number"]');
+  const vals = [];
+  inputs.forEach(inp => {
+    const v = parseFloat(inp.value);
+    if(!isNaN(v)) vals.push(v);
+  });
+  return vals;
+}
+
+function calculate(){
+  const vals = getValues();
+  const msg = document.getElementById('calcMsg');
+  if(vals.length === 0){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Masukkan minimal 1 nilai data.';
+    return;
+  }
+  msg.textContent = '';
+
+  // Hitung frekuensi
+  const freq = {};
+  vals.forEach(v => { freq[v] = (freq[v] || 0) + 1; });
+  const maxFreq = Math.max(...Object.values(freq));
+
+  // Temukan modus
+  const modeVals = Object.keys(freq)
+    .filter(k => freq[k] === maxFreq)
+    .map(Number)
+    .sort((a,b) => a - b);
+
+  // Tabel frekuensi
+  const tbody = document.getElementById('freqBody');
+  tbody.innerHTML = Object.entries(freq)
+    .sort((a,b) => Number(a[0]) - Number(b[0]))
+    .map(([v, f]) => {
+      const isMo = f === maxFreq;
+      return `<tr class="${isMo ? 'is-modus' : ''}">
+        <td>${v}${isMo ? ' ★' : ''}</td>
+        <td>${f}</td>
+      </tr>`;
+    }).join('');
+
+  let resultText, formulaText;
+  if(maxFreq === 1 && vals.length > 1){
+    resultText = 'Tidak ada modus';
+    formulaText = 'Semua nilai muncul hanya 1 kali.';
+  } else {
+    resultText = modeVals.join(', ');
+    const type = modeVals.length === 1 ? 'Unimodal' : modeVals.length === 2 ? 'Bimodal' : 'Multimodal';
+    formulaText = `${type} — frekuensi tertinggi: ${maxFreq}x`;
+  }
+
+  document.getElementById('resultVal').textContent = resultText;
+  document.getElementById('resultFormula').textContent = formulaText;
+  document.getElementById('resultCard').classList.remove('hidden');
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function resetAll(){
+  document.getElementById('dataInputs').innerHTML = '';
+  dataCount = 0;
+  document.getElementById('calcMsg').textContent = '';
+  document.getElementById('resultCard').classList.add('hidden');
+  addRow();
+}
+
+addRow();
+</script>
+</body>
+</html>

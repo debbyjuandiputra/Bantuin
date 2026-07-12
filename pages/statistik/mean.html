@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Mean (Rata-rata)</title>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+.formula-block{
+  background:var(--surface-2); border-radius:14px; padding:20px 16px;
+  text-align:center; margin-bottom:18px;
+}
+.formula-main{
+  font-size:28px; font-weight:700; font-family:'Poppins',sans-serif;
+  color:var(--orange); line-height:1.3; letter-spacing:0.5px;
+}
+.formula-fraction{
+  display:inline-flex; flex-direction:column; align-items:center;
+  vertical-align:middle; margin:0 4px;
+}
+.formula-fraction .num{ border-bottom:2.5px solid var(--orange); padding:0 6px 3px; }
+.formula-fraction .den{ padding:3px 6px 0; }
+.formula-desc{
+  font-size:13px; color:var(--text-soft); margin-top:10px; line-height:1.6;
+}
+.formula-legend{
+  display:flex; flex-wrap:wrap; gap:8px 18px; justify-content:center;
+  font-size:12.5px; color:var(--text-soft); margin-top:8px;
+}
+.formula-legend span b{ color:var(--orange); font-style:italic; }
+
+.data-inputs{ display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+.data-row{
+  display:flex; align-items:center; gap:8px;
+}
+.data-row label{
+  font-size:12.5px; color:var(--text-soft); font-style:italic; font-weight:600;
+  min-width:24px; text-align:right; flex-shrink:0;
+}
+.data-row input{
+  flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px;
+  background:var(--surface); color:var(--text); font-size:14px; outline:none;
+  transition:border-color .2s;
+}
+.data-row input:focus{ border-color:var(--orange); }
+.data-row .rm-btn{
+  width:32px; height:32px; border-radius:8px; border:none;
+  background:var(--surface-2); color:var(--text-soft); font-size:18px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition:background .15s;
+}
+.data-row .rm-btn:hover{ background:var(--danger); color:#fff; }
+
+.add-row{
+  display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;
+}
+.add-btn{
+  flex:1; min-width:80px; padding:9px 0; border-radius:10px; border:1.5px dashed var(--border);
+  background:transparent; color:var(--text-soft); font-size:13px; font-weight:600; cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.add-btn:hover{ border-color:var(--orange); color:var(--orange); }
+
+.result-box{
+  background:var(--surface-2); border-radius:12px; padding:16px; text-align:center; margin-top:14px;
+}
+.result-label{ font-size:12px; color:var(--text-soft); margin-bottom:4px; }
+.result-value{ font-size:32px; font-weight:800; font-family:'Poppins',sans-serif; color:var(--orange); }
+.result-formula{ font-size:12.5px; color:var(--text-soft); margin-top:6px; word-break:break-all; }
+
+.n-row{
+  display:flex; align-items:center; gap:8px; margin-bottom:14px;
+}
+.n-row label{ font-size:13px; color:var(--text-soft); font-style:italic; font-weight:600; }
+.n-row input{
+  width:70px; padding:8px 10px; border:1px solid var(--border); border-radius:10px;
+  background:var(--surface-2); color:var(--text-soft); font-size:14px; font-weight:700;
+  text-align:center; cursor:not-allowed;
+}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../statistik.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Mean (Rata-rata)</h2>
+</div>
+
+<div class="page-body">
+
+  <!-- Rumus -->
+  <div class="formula-block">
+    <div class="formula-main">
+      <span style="font-style:italic">x̄</span>
+      <span style="font-size:22px;color:var(--text);font-weight:500;margin:0 8px">=</span>
+      <span class="formula-fraction">
+        <span class="num">Σ<span style="font-style:italic">xᵢ</span></span>
+        <span class="den"><span style="font-style:italic">n</span></span>
+      </span>
+    </div>
+    <div class="formula-desc">
+      Rata-rata dihitung dengan menjumlahkan seluruh nilai data, lalu dibagi dengan banyaknya data.
+    </div>
+    <div class="formula-legend">
+      <span><b>x̄</b> = nilai rata-rata</span>
+      <span><b>Σxᵢ</b> = jumlah semua nilai data</span>
+      <span><b>n</b> = banyaknya data</span>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="card">
+    <h3>Masukkan Data</h3>
+
+    <!-- n (otomatis) -->
+    <div class="n-row">
+      <label>n =</label>
+      <input type="text" id="nDisplay" value="1" readonly tabindex="-1">
+      <span style="font-size:12px;color:var(--text-soft)">(terisi otomatis)</span>
+    </div>
+
+    <div class="data-inputs" id="dataInputs"></div>
+
+    <div class="add-row">
+      <button class="add-btn" onclick="addOne()">+ 1 data</button>
+      <button class="add-btn" onclick="addFive()">+ 5 data</button>
+      <button class="add-btn" onclick="addTen()">+ 10 data</button>
+    </div>
+
+    <div class="form-msg" id="calcMsg" style="margin-top:10px"></div>
+
+    <button class="btn" style="margin-top:14px" onclick="calculate()">Hitung Mean</button>
+    <button class="btn secondary" style="margin-top:8px" onclick="resetAll()">Reset</button>
+  </div>
+
+  <!-- Hasil -->
+  <div class="card hidden" id="resultCard">
+    <h3>Hasil</h3>
+    <div class="result-box">
+      <div class="result-label">Mean (x̄)</div>
+      <div class="result-value" id="resultVal">0</div>
+      <div class="result-formula" id="resultFormula"></div>
+    </div>
+    <button class="btn secondary" style="margin-top:14px" onclick="copyText(document.getElementById('resultVal').textContent)">Salin Hasil</button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/supabase-config.js"></script>
+<script src="../../js/store.js"></script>
+<script src="../../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+let dataCount = 0;
+
+function addRow(){
+  dataCount++;
+  const wrap = document.getElementById('dataInputs');
+  const row = document.createElement('div');
+  row.className = 'data-row';
+  row.id = 'row-' + dataCount;
+  const idx = dataCount;
+  row.innerHTML = `
+    <label>x<sub style="font-size:9px">${idx}</sub></label>
+    <input type="number" id="xi-${idx}" placeholder="Nilai ke-${idx}" step="any">
+    <button class="rm-btn" onclick="removeRow(${idx})" title="Hapus">×</button>
+  `;
+  wrap.appendChild(row);
+  updateN();
+  document.getElementById('xi-' + idx).focus();
+}
+
+function removeRow(idx){
+  const row = document.getElementById('row-' + idx);
+  if(row) row.remove();
+  updateN();
+}
+
+function updateN(){
+  const count = document.querySelectorAll('#dataInputs .data-row').length;
+  document.getElementById('nDisplay').value = count;
+}
+
+function addOne(){ addRow(); }
+
+function addFive(){
+  const current = document.querySelectorAll('#dataInputs .data-row').length;
+  const target = current <= 1 ? (current === 0 ? 5 : 5) : 5;
+  // Jika masih 1 box, tambahkan 4 (total jadi 5); jika 0, tambahkan 5
+  const toAdd = current === 1 ? 4 : (current === 0 ? 5 : 5);
+  for(let i = 0; i < toAdd; i++) addRow();
+}
+
+function addTen(){
+  const current = document.querySelectorAll('#dataInputs .data-row').length;
+  const toAdd = current === 1 ? 9 : (current === 0 ? 10 : 10);
+  for(let i = 0; i < toAdd; i++) addRow();
+}
+
+function getValues(){
+  const inputs = document.querySelectorAll('#dataInputs input[type="number"]');
+  const vals = [];
+  inputs.forEach(inp => {
+    const v = parseFloat(inp.value);
+    if(!isNaN(v)) vals.push(v);
+  });
+  return vals;
+}
+
+function calculate(){
+  const vals = getValues();
+  const msg = document.getElementById('calcMsg');
+  if(vals.length === 0){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Masukkan minimal 1 nilai data.';
+    return;
+  }
+  msg.textContent = '';
+  const sum = vals.reduce((a,b) => a+b, 0);
+  const mean = sum / vals.length;
+  const meanStr = Number.isInteger(mean) ? mean.toString() : mean.toFixed(4).replace(/\.?0+$/,'');
+
+  document.getElementById('resultVal').textContent = meanStr;
+  document.getElementById('resultFormula').textContent =
+    `(${vals.join(' + ')}) ÷ ${vals.length} = ${sum} ÷ ${vals.length} = ${meanStr}`;
+  document.getElementById('resultCard').classList.remove('hidden');
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function resetAll(){
+  document.getElementById('dataInputs').innerHTML = '';
+  dataCount = 0;
+  updateN();
+  document.getElementById('calcMsg').textContent = '';
+  document.getElementById('resultCard').classList.add('hidden');
+  addRow();
+}
+
+// Mulai dengan 1 box
+addRow();
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Statistik</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../index.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Statistik</h2>
+</div>
+
+<!-- Sub-kategori -->
+<div class="cat-tabs">
+  <button class="cat-tab active" onclick="setSubCat('semua',this)">Semua</button>
+  <button class="cat-tab" onclick="setSubCat('deskriptif',this)">Deskriptif</button>
+  <button class="cat-tab" onclick="setSubCat('analisis',this)">Analisis Data</button>
+  <button class="cat-tab" onclick="setSubCat('hipotesis',this)">Uji Hipotesis</button>
+</div>
+
+<div style="padding:8px 16px 4px;font-size:13px;color:var(--text-soft);font-weight:600" id="subCatLabel">Fitur tersedia</div>
+<div class="feature-grid" id="statGrid"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+const STAT_ICONS = {
+  mean:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="20" y1="20" x2="20" y2="14"/></svg>`,
+  median: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="3"/><polyline points="16 8 20 12 16 16"/><polyline points="8 16 4 12 8 8"/></svg>`,
+  modus:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9"/><rect x="9.5" y="7" width="4" height="14"/><rect x="16" y="3" width="4" height="18"/></svg>`,
+  pie:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>`,
+  bar:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="20"/><rect x="4" y="10" width="4" height="10"/><rect x="10" y="5" width="4" height="15"/><rect x="16" y="13" width="4" height="7"/></svg>`,
+  anova:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M6 20V10l6-6 6 6v10"/><path d="M10 20v-5h4v5"/></svg>`,
+};
+
+const STAT_FEATURES = [
+  // Deskriptif
+  { id:'mean',   title:'Mean (Rata-rata)', desc:'Jumlah data ÷ banyak data',    cat:'deskriptif', active:true,  page:'statistik/mean.html',   icon:STAT_ICONS.mean   },
+  { id:'median', title:'Median',           desc:'Nilai tengah data terurut',     cat:'deskriptif', active:true,  page:'statistik/median.html', icon:STAT_ICONS.median },
+  { id:'modus',  title:'Modus',            desc:'Nilai yang paling sering muncul', cat:'deskriptif', active:true,  page:'statistik/modus.html',  icon:STAT_ICONS.modus  },
+  // Analisis Data
+  { id:'diagram-lingkaran', title:'Diagram Lingkaran', desc:'Segera hadir', cat:'analisis', active:false, icon:STAT_ICONS.pie },
+  { id:'diagram-batang',    title:'Diagram Batang',    desc:'Segera hadir', cat:'analisis', active:false, icon:STAT_ICONS.bar },
+  // Uji Hipotesis
+  { id:'anova', title:'ANOVA', desc:'Segera hadir', cat:'hipotesis', active:false, icon:STAT_ICONS.anova },
+];
+
+let currentSubCat = 'semua';
+
+function renderStatGrid(){
+  const grid = document.getElementById('statGrid');
+  const list = currentSubCat === 'semua'
+    ? STAT_FEATURES
+    : STAT_FEATURES.filter(f => f.cat === currentSubCat);
+
+  if(list.length === 0){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">Belum ada fitur di kategori ini.</div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(f => `
+    <div class="feature-card ${f.active ? '' : 'disabled'}" ${f.active ? `onclick="openStat('${f.page}')"` : ''}>
+      ${f.active ? '' : '<span class="badge-soon">Segera</span>'}
+      <div class="ic">${f.icon}</div>
+      <b>${f.title}</b>
+      <small>${f.desc}</small>
+    </div>
+  `).join('');
+}
+
+function setSubCat(cat, el){
+  currentSubCat = cat;
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderStatGrid();
+}
+
+function openStat(page){ location.href = page; }
+
+renderStatGrid();
+</script>
+</body>
+</html>
