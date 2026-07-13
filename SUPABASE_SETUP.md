@@ -75,6 +75,27 @@ create table if not exists public.feature_clicks (
 );
 ```
 
+## 3b. Buat tabel `catatan` (fitur Catatan)
+
+```sql
+create table if not exists public.catatan (
+  id bigint generated always as identity primary key,
+  user_id integer not null references public.users(user_id),
+  judul text not null,                  -- terenkripsi AES-GCM (lihat js/crypto.js)
+  isi text,                             -- terenkripsi AES-GCM, berisi HTML hasil editor
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists catatan_user_id_idx on public.catatan(user_id);
+```
+
+> **Kenapa dienkripsi, bukan di-hash?** Hash itu satu arah — cocok untuk
+> username (cuma perlu dicocokkan), tapi TIDAK bisa dipakai untuk catatan
+> karena catatan harus bisa dibaca kembali oleh penggunanya. Karena itu
+> `judul` dan `isi` dienkripsi (bisa didekripsi), bukan di-hash.
+> Lihat komentar lengkap di `js/crypto.js` untuk penjelasan & batasannya.
+
 ## 4. Aktifkan Row Level Security (RLS)
 
 ```sql
@@ -128,7 +149,36 @@ create policy "Siapa saja boleh mencatat klik fitur"
 
 -- Tidak ada policy SELECT/UPDATE/DELETE -> data klik tidak bisa dibaca,
 -- diubah, atau dihapus lewat aplikasi (hanya lewat dashboard Supabase Anda).
+
+-- ---------- catatan ----------
+alter table public.catatan enable row level security;
+
+-- Karena tidak ada Supabase Auth (session asli), RLS di tabel ini tidak
+-- bisa membatasi "hanya baris milik sendiri" secara kriptografis -- itu
+-- diatur di sisi aplikasi (semua query di js/notes.js selalu ikut
+-- memfilter .eq('user_id', session.user_id)). Policy di bawah hanya
+-- mengizinkan operasi dasarnya; proteksi isi datanya ada di enkripsi
+-- (js/crypto.js), bukan di RLS ini.
+create policy "Siapa saja boleh kelola catatan"
+  on public.catatan for all
+  to anon
+  using (true)
+  with check (true);
 ```
+
+> **Soal jam pada `created_at` / `clicked_at` / `catatan.created_at` /
+> `catatan.updated_at`:** Aplikasi ini sengaja MENULIS nilai jam +7 (WIB)
+> secara eksplisit lewat fungsi `nowWIB()` di `js/util.js`, alih-alih
+> memakai `default now()` begitu saja. Alasannya: Supabase Dashboard
+> menampilkan kolom `timestamptz` dalam UTC secara default, yang sering
+> bikin bingung karena kelihatan "mundur 7 jam" dari jam WIB sebenarnya.
+> Dengan trik ini, nilai yang tersimpan akan langsung cocok dengan jam
+> WIB kalau dilihat mentah di Dashboard. Konsekuensinya: nilai ini BUKAN
+> UTC yang sesungguhnya secara teknis. Karena itu, di manapun aplikasi
+> menampilkan ulang tanggal/jam dari kolom-kolom ini (mis. halaman
+> Profil & Catatan), WAJIB pakai `formatStoredWIB()` dari `js/util.js`,
+> BUKAN `toLocaleString()`/`toLocaleDateString()` bawaan browser --
+> supaya tidak ke-geser +7 jam lagi sekali (jadi salah 14 jam).
 
 > Karena tidak ada password/token asli yang membuktikan kepemilikan akun,
 > `select` dan `update` pada tabel `users` memang harus terbuka untuk semua
@@ -146,9 +196,11 @@ sesuai dengan project Supabase Anda (Dashboard > Project Settings > API).
 
 ## 6. Selesai
 
-Tidak perlu Supabase Auth. Sistem login username-only, klaim promo, dan
-catatan klik fitur semuanya ditangani penuh oleh `js/store.js`:
+Tidak perlu Supabase Auth. Sistem login username-only, klaim promo,
+catatan klik fitur, dan fitur Catatan semuanya ditangani penuh oleh
+`js/store.js` dan `js/notes.js`:
 - `registerUsername` / `loginUsername` → hash username → cek/insert ke tabel `users` → simpan sesi di `localStorage` perangkat.
 - `updateProfile` → simpan Nama Lengkap & Email opsional ke tabel `users`.
 - `claimCanva` → insert ke tabel `email_canva`, ditolak otomatis kalau email sudah pernah klaim.
 - `logFeatureClick` → insert ke tabel `feature_clicks`, hanya berjalan kalau ada sesi login aktif.
+- `listNotes` / `getNote` / `saveNote` / `deleteNote` (di `js/notes.js`) → CRUD ke tabel `catatan`, judul & isi otomatis dienkripsi/didekripsi lewat `js/crypto.js`. Fitur ini wajib login (tidak ada mode tamu).

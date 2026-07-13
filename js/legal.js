@@ -20,37 +20,40 @@ Setelah masuk, pengguna dapat menambahkan Nama Lengkap dan Email secara opsional
 4. Promo Canva Pro 1 Hari
 Pengguna yang sudah masuk dapat mengajukan klaim promo Canva Pro 1 Hari dengan memasukkan email Canva miliknya. Satu email hanya berhak melakukan klaim sebanyak satu kali. Email yang sudah pernah dipakai untuk klaim tidak dapat digunakan kembali.
 
-5. Kewajiban Pengguna
+5. Fitur Catatan
+Pengguna yang sudah masuk dapat menulis, menyimpan, mengedit, dan menghapus Catatan pribadi (judul wajib diisi, isi dapat diformat tebal/miring/garis bawah/daftar). Catatan disimpan di server menggunakan enkripsi sederhana sehingga isinya tidak tersimpan sebagai teks polos. Pengguna juga dapat mengekspor Catatan miliknya ke format .txt, .md, atau .docx untuk disimpan di perangkat sendiri. Lihat bagian "Catatan Privasi Data" di bawah untuk penjelasan lebih lanjut soal enkripsi ini.
+
+6. Kewajiban Pengguna
 Pengguna dilarang:
 - Menggunakan aplikasi untuk kegiatan yang melanggar hukum.
 - Menyalahgunakan layanan sehingga mengganggu pengguna lain.
 - Mencoba memperoleh akses tanpa izin ke sistem aplikasi.
 - Menyebarkan malware, virus, atau kode berbahaya melalui layanan.
 
-6. Hak Pengembang
+7. Hak Pengembang
 Pengembang berhak:
 - Memperbarui atau menghentikan fitur tertentu.
 - Menangguhkan atau menghapus akun yang terbukti melanggar ketentuan.
 - Melakukan pemeliharaan sistem sewaktu-waktu.
 
-7. Hak Kekayaan Intelektual
+8. Hak Kekayaan Intelektual
 Seluruh hak cipta, desain, logo, ikon, serta konten aplikasi merupakan milik pengembang (DebDev) atau pihak yang memberikan izin penggunaannya.
 Pengguna tidak diperbolehkan menyalin, memodifikasi, atau mendistribusikan bagian aplikasi tanpa izin.
 
-8. Batasan Tanggung Jawab
+9. Batasan Tanggung Jawab
 Aplikasi disediakan sebagaimana adanya.
 Pengembang tidak bertanggung jawab atas kerugian yang timbul akibat penggunaan aplikasi, kehilangan data, gangguan layanan, maupun kesalahan yang berasal dari perangkat atau jaringan pengguna.
 
-9. Perubahan Layanan
+10. Perubahan Layanan
 Fitur dalam aplikasi dapat ditambah, diubah, atau dihapus sewaktu-waktu tanpa pemberitahuan terlebih dahulu.
 
-10. Penghentian Akun
+11. Penghentian Akun
 Pengembang dapat menonaktifkan akun yang melanggar syarat penggunaan atau ketentuan hukum yang berlaku.
 
-11. Perubahan Syarat dan Ketentuan
+12. Perubahan Syarat dan Ketentuan
 Syarat dan Ketentuan ini dapat diperbarui sewaktu-waktu. Versi terbaru akan tersedia di dalam aplikasi.
 
-12. Hukum yang Berlaku
+13. Hukum yang Berlaku
 Syarat dan Ketentuan ini diatur sesuai dengan hukum yang berlaku di Republik Indonesia.
 
 —
@@ -67,6 +70,8 @@ Nama Lengkap dan Email bersifat opsional dan hanya tersimpan jika Anda mengisiny
 Jika Anda mengajukan klaim promo Canva Pro 1 Hari, email Canva yang Anda masukkan akan disimpan untuk memastikan satu email hanya dapat mengklaim promo tersebut satu kali.
 
 Untuk pengguna yang sudah masuk, aplikasi mencatat fitur mana saja yang Anda klik beserta waktunya, semata-mata untuk keperluan statistik penggunaan aplikasi. Pencatatan ini tidak berlaku untuk pengguna yang belum masuk (tamu).
+
+Jika Anda menggunakan fitur Catatan, judul dan isi catatan Anda dienkripsi (AES-GCM) sebelum dikirim dan disimpan di server, sehingga tidak tersimpan sebagai teks polos. Perlu diketahui: karena aplikasi ini tidak menggunakan password asli, kunci enkripsi diturunkan dari UID publik akun Anda yang tertanam di dalam kode aplikasi — bukan dari rahasia yang hanya Anda ketahui. Enkripsi ini melindungi data Anda dari pihak luar yang mungkin melihat data mentah di server, tapi bukan proteksi tingkat produksi terhadap pengembang aplikasi itu sendiri. Anda dapat mengekspor Catatan ke file .txt, .md, atau .docx kapan saja untuk disimpan sebagai cadangan pribadi di perangkat Anda.
 
 Sebagian preferensi tampilan (seperti mode terang/gelap) tetap disimpan secara lokal di perangkat (local storage) karena tidak memerlukan sinkronisasi ke akun Anda.
 

@@ -45,8 +45,22 @@
     <h3>Hasil Analisis</h3>
     <div class="stat-grid">
       <div class="stat-item"><b id="stChar">0</b><span>Karakter</span></div>
+      <div class="stat-item"><b id="stCharNoSpace">0</b><span>Tanpa Spasi</span></div>
+      <div class="stat-item"><b id="stWord">0</b><span>Kata</span></div>
       <div class="stat-item"><b id="stSentence">0</b><span>Kalimat</span></div>
       <div class="stat-item"><b id="stPara">0</b><span>Paragraf</span></div>
+      <div class="stat-item"><b id="stAvgWordPerSentence">0</b><span>Kata/Kalimat</span></div>
+    </div>
+
+    <div class="stat-grid" style="grid-template-columns:1fr;margin-top:10px">
+      <div class="stat-item" style="text-align:left;display:flex;justify-content:space-between;align-items:center">
+        <span>⏱️ Perkiraan Waktu Baca</span><b id="stReadTime" style="font-size:15px">-</b>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-soft)">Top 5 Kata Kunci</label>
+      <div class="keyword-chips" id="keywordChips"></div>
     </div>
 
     <div class="field" style="margin-top:16px">
@@ -80,6 +94,15 @@ function switchSource(mode){
   document.getElementById('srcFile').classList.toggle('hidden', mode!=='file');
 }
 
+const STOPWORDS_ID = new Set(`yang dan di ke dari ini itu untuk dengan pada adalah akan atau juga
+tidak saya kamu dia mereka kita ada dalam oleh tersebut sebagai karena jika agar dapat bisa saja
+sudah belum masih lebih paling sangat hanya harus mau ingin nya kah lah pun para antara bagi hingga
+sampai tanpa tentang terhadap seperti maka namun tetapi melainkan meskipun walaupun apabila ketika
+saat sebelum sesudah setelah atas bawah luar depan belakang kanan kiri yaitu yakni bahwa such begitu
+demikian tadi nanti kini kemudian lalu serta pula memang tentu jadi apa siapa mana kapan bagaimana
+mengapa kenapa semua setiap tiap banyak sedikit satu dua tiga si sang per bukan iya ya oh eh nah deh
+dong kok sih tuh kek nih situ sini sana kami anda beliau ia mu ku'`.split(/\s+/).filter(Boolean));
+
 function processText(){
   const text = document.getElementById('textInput').value;
   if(!text.trim()){ document.getElementById('charMsg').textContent = 'Masukkan teks terlebih dahulu.'; return; }
@@ -89,17 +112,69 @@ function processText(){
 
 function analyze(text){
   fullText = text;
+  const trimmed = text.trim();
+
   const chars = text.length;
-  const sentences = (text.match(/[^.!?]+[.!?]+/g) || (text.trim() ? [text] : [])).length;
-  const paragraphs = text.split(/\n\s*\n/).map(p=>p.trim()).filter(p=>p.length>0).length || (text.trim() ? 1 : 0);
+  const charsNoSpace = text.replace(/\s/g, '').length;
+
+  const words = trimmed ? (trimmed.match(/[\p{L}\p{N}'-]+/gu) || []) : [];
+  const wordCount = words.length;
+
+  const sentenceMatches = text.match(/[^.!?]+[.!?]+/g) || (trimmed ? [text] : []);
+  const sentenceCount = sentenceMatches.length;
+
+  const paragraphCount = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0).length || (trimmed ? 1 : 0);
+
+  const avgWordPerSentence = sentenceCount > 0 ? (wordCount / sentenceCount) : 0;
+
+  // Waktu baca: asumsi kecepatan baca rata-rata 200 kata/menit
+  const readMinutes = wordCount / 200;
+  let readTimeLabel = '< 1 menit';
+  if(readMinutes >= 1){
+    const rounded = Math.round(readMinutes);
+    readTimeLabel = `~${rounded} menit`;
+  }
 
   document.getElementById('stChar').textContent = chars;
-  document.getElementById('stSentence').textContent = sentences;
-  document.getElementById('stPara').textContent = paragraphs;
+  document.getElementById('stCharNoSpace').textContent = charsNoSpace;
+  document.getElementById('stWord').textContent = wordCount;
+  document.getElementById('stSentence').textContent = sentenceCount;
+  document.getElementById('stPara').textContent = paragraphCount;
+  document.getElementById('stAvgWordPerSentence').textContent = avgWordPerSentence.toFixed(1);
+  document.getElementById('stReadTime').textContent = readTimeLabel;
+
+  renderKeywords(words);
+
   document.getElementById('statCard').classList.remove('hidden');
-  document.getElementById('previewBox').textContent = text.slice(0, 3000) + (text.length>3000 ? '...' : '');
+  document.getElementById('previewBox').textContent = text.slice(0, 3000) + (text.length > 3000 ? '...' : '');
   document.getElementById('searchInput').value = '';
   document.getElementById('searchResultMsg').textContent = '';
+}
+
+// Top 5 kata kunci berdasarkan persentase kemunculan (stopword & kata pendek diabaikan)
+function renderKeywords(words){
+  const holder = document.getElementById('keywordChips');
+  const filtered = words
+    .map(w => w.toLowerCase())
+    .filter(w => w.length > 2 && !STOPWORDS_ID.has(w));
+
+  if(filtered.length === 0){
+    holder.innerHTML = '<span style="font-size:12px;color:var(--text-soft)">Belum ada kata kunci yang menonjol.</span>';
+    return;
+  }
+
+  const freq = {};
+  filtered.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+
+  const total = filtered.length;
+  const top5 = Object.entries(freq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  holder.innerHTML = top5.map(([word, count]) => {
+    const pct = ((count / total) * 100).toFixed(1);
+    return `<div class="keyword-chip">${escapeHtml(word)} <span>${pct}%</span></div>`;
+  }).join('');
 }
 
 function doSearch(){
@@ -113,9 +188,6 @@ function doSearch(){
   const highlighted = escapeHtml(fullText.slice(0,3000)).replace(new RegExp(escapeRegex(escapeHtml(q)),'gi'), m => `<mark style="background:var(--orange-light);color:#1f2430;border-radius:3px">${m}</mark>`);
   document.getElementById('previewBox').innerHTML = highlighted;
 }
-
-function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 document.getElementById('fileInput').addEventListener('change', async function(){
   const file = this.files[0];

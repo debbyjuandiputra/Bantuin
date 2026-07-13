@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Catatan</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="location.href='catatan.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2 id="editorTitle">Catatan Baru</h2>
+</div>
+
+<div class="page-body">
+  <div class="card">
+    <div class="field">
+      <label>Judul <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="noteTitle" placeholder="Judul catatan..." maxlength="150">
+    </div>
+
+    <div class="editor-toolbar">
+      <button type="button" onclick="fmt('bold')" title="Bold"><b>B</b></button>
+      <button type="button" onclick="fmt('italic')" title="Italic"><i>I</i></button>
+      <button type="button" onclick="fmt('underline')" title="Underline"><u>U</u></button>
+      <button type="button" onclick="fmt('insertUnorderedList')" title="Daftar bullet">•≡</button>
+    </div>
+    <div class="note-editor" id="noteBody" contenteditable="true" data-placeholder="Tulis catatan di sini..."></div>
+
+    <div class="form-msg" id="noteMsg"></div>
+    <button class="btn" style="margin-top:14px" onclick="handleSaveNote()" id="saveNoteBtn">Simpan Catatan</button>
+  </div>
+
+  <div class="card hidden" id="exportCard">
+    <h3>Ekspor Catatan</h3>
+    <p class="desc">Simpan catatan ini sebagai file ke perangkatmu.</p>
+    <div class="grid-2">
+      <button class="btn secondary small" onclick="doExport('txt')">Ekspor .TXT</button>
+      <button class="btn secondary small" onclick="doExport('md')">Ekspor .MD</button>
+    </div>
+    <button class="btn outline small" style="margin-top:10px;width:100%" onclick="doExport('docx')">Ekspor .DOCX</button>
+  </div>
+
+  <button class="btn danger hidden" id="deleteNoteBtn" onclick="handleDeleteNote()">Hapus Catatan</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.js"></script>
+<script src="../js/supabase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/crypto.js"></script>
+<script src="../js/notes.js"></script>
+<script>
+applyStoredTheme();
+
+let noteId = new URLSearchParams(location.search).get('id');
+
+requireAuth(async function(){
+  if(noteId){
+    document.getElementById('editorTitle').textContent = 'Edit Catatan';
+    document.getElementById('exportCard').classList.remove('hidden');
+    document.getElementById('deleteNoteBtn').classList.remove('hidden');
+
+    const res = await getNote(noteId);
+    if(!res.ok){
+      showToast(res.msg);
+      location.href = 'catatan.html';
+      return;
+    }
+    document.getElementById('noteTitle').value = res.data.judul;
+    document.getElementById('noteBody').innerHTML = res.data.isi;
+  }
+});
+
+function fmt(cmd){
+  document.execCommand(cmd, false, null);
+  document.getElementById('noteBody').focus();
+}
+
+async function handleSaveNote(){
+  const judul = document.getElementById('noteTitle').value.trim();
+  const isiHtml = document.getElementById('noteBody').innerHTML;
+  const msg = document.getElementById('noteMsg');
+  const btn = document.getElementById('saveNoteBtn');
+
+  msg.textContent = '';
+  if(!judul){ msg.textContent = 'Judul wajib diisi.'; return; }
+
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  const res = await saveNote({ id: noteId, judul, isiHtml });
+  btn.disabled = false; btn.textContent = 'Simpan Catatan';
+
+  if(res.ok){
+    showToast('Catatan tersimpan');
+    noteId = res.id;
+    document.getElementById('exportCard').classList.remove('hidden');
+    document.getElementById('deleteNoteBtn').classList.remove('hidden');
+    document.getElementById('editorTitle').textContent = 'Edit Catatan';
+    history.replaceState(null, '', 'catatan-editor.html?id=' + res.id);
+  } else {
+    msg.textContent = res.msg;
+  }
+}
+
+async function handleDeleteNote(){
+  if(!noteId) return;
+  if(!confirm('Hapus catatan ini? Tindakan ini tidak bisa dibatalkan.')) return;
+
+  const res = await deleteNote(noteId);
+  if(res.ok){
+    showToast('Catatan dihapus');
+    location.href = 'catatan.html';
+  } else {
+    showToast(res.msg);
+  }
+}
+
+function doExport(type){
+  const judul = document.getElementById('noteTitle').value.trim() || 'Catatan';
+  const html = document.getElementById('noteBody').innerHTML;
+  if(type === 'txt') exportNoteAsTxt(judul, html);
+  else if(type === 'md') exportNoteAsMd(judul, html);
+  else if(type === 'docx') exportNoteAsDocx(judul, html);
+}
+</script>
+</body>
+</html>

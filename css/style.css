@@ -342,6 +342,40 @@ input, select, textarea{ font-family:'Inter', sans-serif; }
 
 .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
+/* ---------- Catatan ---------- */
+.note-item{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 16px; margin-bottom:10px; cursor:pointer; box-shadow: var(--shadow);
+}
+.note-item:active{ background:var(--surface-2); }
+.note-item b{ display:block; font-size:14.5px; margin-bottom:4px; }
+.note-item p{ margin:0 0 8px; font-size:12.5px; color:var(--text-soft); line-height:1.5; }
+.note-item span{ font-size:11px; color:var(--text-soft); }
+
+.editor-toolbar{
+  display:flex; gap:6px; margin-bottom:10px; background:var(--surface-2); padding:6px; border-radius:12px;
+}
+.editor-toolbar button{
+  flex:1; border:none; background:transparent; border-radius:8px; padding:9px 0; font-size:14px;
+  color:var(--text); font-weight:700;
+}
+.editor-toolbar button:active{ background:var(--surface); }
+.editor-toolbar button.active{ background:var(--orange); color:#fff; }
+
+.note-editor{
+  min-height:220px; border:1px solid var(--border); border-radius:12px; padding:14px; font-size:14.5px;
+  line-height:1.7; background:var(--bg); color:var(--text); outline:none; overflow-y:auto;
+}
+.note-editor:focus{ border-color: var(--orange); }
+.note-editor:empty:before{ content: attr(data-placeholder); color: var(--text-soft); }
+
+.keyword-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.keyword-chip{
+  background:var(--surface-2); border-radius:20px; padding:6px 12px; font-size:12px; font-weight:600;
+  color:var(--text); display:flex; align-items:center; gap:6px;
+}
+.keyword-chip span{ color:var(--orange); font-weight:700; }
+
 @media(min-width:520px){
   .feature-grid{ grid-template-columns:1fr 1fr 1fr; }
 }

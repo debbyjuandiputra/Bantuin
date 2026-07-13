@@ -35,11 +35,13 @@ const ICONS = {
   stats: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="20" y1="20" x2="20" y2="14"/></svg>`,
   bg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
   uuid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>`,
-  auth: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`
+  auth: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`,
+  notes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>`
 };
 
 const FEATURES = [
   { id:'konversi-dokumen', title:'Konversi File', desc:'PDF ⇄ DOCX, XLSX ⇄ CSV', cat:['dokumen'], icon:ICONS.doc, active:true, page:'pages/konversi-dokumen.html' },
+  { id:'catatan', title:'Catatan', desc:'Tulis, format & ekspor catatanmu', cat:['dokumen'], icon:ICONS.notes, active:true, page:'pages/catatan.html' },
   { id:'aplikasi-premium', title:'Aplikasi Premium', desc:'CapCut Pro, Canva Pro & Zoom Pro', cat:['lainnya'], icon:ICONS.premium, active:true, page:'pages/aplikasi-premium.html' },
   { id:'cek-karakter', title:'Cek Panjang Karakter', desc:'Karakter, kalimat & paragraf', cat:['perhitungan','dokumen'], icon:ICONS.ruler, active:true, page:'pages/cek-karakter.html' },
   { id:'scan-dokumen', title:'Scan Dokumen', desc:'Segera hadir', cat:['dokumen'], icon:ICONS.scan, active:false },
@@ -159,12 +161,31 @@ function closeKontakModal(){ document.getElementById('kontakModal').classList.re
 // ---------------- Modal Promo Login (tamu) ----------------
 function closeLoginPromoModal(){ document.getElementById('loginPromoModal').classList.remove('show'); }
 
-// Untuk tamu, setiap kali web dibuka/dimuat ulang, tampilkan ajakan login
-// supaya bisa klaim Canva Pro 1 Hari.
-if(!currentSession){
+// ---------------- Modal Apa yang Baru (tampil sekali per perangkat) ----------------
+const WHATSNEW_KEY = 'bantuin_whatsnew_seen_v2';
+
+function closeWhatsNewModal(){
+  document.getElementById('whatsNewModal').classList.remove('show');
+  localStorage.setItem(WHATSNEW_KEY, '1');
+  scheduleGuestPromo();
+}
+
+function scheduleGuestPromo(){
+  // Untuk tamu, ajak login supaya bisa klaim Canva Pro 1 Hari.
+  // Ditunda supaya tidak tabrakan/tumpuk dengan modal What's New.
+  if(!currentSession){
+    setTimeout(function(){
+      document.getElementById('loginPromoModal').classList.add('show');
+    }, 1200);
+  }
+}
+
+if(!localStorage.getItem(WHATSNEW_KEY)){
   setTimeout(function(){
-    document.getElementById('loginPromoModal').classList.add('show');
-  }, 1800);
+    document.getElementById('whatsNewModal').classList.add('show');
+  }, 700);
+} else {
+  scheduleGuestPromo();
 }
 
 // ---------------- Modal Klaim Canva Pro (setelah login) ----------------

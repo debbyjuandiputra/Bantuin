@@ -102,8 +102,7 @@ requireAuth(function(u){
   renderUsername();
 
   if(u.created_at){
-    const d = new Date(u.created_at);
-    document.getElementById('dCreatedAt').textContent = d.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+    document.getElementById('dCreatedAt').textContent = formatStoredWIB(u.created_at);
   }
 
   document.getElementById('dNama').textContent = u.nama || '-';

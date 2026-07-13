@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Catatan</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../index.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Catatan</h2>
+</div>
+
+<div class="page-body">
+  <button class="btn" onclick="location.href='catatan-editor.html'">+ Tambah Catatan</button>
+
+  <div id="notesList" style="margin-top:18px"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/crypto.js"></script>
+<script src="../js/notes.js"></script>
+<script>
+applyStoredTheme();
+
+requireAuth(async function(){
+  await loadNotes();
+});
+
+async function loadNotes(){
+  const holder = document.getElementById('notesList');
+  holder.innerHTML = '<div class="empty-state">Memuat catatan...</div>';
+
+  const res = await listNotes();
+  if(!res.ok){
+    holder.innerHTML = `<div class="empty-state">${escapeHtml(res.msg)}</div>`;
+    return;
+  }
+  if(res.data.length === 0){
+    holder.innerHTML = '<div class="empty-state">Belum ada catatan. Yuk buat catatan pertamamu!</div>';
+    return;
+  }
+
+  holder.innerHTML = res.data.map(n => {
+    const plain = htmlToPlainText(n.isi);
+    const snippet = plain.slice(0, 90) + (plain.length > 90 ? '...' : '');
+    const dateLabel = formatStoredWIB(n.updated_at, true);
+    return `
+      <div class="note-item" onclick="location.href='catatan-editor.html?id=${n.id}'">
+        <b>${escapeHtml(n.judul)}</b>
+        <p>${escapeHtml(snippet) || '(kosong)'}</p>
+        <span>Diperbarui ${dateLabel}</span>
+      </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>

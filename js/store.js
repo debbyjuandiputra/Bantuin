@@ -103,7 +103,7 @@ async function registerUsername({username}){
       const userId = await generateNextUserId();
       const { data: inserted, error: insertErr } = await sb
         .from(TABLE_NAME)
-        .insert({ username: hash, user_id: userId })
+        .insert({ username: hash, user_id: userId, created_at: nowWIB() })
         .select('user_id, created_at, nama, email')
         .single();
 
@@ -213,7 +213,7 @@ async function logFeatureClick(feature){
   const session = getSession();
   if(!session) return;
   try{
-    await sb.from(TABLE_CLICKS).insert({ user_id: session.user_id, feature: feature });
+    await sb.from(TABLE_CLICKS).insert({ user_id: session.user_id, feature: feature, clicked_at: nowWIB() });
   }catch(err){
     // silent fail
   }
