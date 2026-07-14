@@ -376,6 +376,12 @@ input, select, textarea{ font-family:'Inter', sans-serif; }
 }
 .keyword-chip span{ color:var(--orange); font-weight:700; }
 
+.ngram-tab{
+  border:1px solid var(--border); background:var(--surface-2); border-radius:8px;
+  padding:5px 10px; font-size:11.5px; font-weight:600; color:var(--text-soft);
+}
+.ngram-tab.active{ background:var(--orange); color:#fff; border-color:var(--orange); }
+
 @media(min-width:520px){
   .feature-grid{ grid-template-columns:1fr 1fr 1fr; }
 }

@@ -6,6 +6,31 @@
 <title>Bantuin — Generate Kode Authenticator</title>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="stylesheet" href="../css/style.css">
+<style>
+.key-item{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow);
+}
+.key-item b{ display:block; font-size:14px; margin-bottom:4px; }
+.key-item .key-actions{ display:flex; gap:8px; margin-top:10px; }
+.key-item .key-actions button{
+  border:none; background:var(--surface-2); border-radius:8px; padding:5px 10px;
+  font-size:11.5px; font-weight:600; color:var(--text-soft); cursor:pointer;
+}
+.key-item .key-actions button.danger{ color:var(--danger); background:rgba(224,71,61,.1); }
+.key-row{ display:flex; align-items:flex-start; gap:4px; }
+.key-row .key-item{ flex:1; }
+.key-otp{
+  font-family:'Poppins',sans-serif; font-size:26px; font-weight:700;
+  letter-spacing:4px; color:var(--orange); margin:6px 0 2px;
+}
+.key-timer{ font-size:11px; color:var(--text-soft); }
+.drag-handle{ display:flex; align-items:center; cursor:grab; padding:0 4px; color:var(--border); margin-top:4px; }
+.drag-handle:active{ cursor:grabbing; }
+.key-item.dragging{ opacity:.4; }
+.drop-indicator{ height:3px; border-radius:3px; background:var(--orange); margin:2px 0; display:none; }
+.drop-indicator.show{ display:block; }
+</style>
 </head>
 <body>
 
@@ -17,13 +42,20 @@
 </div>
 
 <div class="page-body">
+
+  <!-- === Generate Section === -->
   <div class="card">
-    <h3>Masukkan Kunci (Secret)</h3>
-    <p class="desc">Masukkan kunci rahasia Base32 dari aplikasi/situs yang ingin diverifikasi (contoh: 2FA / Google Authenticator).</p>
+    <h3>Generate Kode OTP</h3>
+    <p class="desc">Masukkan kunci Base32 dari aplikasi/situs yang ingin diverifikasi.</p>
 
     <div class="field">
       <label>Kunci (Secret Key)</label>
-      <input type="text" id="secretKey" placeholder="Contoh: JBSWY3DPEHPK3PXP" autocomplete="off">
+      <div style="display:flex;gap:8px">
+        <input type="text" id="secretKey" placeholder="Contoh: JBSWY3DPEHPK3PXP" autocomplete="off" style="flex:1">
+        <button class="icon-btn" onclick="clearSecret()" title="Hapus kunci">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>
 
     <div class="grid-2">
@@ -52,13 +84,12 @@
       </select>
     </div>
 
-    <!-- Toggle Standar Google -->
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 4px;padding:12px 14px;background:var(--surface-2);border-radius:12px;border:1px solid var(--border)">
       <div>
         <div style="font-size:13px;font-weight:600;color:var(--text)">Standar Google</div>
         <div style="font-size:11px;color:var(--text-soft);margin-top:2px">SHA1 · 30 detik · 6 digit</div>
       </div>
-      <button type="button" id="googleStdBtn" onclick="toggleGoogleStd()" aria-label="Aktifkan Standar Google"
+      <button type="button" id="googleStdBtn" onclick="toggleGoogleStd()"
         style="width:52px;height:30px;border-radius:20px;background:var(--surface-2);border:1px solid var(--border);position:relative;flex-shrink:0;transition:.25s;cursor:pointer;">
         <span id="googleStdKnob" style="position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--text-soft);transition:.25s;display:block;"></span>
       </button>
@@ -68,12 +99,52 @@
     <div class="form-msg" id="totpMsg"></div>
   </div>
 
+  <!-- === Hasil OTP === -->
   <div class="card hidden" id="resultCard">
     <h3>Kode OTP Anda</h3>
     <div class="totp-code" id="otpCode">------</div>
     <div class="progress-bar"><i id="otpProgress" style="width:100%"></i></div>
     <div class="totp-timer" id="otpTimerText">Refresh dalam 30 detik</div>
-    <button class="btn secondary" style="margin-top:14px" onclick="copyText(document.getElementById('otpCode').textContent)">Salin Kode</button>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn secondary" style="flex:1" onclick="copyText(document.getElementById('otpCode').textContent)">Salin Kode</button>
+      <button class="btn" style="flex:1" onclick="openSaveModal()">Simpan Kunci</button>
+    </div>
+    <div style="font-size:11px;color:var(--text-soft);margin-top:8px;text-align:center" id="saveHint"></div>
+  </div>
+
+  <!-- === Kunci Tersimpan === -->
+  <div id="savedSection">
+    <div class="section-label" style="padding:14px 0 6px;font-size:11.5px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.5px">Kunci Tersimpan</div>
+    <div id="savedKeysList"></div>
+  </div>
+
+</div>
+
+<!-- Modal Simpan Kunci -->
+<div class="modal-bg" id="saveKeyModal">
+  <div class="modal-box">
+    <h3 id="saveKeyTitle">Simpan Kunci</h3>
+    <div class="field">
+      <label>Judul / Label Kunci</label>
+      <input type="text" id="saveKeyJudul" placeholder="contoh: GitHub, Instagram, Gmail" maxlength="80">
+    </div>
+    <div class="field">
+      <label>Kunci (Secret)</label>
+      <input type="text" id="saveKeySecret" placeholder="Secret Base32..." autocomplete="off">
+    </div>
+    <div class="form-msg" id="saveKeyMsg"></div>
+    <button class="btn" id="saveKeyBtn" onclick="handleSaveKey()">Simpan</button>
+    <button class="btn secondary" style="margin-top:10px" onclick="closeSaveModal()">Batal</button>
+  </div>
+</div>
+
+<!-- Modal Login Notif -->
+<div class="modal-bg" id="loginKeyModal">
+  <div class="modal-box">
+    <h3>Perlu Login</h3>
+    <p class="desc" style="color:var(--text-soft);font-size:13px;margin-bottom:14px">Silakan login terlebih dahulu untuk menyimpan kunci Authenticator.</p>
+    <button class="btn" onclick="location.href='../login.html'">Masuk / Daftar</button>
+    <button class="btn secondary" style="margin-top:10px" onclick="document.getElementById('loginKeyModal').classList.remove('show')">Nanti saja</button>
   </div>
 </div>
 
@@ -81,48 +152,236 @@
 <script src="../js/supabase-config.js"></script>
 <script src="../js/store.js"></script>
 <script src="../js/util.js"></script>
+<script src="../js/crypto.js"></script>
+<script src="../js/auth-keys.js"></script>
 <script>
 applyStoredTheme();
 
+const _authSession = getSession();
 let totpTimer = null;
 let currentSettings = null;
 let googleStdActive = false;
+let editKeyId = null;
 
+// ----- Load saved keys -----
+async function loadSavedKeys(){
+  const holder = document.getElementById('savedKeysList');
+  if(!_authSession){
+    holder.innerHTML = '<div style="font-size:12.5px;color:var(--text-soft);padding:4px 0">Login untuk menyimpan dan melihat kunci tersimpan.</div>';
+    return;
+  }
+  holder.innerHTML = '<div style="font-size:12.5px;color:var(--text-soft)">Memuat...</div>';
+  const res = await listAuthKeys();
+  if(!res.ok || res.data.length === 0){
+    holder.innerHTML = '<div style="font-size:12.5px;color:var(--text-soft);padding:4px 0">Belum ada kunci tersimpan.</div>';
+    return;
+  }
+  savedKeys = res.data;
+  renderSavedKeys();
+}
+loadSavedKeys();
+
+let savedKeys = [];
+let dragSrcId = null;
+let dragOverId = null;
+let timerMap = {}; // id -> timer
+
+function renderSavedKeys(){
+  const holder = document.getElementById('savedKeysList');
+  if(savedKeys.length === 0){
+    holder.innerHTML = '<div style="font-size:12.5px;color:var(--text-soft);padding:4px 0">Belum ada kunci tersimpan.</div>';
+    return;
+  }
+  holder.innerHTML = savedKeys.map(k => `
+    <div class="key-row">
+      <div class="drag-handle" onpointerdown="startKeyDrag(event,'${k.id}')">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+      </div>
+      <div class="key-item" id="key-${k.id}" data-kid="${k.id}">
+        <b>${escapeHtml(k.judul)}</b>
+        <div class="key-otp" id="kotp-${k.id}">------</div>
+        <div class="progress-bar"><i id="kprog-${k.id}" style="width:100%"></i></div>
+        <div class="key-timer" id="ktimer-${k.id}">—</div>
+        <div class="key-actions">
+          <button onclick="useKey('${k.id}')">Gunakan</button>
+          <button onclick="openEditKeyModal('${k.id}')">Edit</button>
+          <button class="danger" onclick="handleDeleteKey('${k.id}')">Hapus</button>
+        </div>
+      </div>
+    </div>
+    <div class="drop-indicator" id="kdrop-${k.id}"></div>`).join('');
+
+  // Mulai timer OTP untuk tiap kunci
+  savedKeys.forEach(k => startKeyOtp(k));
+}
+
+async function startKeyOtp(k){
+  if(timerMap[k.id]) clearInterval(timerMap[k.id]);
+  async function refresh(){
+    try{
+      const res = await computeTotp(k.kunci, 6, 30, 'SHA-1');
+      const el = document.getElementById('kotp-' + k.id);
+      const prog = document.getElementById('kprog-' + k.id);
+      const timer = document.getElementById('ktimer-' + k.id);
+      if(el){ el.textContent = res.otp; }
+      if(prog){ prog.style.width = (res.secondsLeft/30*100) + '%'; }
+      if(timer){ timer.textContent = `Refresh dalam ${res.secondsLeft}s`; }
+    }catch(e){}
+  }
+  refresh();
+  timerMap[k.id] = setInterval(refresh, 1000);
+}
+
+function useKey(id){
+  const k = savedKeys.find(x => String(x.id) === String(id));
+  if(!k) return;
+  document.getElementById('secretKey').value = k.kunci;
+  document.getElementById('totpMsg').textContent = '';
+  startTotp();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ----- Modal Simpan / Edit -----
+function openSaveModal(){
+  if(!_authSession){
+    document.getElementById('loginKeyModal').classList.add('show');
+    return;
+  }
+  editKeyId = null;
+  document.getElementById('saveKeyTitle').textContent = 'Simpan Kunci';
+  document.getElementById('saveKeyJudul').value = '';
+  document.getElementById('saveKeySecret').value = currentSettings ? currentSettings.secret : '';
+  document.getElementById('saveKeyMsg').textContent = '';
+  document.getElementById('saveKeyBtn').textContent = 'Simpan';
+  document.getElementById('saveKeyModal').classList.add('show');
+}
+
+function openEditKeyModal(id){
+  const k = savedKeys.find(x => String(x.id) === String(id));
+  if(!k) return;
+  editKeyId = id;
+  document.getElementById('saveKeyTitle').textContent = 'Edit Kunci';
+  document.getElementById('saveKeyJudul').value = k.judul;
+  document.getElementById('saveKeySecret').value = k.kunci;
+  document.getElementById('saveKeyMsg').textContent = '';
+  document.getElementById('saveKeyBtn').textContent = 'Perbarui';
+  document.getElementById('saveKeyModal').classList.add('show');
+}
+
+function closeSaveModal(){
+  document.getElementById('saveKeyModal').classList.remove('show');
+  editKeyId = null;
+}
+
+async function handleSaveKey(){
+  const judul  = document.getElementById('saveKeyJudul').value.trim();
+  const kunci  = document.getElementById('saveKeySecret').value.trim();
+  const msg    = document.getElementById('saveKeyMsg');
+  const btn    = document.getElementById('saveKeyBtn');
+  msg.textContent = '';
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+  const res = await saveAuthKey({ id: editKeyId, judul, kunci });
+
+  btn.disabled = false; btn.textContent = editKeyId ? 'Perbarui' : 'Simpan';
+
+  if(res.ok){
+    closeSaveModal();
+    showToast(editKeyId ? 'Kunci diperbarui' : 'Kunci disimpan');
+    await loadSavedKeys();
+  } else {
+    msg.textContent = res.msg;
+  }
+}
+
+async function handleDeleteKey(id){
+  if(!confirm('Hapus kunci ini?')) return;
+  if(timerMap[id]) clearInterval(timerMap[id]);
+  const res = await deleteAuthKey(id);
+  if(res.ok){
+    showToast('Kunci dihapus');
+    await loadSavedKeys();
+  } else {
+    showToast(res.msg);
+  }
+}
+
+// ----- Drag reorder saved keys -----
+function startKeyDrag(e, id){
+  e.preventDefault();
+  dragSrcId = String(id);
+  const el = document.getElementById('key-' + id);
+  if(el) el.classList.add('dragging');
+
+  document.addEventListener('pointermove', onKeyDragMove);
+  document.addEventListener('pointerup', onKeyDragEnd);
+}
+
+function onKeyDragMove(e){
+  if(!dragSrcId) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const target = el ? el.closest('[data-kid]') : null;
+  document.querySelectorAll('.drop-indicator').forEach(d => d.classList.remove('show'));
+  if(target){
+    const tid = target.getAttribute('data-kid');
+    if(tid && tid !== dragSrcId){
+      dragOverId = tid;
+      const ind = document.getElementById('kdrop-' + tid);
+      if(ind) ind.classList.add('show');
+    }
+  }
+}
+
+function onKeyDragEnd(){
+  document.removeEventListener('pointermove', onKeyDragMove);
+  document.removeEventListener('pointerup', onKeyDragEnd);
+  document.querySelectorAll('.drop-indicator').forEach(d => d.classList.remove('show'));
+  const dragEl = document.getElementById('key-' + dragSrcId);
+  if(dragEl) dragEl.classList.remove('dragging');
+
+  if(dragSrcId && dragOverId && dragSrcId !== dragOverId){
+    reorderKeys(dragSrcId, dragOverId);
+  }
+  dragSrcId = null; dragOverId = null;
+}
+
+async function reorderKeys(fromId, afterId){
+  const fi = savedKeys.findIndex(k => String(k.id) === fromId);
+  const ti = savedKeys.findIndex(k => String(k.id) === afterId);
+  if(fi === -1 || ti === -1) return;
+  const moved = savedKeys.splice(fi, 1)[0];
+  const newTi = savedKeys.findIndex(k => String(k.id) === afterId);
+  savedKeys.splice(newTi + 1, 0, moved);
+  renderSavedKeys();
+  await saveAuthKeyOrder(savedKeys.map(k => k.id));
+}
+
+// ----- TOTP logic (sama seperti sebelumnya) -----
 function toggleGoogleStd(){
   googleStdActive = !googleStdActive;
-
-  const btn  = document.getElementById('googleStdBtn');
+  const btn = document.getElementById('googleStdBtn');
   const knob = document.getElementById('googleStdKnob');
   const digitsEl = document.getElementById('digits');
   const periodEl = document.getElementById('period');
   const algoEl   = document.getElementById('algo');
 
   if(googleStdActive){
-    // Aktifkan: kunci ke SHA1 + 30 detik + 6 digit
-    algoEl.value   = 'SHA-1';
-    periodEl.value = '30';
-    digitsEl.value = '6';
-    algoEl.disabled   = true;
-    periodEl.disabled = true;
-    digitsEl.disabled = true;
-
-    // Visual tombol ON
-    btn.style.background  = 'var(--orange)';
-    btn.style.borderColor = 'var(--orange)';
-    knob.style.left       = '26px';
-    knob.style.background = '#fff';
+    algoEl.value='SHA-1'; periodEl.value='30'; digitsEl.value='6';
+    algoEl.disabled=true; periodEl.disabled=true; digitsEl.disabled=true;
+    btn.style.background='var(--orange)'; btn.style.borderColor='var(--orange)';
+    knob.style.left='26px'; knob.style.background='#fff';
   } else {
-    // Nonaktifkan: buka kembali semua pilihan
-    algoEl.disabled   = false;
-    periodEl.disabled = false;
-    digitsEl.disabled = false;
-
-    // Visual tombol OFF
-    btn.style.background  = 'var(--surface-2)';
-    btn.style.borderColor = 'var(--border)';
-    knob.style.left       = '2px';
-    knob.style.background = 'var(--text-soft)';
+    algoEl.disabled=false; periodEl.disabled=false; digitsEl.disabled=false;
+    btn.style.background='var(--surface-2)'; btn.style.borderColor='var(--border)';
+    knob.style.left='2px'; knob.style.background='var(--text-soft)';
   }
+}
+
+function clearSecret(){
+  document.getElementById('secretKey').value = '';
+  document.getElementById('resultCard').classList.add('hidden');
+  if(totpTimer){ clearInterval(totpTimer); totpTimer=null; }
+  currentSettings = null;
 }
 
 function base32Decode(str){
@@ -135,16 +394,13 @@ function base32Decode(str){
     bits += idx.toString(2).padStart(5,'0');
   }
   const bytes = [];
-  for(let i=0;i+8<=bits.length;i+=8){
-    bytes.push(parseInt(bits.substring(i,i+8),2));
-  }
+  for(let i=0;i+8<=bits.length;i+=8){ bytes.push(parseInt(bits.substring(i,i+8),2)); }
   return new Uint8Array(bytes);
 }
 
 function intToBuffer(num){
   const buf = new ArrayBuffer(8);
   const view = new DataView(buf);
-  // JS number aman sampai 2^53, cukup untuk counter waktu unix
   view.setUint32(4, num % 4294967296, false);
   view.setUint32(0, Math.floor(num / 4294967296), false);
   return buf;
@@ -155,20 +411,12 @@ async function computeTotp(secretRaw, digits, period, algo){
   if(keyBytes.length === 0) throw new Error('empty');
   const counter = Math.floor(Date.now()/1000/period);
   const counterBuf = intToBuffer(counter);
-
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw', keyBytes, {name:'HMAC', hash:{name:algo}}, false, ['sign']
-  );
-  const sig = await crypto.subtle.sign('HMAC', cryptoKey, counterBuf);
+  const cryptoKey = await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:{name:algo}},false,['sign']);
+  const sig = await crypto.subtle.sign('HMAC',cryptoKey,counterBuf);
   const hash = new Uint8Array(sig);
-
   const offset = hash[hash.length-1] & 0xf;
-  const binary = ((hash[offset] & 0x7f) << 24) |
-                 ((hash[offset+1] & 0xff) << 16) |
-                 ((hash[offset+2] & 0xff) << 8) |
-                 (hash[offset+3] & 0xff);
-
-  const otp = (binary % (10 ** digits)).toString().padStart(digits, '0');
+  const binary = ((hash[offset]&0x7f)<<24)|((hash[offset+1]&0xff)<<16)|((hash[offset+2]&0xff)<<8)|(hash[offset+3]&0xff);
+  const otp = (binary % (10**digits)).toString().padStart(digits,'0');
   const secondsLeft = period - (Math.floor(Date.now()/1000) % period);
   return {otp, secondsLeft, period};
 }
@@ -176,13 +424,13 @@ async function computeTotp(secretRaw, digits, period, algo){
 async function refreshTotp(){
   if(!currentSettings) return;
   try{
-    const {secret, digits, period, algo} = currentSettings;
-    const res = await computeTotp(secret, digits, period, algo);
+    const {secret,digits,period,algo} = currentSettings;
+    const res = await computeTotp(secret,digits,period,algo);
     document.getElementById('otpCode').textContent = res.otp;
     document.getElementById('otpTimerText').textContent = `Refresh dalam ${res.secondsLeft} detik`;
-    document.getElementById('otpProgress').style.width = (res.secondsLeft/res.period*100) + '%';
+    document.getElementById('otpProgress').style.width = (res.secondsLeft/res.period*100)+'%';
   }catch(e){
-    document.getElementById('totpMsg').textContent = 'Kunci tidak valid. Gunakan format Base32 (huruf A-Z & angka 2-7).';
+    document.getElementById('totpMsg').textContent = 'Kunci tidak valid. Gunakan format Base32.';
   }
 }
 
@@ -190,16 +438,19 @@ function startTotp(){
   const secret = document.getElementById('secretKey').value.trim();
   const digits = parseInt(document.getElementById('digits').value);
   const period = parseInt(document.getElementById('period').value);
-  const algo = document.getElementById('algo').value;
-  const msg = document.getElementById('totpMsg');
+  const algo   = document.getElementById('algo').value;
+  const msg    = document.getElementById('totpMsg');
   msg.textContent = '';
+  if(!secret){ msg.textContent='Masukkan kunci terlebih dahulu.'; return; }
 
-  if(!secret){ msg.textContent = 'Masukkan kunci terlebih dahulu.'; return; }
-
-  currentSettings = {secret, digits, period, algo};
+  currentSettings = {secret,digits,period,algo};
   document.getElementById('resultCard').classList.remove('hidden');
-  refreshTotp();
 
+  // Tampilkan hint simpan
+  const hint = document.getElementById('saveHint');
+  hint.textContent = _authSession ? 'Simpan kunci ini agar bisa digunakan kembali dengan mudah.' : 'Login untuk menyimpan kunci ini.';
+
+  refreshTotp();
   if(totpTimer) clearInterval(totpTimer);
   totpTimer = setInterval(refreshTotp, 1000);
 }

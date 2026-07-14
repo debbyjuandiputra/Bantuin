@@ -60,22 +60,33 @@ applyStoredTheme();
 
 let noteId = new URLSearchParams(location.search).get('id');
 
-requireAuth(async function(){
+// Cek login secara ramah — jika belum login, tampilkan pesan bukan redirect
+const _cSession = getSession();
+if(!_cSession){
+  // Sembunyikan form editor, tampilkan pesan
+  document.querySelector('.page-body').innerHTML = `
+    <div class="card" style="text-align:center;padding:32px 20px">
+      <p style="font-size:14px;margin-bottom:16px">Silakan login terlebih dahulu untuk membuat atau mengedit catatan.</p>
+      <a class="btn" href="../login.html">Masuk / Daftar</a>
+      <button class="btn secondary" style="margin-top:10px" onclick="history.back()">Kembali</button>
+    </div>`;
+} else {
   if(noteId){
     document.getElementById('editorTitle').textContent = 'Edit Catatan';
     document.getElementById('exportCard').classList.remove('hidden');
     document.getElementById('deleteNoteBtn').classList.remove('hidden');
 
-    const res = await getNote(noteId);
-    if(!res.ok){
-      showToast(res.msg);
-      location.href = 'catatan.html';
-      return;
-    }
-    document.getElementById('noteTitle').value = res.data.judul;
-    document.getElementById('noteBody').innerHTML = res.data.isi;
+    getNote(noteId).then(res => {
+      if(!res.ok){
+        showToast(res.msg);
+        location.href = 'catatan.html';
+        return;
+      }
+      document.getElementById('noteTitle').value = res.data.judul;
+      document.getElementById('noteBody').innerHTML = res.data.isi;
+    });
   }
-});
+}
 
 function fmt(cmd){
   document.execCommand(cmd, false, null);

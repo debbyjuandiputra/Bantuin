@@ -59,7 +59,14 @@
     </div>
 
     <div style="margin-top:16px">
-      <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-soft)">Top 5 Kata Kunci</label>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--text-soft)">Top 5 Kata Kunci</label>
+        <div style="display:flex;gap:4px" id="ngramTabs">
+          <button class="ngram-tab active" onclick="setNgram(1,this)">1 Kata</button>
+          <button class="ngram-tab" onclick="setNgram(2,this)">2 Kata</button>
+          <button class="ngram-tab" onclick="setNgram(3,this)">3 Kata</button>
+        </div>
+      </div>
       <div class="keyword-chips" id="keywordChips"></div>
     </div>
 
@@ -85,6 +92,15 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 
 let currentSource = 'text';
 let fullText = '';
+let lastWords = [];
+let ngramSize = 1;
+
+function setNgram(n, el){
+  ngramSize = n;
+  document.querySelectorAll('.ngram-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if(lastWords.length) renderKeywords(lastWords);
+}
 
 function switchSource(mode){
   currentSource = mode;
@@ -143,6 +159,7 @@ function analyze(text){
   document.getElementById('stAvgWordPerSentence').textContent = avgWordPerSentence.toFixed(1);
   document.getElementById('stReadTime').textContent = readTimeLabel;
 
+  lastWords = words;
   renderKeywords(words);
 
   document.getElementById('statCard').classList.remove('hidden');
@@ -151,29 +168,44 @@ function analyze(text){
   document.getElementById('searchResultMsg').textContent = '';
 }
 
-// Top 5 kata kunci berdasarkan persentase kemunculan (stopword & kata pendek diabaikan)
+// Top 5 kata kunci berdasarkan persentase kemunculan
 function renderKeywords(words){
   const holder = document.getElementById('keywordChips');
-  const filtered = words
-    .map(w => w.toLowerCase())
-    .filter(w => w.length > 2 && !STOPWORDS_ID.has(w));
+  const cleaned = words.map(w => w.toLowerCase()).filter(w => w.length > 1);
 
-  if(filtered.length === 0){
+  let tokens = [];
+  if(ngramSize === 1){
+    tokens = cleaned.filter(w => w.length > 2 && !STOPWORDS_ID.has(w));
+  } else {
+    // Bangun ngram dari cleaned (tanpa filter stopword dulu, stopword hanya diabaikan di edge)
+    const allWords = cleaned;
+    for(let i = 0; i <= allWords.length - ngramSize; i++){
+      const gram = allWords.slice(i, i + ngramSize);
+      // Abaikan kalau semua kata di ngram adalah stopword
+      if(gram.every(w => STOPWORDS_ID.has(w))) continue;
+      // Minimal ada 1 kata bukan stopword dan bukan kata sangat pendek
+      if(gram.some(w => !STOPWORDS_ID.has(w) && w.length > 2)){
+        tokens.push(gram.join(' '));
+      }
+    }
+  }
+
+  if(tokens.length === 0){
     holder.innerHTML = '<span style="font-size:12px;color:var(--text-soft)">Belum ada kata kunci yang menonjol.</span>';
     return;
   }
 
   const freq = {};
-  filtered.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+  tokens.forEach(t => { freq[t] = (freq[t] || 0) + 1; });
 
-  const total = filtered.length;
+  const total = tokens.length;
   const top5 = Object.entries(freq)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  holder.innerHTML = top5.map(([word, count]) => {
+  holder.innerHTML = top5.map(([phrase, count]) => {
     const pct = ((count / total) * 100).toFixed(1);
-    return `<div class="keyword-chip">${escapeHtml(word)} <span>${pct}%</span></div>`;
+    return `<div class="keyword-chip">${escapeHtml(phrase)} <span>${pct}%</span></div>`;
   }).join('');
 }
 

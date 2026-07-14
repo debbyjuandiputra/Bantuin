@@ -1,29 +1,36 @@
 // ==========================================================
-// BANTUIN — notes.js — fitur Catatan (CRUD + ekspor)
+// BANTUIN — notes.js — fitur Catatan (CRUD + pin + urutan + ekspor)
 // ==========================================================
-// Tabel Supabase: catatan (lihat SUPABASE_SETUP.md untuk skema & RLS)
+// Tabel Supabase: catatan
 //   id          bigint identity primary key
 //   user_id     integer  -> references users(user_id)
 //   judul       text     -> terenkripsi (lihat crypto.js)
-//   isi         text     -> terenkripsi, berisi HTML hasil editor (bold/italic/underline/list)
+//   isi         text     -> terenkripsi, berisi HTML hasil editor
+//   pin         boolean  default false
+//   urutan      integer  default 0  (semakin kecil = semakin atas)
 //   created_at  timestamptz
 //   updated_at  timestamptz
-//
-// Fitur Catatan WAJIB login (tidak ada mode tamu) karena catatan
-// melekat ke user_id akun. Halaman pemanggil harus membungkus
-// pemakaian fungsi-fungsi ini dengan requireAuth().
 // ==========================================================
 
 const TABLE_NOTES = 'catatan';
 
+// Helper: cek login & kembalikan pesan ramah jika belum
+function requireNoteAuth(){
+  const s = getSession();
+  if(!s) return { ok:false, msg:'Silakan login terlebih dahulu.' };
+  return { ok:true, session:s };
+}
+
 async function listNotes(){
-  const session = getSession();
-  if(!session) return { ok:false, msg:'Anda harus masuk terlebih dahulu.', data:[] };
+  const auth = requireNoteAuth();
+  if(!auth.ok) return { ok:false, msg:auth.msg, data:[] };
 
   const { data, error } = await sb
     .from(TABLE_NOTES)
-    .select('id, judul, isi, created_at, updated_at')
-    .eq('user_id', session.user_id)
+    .select('id, judul, isi, pin, urutan, created_at, updated_at')
+    .eq('user_id', auth.session.user_id)
+    .order('pin', { ascending:false })
+    .order('urutan', { ascending:true })
     .order('updated_at', { ascending:false });
 
   if(error) return { ok:false, msg: mapSupabaseError(error), data:[] };
@@ -32,8 +39,10 @@ async function listNotes(){
   for(const row of data){
     result.push({
       id: row.id,
-      judul: await decryptNoteField(row.judul, session.user_id),
-      isi: await decryptNoteField(row.isi, session.user_id),
+      judul: await decryptNoteField(row.judul, auth.session.user_id),
+      isi: await decryptNoteField(row.isi, auth.session.user_id),
+      pin: row.pin || false,
+      urutan: row.urutan || 0,
       created_at: row.created_at,
       updated_at: row.updated_at
     });
@@ -42,14 +51,14 @@ async function listNotes(){
 }
 
 async function getNote(id){
-  const session = getSession();
-  if(!session) return { ok:false, msg:'Anda harus masuk terlebih dahulu.' };
+  const auth = requireNoteAuth();
+  if(!auth.ok) return { ok:false, msg:auth.msg };
 
   const { data, error } = await sb
     .from(TABLE_NOTES)
-    .select('id, judul, isi, created_at, updated_at')
+    .select('id, judul, isi, pin, urutan, created_at, updated_at')
     .eq('id', id)
-    .eq('user_id', session.user_id)
+    .eq('user_id', auth.session.user_id)
     .maybeSingle();
 
   if(error) return { ok:false, msg: mapSupabaseError(error) };
@@ -59,25 +68,26 @@ async function getNote(id){
     ok:true,
     data: {
       id: data.id,
-      judul: await decryptNoteField(data.judul, session.user_id),
-      isi: await decryptNoteField(data.isi, session.user_id),
+      judul: await decryptNoteField(data.judul, auth.session.user_id),
+      isi: await decryptNoteField(data.isi, auth.session.user_id),
+      pin: data.pin || false,
+      urutan: data.urutan || 0,
       created_at: data.created_at,
       updated_at: data.updated_at
     }
   };
 }
 
-// id kosong/null -> buat catatan baru. id terisi -> update catatan milik user itu sendiri.
 async function saveNote({ id, judul, isiHtml }){
-  const session = getSession();
-  if(!session) return { ok:false, msg:'Anda harus masuk terlebih dahulu.' };
+  const auth = requireNoteAuth();
+  if(!auth.ok) return { ok:false, msg:auth.msg };
 
   const cleanJudul = (judul || '').trim();
   if(!cleanJudul) return { ok:false, msg:'Judul wajib diisi.' };
 
   try{
-    const encJudul = await encryptNoteField(cleanJudul, session.user_id);
-    const encIsi = await encryptNoteField(isiHtml || '', session.user_id);
+    const encJudul = await encryptNoteField(cleanJudul, auth.session.user_id);
+    const encIsi   = await encryptNoteField(isiHtml || '', auth.session.user_id);
     const now = nowWIB();
 
     if(id){
@@ -85,14 +95,25 @@ async function saveNote({ id, judul, isiHtml }){
         .from(TABLE_NOTES)
         .update({ judul: encJudul, isi: encIsi, updated_at: now })
         .eq('id', id)
-        .eq('user_id', session.user_id);
+        .eq('user_id', auth.session.user_id);
       if(error) return { ok:false, msg: mapSupabaseError(error) };
       return { ok:true, id };
     }
 
+    // Baru: ambil urutan terbesar lalu +1 supaya catatan baru muncul di paling bawah
+    const { data: last } = await sb
+      .from(TABLE_NOTES)
+      .select('urutan')
+      .eq('user_id', auth.session.user_id)
+      .order('urutan', { ascending:false })
+      .limit(1)
+      .maybeSingle();
+    const nextUrutan = (last ? (last.urutan || 0) : 0) + 1;
+
     const { data, error } = await sb
       .from(TABLE_NOTES)
-      .insert({ user_id: session.user_id, judul: encJudul, isi: encIsi, created_at: now, updated_at: now })
+      .insert({ user_id: auth.session.user_id, judul: encJudul, isi: encIsi,
+                pin: false, urutan: nextUrutan, created_at: now, updated_at: now })
       .select('id')
       .single();
     if(error) return { ok:false, msg: mapSupabaseError(error) };
@@ -103,17 +124,45 @@ async function saveNote({ id, judul, isiHtml }){
 }
 
 async function deleteNote(id){
-  const session = getSession();
-  if(!session) return { ok:false, msg:'Anda harus masuk terlebih dahulu.' };
+  const auth = requireNoteAuth();
+  if(!auth.ok) return { ok:false, msg:auth.msg };
 
   const { error } = await sb
     .from(TABLE_NOTES)
     .delete()
     .eq('id', id)
-    .eq('user_id', session.user_id);
+    .eq('user_id', auth.session.user_id);
 
   if(error) return { ok:false, msg: mapSupabaseError(error) };
   return { ok:true };
+}
+
+async function updateNotePin(id, pinValue){
+  const auth = requireNoteAuth();
+  if(!auth.ok) return { ok:false, msg:auth.msg };
+
+  const { error } = await sb
+    .from(TABLE_NOTES)
+    .update({ pin: pinValue, updated_at: nowWIB() })
+    .eq('id', id)
+    .eq('user_id', auth.session.user_id);
+
+  if(error) return { ok:false, msg: mapSupabaseError(error) };
+  return { ok:true };
+}
+
+// Simpan urutan baru setelah drag: update kolom `urutan` berdasarkan posisi array
+async function saveNoteOrder(orderedIds){
+  const auth = requireNoteAuth();
+  if(!auth.ok) return;
+
+  // Update satu per satu (Supabase JS v2 tidak mendukung bulk update per-row berbeda)
+  for(let i = 0; i < orderedIds.length; i++){
+    await sb.from(TABLE_NOTES)
+      .update({ urutan: i })
+      .eq('id', orderedIds[i])
+      .eq('user_id', auth.session.user_id);
+  }
 }
 
 // ---------------- Ekspor Catatan ----------------

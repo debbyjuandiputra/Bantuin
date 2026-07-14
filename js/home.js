@@ -40,21 +40,23 @@ const ICONS = {
 };
 
 const FEATURES = [
+  // ---- AKTIF ----
   { id:'konversi-dokumen', title:'Konversi File', desc:'PDF ⇄ DOCX, XLSX ⇄ CSV', cat:['dokumen'], icon:ICONS.doc, active:true, page:'pages/konversi-dokumen.html' },
   { id:'catatan', title:'Catatan', desc:'Tulis, format & ekspor catatanmu', cat:['dokumen'], icon:ICONS.notes, active:true, page:'pages/catatan.html' },
-  { id:'aplikasi-premium', title:'Aplikasi Premium', desc:'CapCut Pro, Canva Pro & Zoom Pro', cat:['lainnya'], icon:ICONS.premium, active:true, page:'pages/aplikasi-premium.html' },
   { id:'cek-karakter', title:'Cek Panjang Karakter', desc:'Karakter, kalimat & paragraf', cat:['perhitungan','dokumen'], icon:ICONS.ruler, active:true, page:'pages/cek-karakter.html' },
-  { id:'scan-dokumen', title:'Scan Dokumen', desc:'Segera hadir', cat:['dokumen'], icon:ICONS.scan, active:false },
   { id:'base64', title:'Base64 Encode & Decode', desc:'Konversi teks ke/dari Base64', cat:['programming'], icon:ICONS.code, active:true, page:'pages/base64.html' },
   { id:'url-encode', title:'URL Encode & Decode', desc:'Encode & decode karakter URL', cat:['programming'], icon:ICONS.link, active:true, page:'pages/url-encode.html' },
+  { id:'kalkulator-statistik', title:'Statistik', desc:'Mean, median, modus & lebih', cat:['perhitungan'], icon:ICONS.stats, active:true, page:'pages/statistik.html' },
+  { id:'uuid-generator', title:'UUID Generator', desc:'Buat ID unik instan', cat:['programming'], icon:ICONS.uuid, active:true, page:'pages/uuid-generator.html' },
+  { id:'authenticator', title:'Generate Kode Authenticator', desc:'Kode OTP 2FA', cat:['programming'], icon:ICONS.auth, active:true, page:'pages/authenticator.html' },
+  { id:'aplikasi-premium', title:'Aplikasi Premium', desc:'CapCut Pro, Canva Pro & Zoom Pro', cat:['lainnya'], icon:ICONS.premium, active:true, page:'pages/aplikasi-premium.html' },
+  // ---- SEGERA HADIR ----
+  { id:'scan-dokumen', title:'Scan Dokumen', desc:'Segera hadir', cat:['dokumen'], icon:ICONS.scan, active:false },
   { id:'todolist', title:'To Do List Modern', desc:'Segera hadir', cat:['penjadwalan'], icon:ICONS.todo, active:false },
   { id:'alarm', title:'Alarm dan Pengingat', desc:'Segera hadir', cat:['penjadwalan'], icon:ICONS.alarm, active:false },
   { id:'kalkulator-ilmiah', title:'Kalkulator Ilmiah', desc:'Segera hadir', cat:['perhitungan'], icon:ICONS.calc, active:false },
   { id:'kalkulator-modern', title:'Kalkulator Modern', desc:'Segera hadir', cat:['perhitungan'], icon:ICONS.calc, active:false },
-  { id:'kalkulator-statistik', title:'Statistik', desc:'Mean, median, modus & lebih', cat:['perhitungan'], icon:ICONS.stats, active:true, page:'pages/statistik.html' },
   { id:'hapus-latar', title:'Hapus Latar Belakang', desc:'Segera hadir', cat:['lainnya'], icon:ICONS.bg, active:false },
-  { id:'uuid-generator', title:'UUID Generator', desc:'Buat ID unik instan', cat:['programming'], icon:ICONS.uuid, active:true, page:'pages/uuid-generator.html' },
-  { id:'authenticator', title:'Generate Kode Authenticator', desc:'Kode OTP 2FA', cat:['programming'], icon:ICONS.auth, active:true, page:'pages/authenticator.html' },
 ];
 
 let currentCat = 'semua';

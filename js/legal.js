@@ -3,15 +3,15 @@
 // walau dijalankan offline di dalam WebView APK.
 
 const LEGAL_TEXT = `Syarat dan Ketentuan Penggunaan
-Terakhir diperbarui: 12 Juli 2026
+Terakhir diperbarui: 14 Juli 2026
 
 Dengan menggunakan aplikasi ini — baik sebagai tamu maupun dengan membuat akun — Anda dianggap telah membaca, memahami, dan menyetujui seluruh syarat dan ketentuan berikut.
 
 1. Penggunaan Layanan
-Aplikasi ini menyediakan berbagai alat bantu bagi siswa, mahasiswa, dan pengguna umum, seperti konversi file, cek karakter, encode/decode, generator UUID, generator kode autentikator, serta fitur lainnya. Sebagian besar fitur dapat langsung digunakan tanpa membuat akun (mode tamu).
+Aplikasi ini menyediakan berbagai alat bantu bagi siswa, mahasiswa, dan pengguna umum, seperti konversi file, cek karakter, catatan pribadi, encode/decode, generator UUID, generator kode autentikator, serta fitur lainnya. Sebagian besar fitur dapat langsung digunakan tanpa membuat akun (mode tamu).
 
 2. Akun Pengguna (Opsional)
-Pembuatan akun bersifat opsional dan hanya diperlukan untuk fitur tertentu, seperti klaim promo Canva Pro 1 Hari. Pengguna bertanggung jawab atas kerahasiaan username yang dimilikinya, karena username adalah satu-satunya identitas untuk masuk ke akun (aplikasi ini tidak menggunakan password).
+Pembuatan akun bersifat opsional dan diperlukan untuk fitur tertentu seperti Catatan, Kunci Authenticator, dan klaim promo Canva Pro 1 Hari. Pengguna bertanggung jawab atas kerahasiaan username yang dimilikinya, karena username adalah satu-satunya identitas untuk masuk ke akun (aplikasi ini tidak menggunakan password).
 Pengguna wajib menggunakan username miliknya sendiri dan tidak menggunakan identitas milik orang lain tanpa izin.
 
 3. Data Profil Tambahan (Opsional)
@@ -21,39 +21,42 @@ Setelah masuk, pengguna dapat menambahkan Nama Lengkap dan Email secara opsional
 Pengguna yang sudah masuk dapat mengajukan klaim promo Canva Pro 1 Hari dengan memasukkan email Canva miliknya. Satu email hanya berhak melakukan klaim sebanyak satu kali. Email yang sudah pernah dipakai untuk klaim tidak dapat digunakan kembali.
 
 5. Fitur Catatan
-Pengguna yang sudah masuk dapat menulis, menyimpan, mengedit, dan menghapus Catatan pribadi (judul wajib diisi, isi dapat diformat tebal/miring/garis bawah/daftar). Catatan disimpan di server menggunakan enkripsi sederhana sehingga isinya tidak tersimpan sebagai teks polos. Pengguna juga dapat mengekspor Catatan miliknya ke format .txt, .md, atau .docx untuk disimpan di perangkat sendiri. Lihat bagian "Catatan Privasi Data" di bawah untuk penjelasan lebih lanjut soal enkripsi ini.
+Pengguna yang sudah masuk dapat menulis, menyimpan, mengedit, menghapus, menyematkan (pin), dan mengurutkan Catatan pribadi (judul wajib diisi, isi dapat diformat tebal/miring/garis bawah/daftar). Catatan disimpan di server menggunakan enkripsi sederhana sehingga isinya tidak tersimpan sebagai teks polos. Pengguna juga dapat mengekspor Catatan miliknya ke format .txt, .md, atau .docx untuk disimpan di perangkat sendiri.
 
-6. Kewajiban Pengguna
+6. Fitur Kunci Authenticator
+Pengguna yang sudah masuk dapat menyimpan, mengedit, menghapus, dan mengurutkan kunci rahasia TOTP (digunakan untuk generate kode OTP) di dalam aplikasi. Kunci tersebut dienkripsi sebelum disimpan di server sehingga tidak tersimpan sebagai teks polos. Menyimpan kunci bersifat opsional — pengguna tetap dapat menggunakan generator OTP tanpa menyimpan kunci apapun. Pengguna bertanggung jawab penuh atas kunci yang disimpan dan disarankan untuk tidak menyimpan kunci akun-akun yang sangat sensitif di layanan pihak ketiga manapun, termasuk aplikasi ini.
+
+7. Kewajiban Pengguna
 Pengguna dilarang:
 - Menggunakan aplikasi untuk kegiatan yang melanggar hukum.
 - Menyalahgunakan layanan sehingga mengganggu pengguna lain.
 - Mencoba memperoleh akses tanpa izin ke sistem aplikasi.
 - Menyebarkan malware, virus, atau kode berbahaya melalui layanan.
 
-7. Hak Pengembang
+8. Hak Pengembang
 Pengembang berhak:
 - Memperbarui atau menghentikan fitur tertentu.
 - Menangguhkan atau menghapus akun yang terbukti melanggar ketentuan.
 - Melakukan pemeliharaan sistem sewaktu-waktu.
 
-8. Hak Kekayaan Intelektual
+9. Hak Kekayaan Intelektual
 Seluruh hak cipta, desain, logo, ikon, serta konten aplikasi merupakan milik pengembang (DebDev) atau pihak yang memberikan izin penggunaannya.
 Pengguna tidak diperbolehkan menyalin, memodifikasi, atau mendistribusikan bagian aplikasi tanpa izin.
 
-9. Batasan Tanggung Jawab
+10. Batasan Tanggung Jawab
 Aplikasi disediakan sebagaimana adanya.
 Pengembang tidak bertanggung jawab atas kerugian yang timbul akibat penggunaan aplikasi, kehilangan data, gangguan layanan, maupun kesalahan yang berasal dari perangkat atau jaringan pengguna.
 
-10. Perubahan Layanan
+11. Perubahan Layanan
 Fitur dalam aplikasi dapat ditambah, diubah, atau dihapus sewaktu-waktu tanpa pemberitahuan terlebih dahulu.
 
-11. Penghentian Akun
+12. Penghentian Akun
 Pengembang dapat menonaktifkan akun yang melanggar syarat penggunaan atau ketentuan hukum yang berlaku.
 
-12. Perubahan Syarat dan Ketentuan
+13. Perubahan Syarat dan Ketentuan
 Syarat dan Ketentuan ini dapat diperbarui sewaktu-waktu. Versi terbaru akan tersedia di dalam aplikasi.
 
-13. Hukum yang Berlaku
+14. Hukum yang Berlaku
 Syarat dan Ketentuan ini diatur sesuai dengan hukum yang berlaku di Republik Indonesia.
 
 —
@@ -71,7 +74,7 @@ Jika Anda mengajukan klaim promo Canva Pro 1 Hari, email Canva yang Anda masukka
 
 Untuk pengguna yang sudah masuk, aplikasi mencatat fitur mana saja yang Anda klik beserta waktunya, semata-mata untuk keperluan statistik penggunaan aplikasi. Pencatatan ini tidak berlaku untuk pengguna yang belum masuk (tamu).
 
-Jika Anda menggunakan fitur Catatan, judul dan isi catatan Anda dienkripsi (AES-GCM) sebelum dikirim dan disimpan di server, sehingga tidak tersimpan sebagai teks polos. Perlu diketahui: karena aplikasi ini tidak menggunakan password asli, kunci enkripsi diturunkan dari UID publik akun Anda yang tertanam di dalam kode aplikasi — bukan dari rahasia yang hanya Anda ketahui. Enkripsi ini melindungi data Anda dari pihak luar yang mungkin melihat data mentah di server, tapi bukan proteksi tingkat produksi terhadap pengembang aplikasi itu sendiri. Anda dapat mengekspor Catatan ke file .txt, .md, atau .docx kapan saja untuk disimpan sebagai cadangan pribadi di perangkat Anda.
+Jika Anda menggunakan fitur Catatan, judul dan isi catatan Anda dienkripsi (AES-GCM) sebelum dikirim dan disimpan di server, sehingga tidak tersimpan sebagai teks polos. Hal yang sama berlaku untuk kunci TOTP yang Anda simpan di fitur Kunci Authenticator. Perlu diketahui: karena aplikasi ini tidak menggunakan password asli, kunci enkripsi diturunkan dari UID publik akun Anda yang tertanam di dalam kode aplikasi — bukan dari rahasia yang hanya Anda ketahui. Enkripsi ini melindungi data Anda dari pihak luar yang mungkin melihat data mentah di server, tapi bukan proteksi tingkat produksi terhadap pengembang aplikasi itu sendiri. Anda dapat mengekspor Catatan ke file .txt, .md, atau .docx kapan saja untuk disimpan sebagai cadangan pribadi di perangkat Anda.
 
 Sebagian preferensi tampilan (seperti mode terang/gelap) tetap disimpan secara lokal di perangkat (local storage) karena tidak memerlukan sinkronisasi ke akun Anda.
 

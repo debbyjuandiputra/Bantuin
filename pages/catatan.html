@@ -6,6 +6,39 @@
 <title>Bantuin — Catatan</title>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="stylesheet" href="../css/style.css">
+<style>
+.note-item{ touch-action:none; }
+.note-item.pinned{ border-left:3px solid var(--orange); }
+.note-item.dragging{ opacity:.4; }
+.note-item .note-actions{
+  display:flex; gap:8px; margin-top:8px;
+}
+.note-item .note-actions button{
+  flex:0; border:none; background:var(--surface-2); border-radius:8px;
+  padding:5px 10px; font-size:11.5px; font-weight:600; color:var(--text-soft); cursor:pointer;
+}
+.note-item .note-actions button.pin-active{ color:var(--orange); background:rgba(245,137,27,.12); }
+.drag-handle{
+  display:flex; align-items:center; justify-content:center; cursor:grab;
+  padding:0 6px; color:var(--border);
+}
+.drag-handle:active{ cursor:grabbing; }
+.note-row{ display:flex; align-items:flex-start; gap:4px; }
+.note-row .note-item{ flex:1; }
+.section-label{
+  font-size:11.5px; font-weight:700; color:var(--text-soft); padding:10px 0 6px;
+  text-transform:uppercase; letter-spacing:.5px;
+}
+.drop-indicator{
+  height:3px; border-radius:3px; background:var(--orange); margin:2px 0; display:none;
+}
+.drop-indicator.show{ display:block; }
+.btn-add-catatan{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  border:none; border-radius:12px; padding:13px 18px; font-weight:700; font-size:14.5px;
+  width:100%; background:var(--orange); color:#fff; cursor:pointer;
+}
+</style>
 </head>
 <body>
 
@@ -17,9 +50,18 @@
 </div>
 
 <div class="page-body">
-  <button class="btn" onclick="location.href='catatan-editor.html'">+ Tambah Catatan</button>
-
+  <button class="btn-add-catatan" onclick="handleAddNote()">+ Tambah Catatan</button>
   <div id="notesList" style="margin-top:18px"></div>
+</div>
+
+<!-- Modal Login (untuk tamu yang coba akses catatan) -->
+<div class="modal-bg" id="loginNoteModal">
+  <div class="modal-box">
+    <h3>Perlu Login</h3>
+    <p class="desc" style="color:var(--text-soft);font-size:13px;margin-bottom:14px">Silakan login terlebih dahulu untuk menggunakan fitur Catatan.</p>
+    <button class="btn" onclick="location.href='../login.html'">Masuk / Daftar</button>
+    <button class="btn secondary" style="margin-top:10px" onclick="closeLoginNoteModal()">Nanti saja</button>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -31,9 +73,30 @@
 <script>
 applyStoredTheme();
 
-requireAuth(async function(){
-  await loadNotes();
-});
+const currentSession = getSession();
+
+function closeLoginNoteModal(){
+  document.getElementById('loginNoteModal').classList.remove('show');
+}
+
+function handleAddNote(){
+  if(!currentSession){
+    document.getElementById('loginNoteModal').classList.add('show');
+    return;
+  }
+  location.href = 'catatan-editor.html';
+}
+
+// ---- State ----
+let notes = [];       // semua catatan terurut (pinned dulu)
+let dragSrcId = null; // id catatan yang sedang di-drag
+
+if(currentSession){
+  loadNotes();
+} else {
+  document.getElementById('notesList').innerHTML =
+    '<div class="empty-state">Login untuk melihat dan membuat catatan.</div>';
+}
 
 async function loadNotes(){
   const holder = document.getElementById('notesList');
@@ -49,18 +112,141 @@ async function loadNotes(){
     return;
   }
 
-  holder.innerHTML = res.data.map(n => {
-    const plain = htmlToPlainText(n.isi);
-    const snippet = plain.slice(0, 90) + (plain.length > 90 ? '...' : '');
-    const dateLabel = formatStoredWIB(n.updated_at, true);
-    return `
-      <div class="note-item" onclick="location.href='catatan-editor.html?id=${n.id}'">
+  // Pinned dulu, lalu sisanya (sudah diurutkan server berdasarkan urutan)
+  const pinned = res.data.filter(n => n.pin);
+  const regular = res.data.filter(n => !n.pin);
+  notes = [...pinned, ...regular];
+  renderNotes();
+}
+
+function renderNotes(){
+  const holder = document.getElementById('notesList');
+  const pinned = notes.filter(n => n.pin);
+  const regular = notes.filter(n => !n.pin);
+
+  let html = '';
+  if(pinned.length){
+    html += `<div class="section-label">📌 Disematkan</div>`;
+    html += pinned.map(n => noteCard(n)).join('');
+  }
+  if(regular.length){
+    html += `<div class="section-label">Catatan</div>`;
+    html += regular.map(n => noteCard(n)).join('');
+  }
+
+  holder.innerHTML = html;
+  bindDragEvents();
+}
+
+function noteCard(n){
+  const plain = htmlToPlainText(n.isi);
+  const snippet = plain.slice(0, 90) + (plain.length > 90 ? '...' : '');
+  const dateLabel = formatStoredWIB(n.updated_at, true);
+  const pinClass = n.pin ? 'pinned' : '';
+  const pinLabel = n.pin ? '📌 Lepas Pin' : 'Pin';
+  const pinActive = n.pin ? 'pin-active' : '';
+
+  return `
+    <div class="note-row">
+      <div class="drag-handle" draggable="false"
+           onpointerdown="startDrag(event,'${n.id}')" title="Geser untuk mengurutkan">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+      </div>
+      <div class="note-item ${pinClass}" id="note-${n.id}" data-id="${n.id}">
         <b>${escapeHtml(n.judul)}</b>
         <p>${escapeHtml(snippet) || '(kosong)'}</p>
         <span>Diperbarui ${dateLabel}</span>
-      </div>`;
-  }).join('');
+        <div class="note-actions">
+          <button class="${pinActive}" onclick="togglePin('${n.id}')">${pinLabel}</button>
+          <button onclick="location.href='catatan-editor.html?id=${n.id}'">Edit</button>
+        </div>
+      </div>
+    </div>
+    <div class="drop-indicator" id="drop-${n.id}"></div>`;
 }
+
+// ---- Pin ----
+async function togglePin(id){
+  const note = notes.find(n => String(n.id) === String(id));
+  if(!note) return;
+  const res = await updateNotePin(id, !note.pin);
+  if(res.ok){
+    note.pin = !note.pin;
+    // Re-sort: pinned dulu
+    const pinned = notes.filter(n => n.pin);
+    const regular = notes.filter(n => !n.pin);
+    notes = [...pinned, ...regular];
+    renderNotes();
+    showToast(note.pin ? 'Catatan disematkan' : 'Pin dilepas');
+  } else {
+    showToast(res.msg || 'Gagal mengubah pin');
+  }
+}
+
+// ---- Drag to reorder (pointer events, touch-friendly) ----
+let dragNote = null;
+let dragOverId = null;
+let dragStartY = 0;
+
+function startDrag(e, id){
+  e.preventDefault();
+  dragSrcId = String(id);
+  dragNote = document.getElementById('note-' + id);
+  if(dragNote) dragNote.classList.add('dragging');
+  dragStartY = e.clientY;
+
+  document.addEventListener('pointermove', onDragMove);
+  document.addEventListener('pointerup', onDragEnd);
+}
+
+function onDragMove(e){
+  if(!dragSrcId) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const targetCard = el ? el.closest('[data-id]') : null;
+
+  // Sembunyikan semua indikator
+  document.querySelectorAll('.drop-indicator').forEach(d => d.classList.remove('show'));
+
+  if(targetCard){
+    const tid = targetCard.getAttribute('data-id');
+    if(tid && tid !== dragSrcId){
+      dragOverId = tid;
+      const indicator = document.getElementById('drop-' + tid);
+      if(indicator) indicator.classList.add('show');
+    }
+  }
+}
+
+function onDragEnd(){
+  document.removeEventListener('pointermove', onDragMove);
+  document.removeEventListener('pointerup', onDragEnd);
+
+  if(dragNote) dragNote.classList.remove('dragging');
+  document.querySelectorAll('.drop-indicator').forEach(d => d.classList.remove('show'));
+
+  if(dragSrcId && dragOverId && dragSrcId !== dragOverId){
+    reorderNotes(dragSrcId, dragOverId);
+  }
+  dragSrcId = null;
+  dragOverId = null;
+  dragNote = null;
+}
+
+async function reorderNotes(fromId, afterId){
+  const fromIdx = notes.findIndex(n => String(n.id) === fromId);
+  const toIdx   = notes.findIndex(n => String(n.id) === afterId);
+  if(fromIdx === -1 || toIdx === -1) return;
+
+  const moved = notes.splice(fromIdx, 1)[0];
+  const insertAt = notes.findIndex(n => String(n.id) === afterId);
+  notes.splice(insertAt + 1, 0, moved);
+
+  renderNotes();
+  // Simpan urutan baru ke DB
+  await saveNoteOrder(notes.map(n => n.id));
+}
+
+function bindDragEvents(){ /* drag sudah pakai pointer events — tidak perlu tambahan */ }
 </script>
 </body>
 </html>

@@ -83,11 +83,34 @@ create table if not exists public.catatan (
   user_id integer not null references public.users(user_id),
   judul text not null,                  -- terenkripsi AES-GCM (lihat js/crypto.js)
   isi text,                             -- terenkripsi AES-GCM, berisi HTML hasil editor
+  pin boolean not null default false,   -- catatan disematkan tampil di atas
+  urutan integer not null default 0,    -- urutan tampil (semakin kecil = semakin atas)
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 create index if not exists catatan_user_id_idx on public.catatan(user_id);
+```
+
+-- Jika tabel sudah ada dari setup sebelumnya, jalankan ALTER ini untuk menambah kolom baru:
+```sql
+alter table public.catatan add column if not exists pin boolean not null default false;
+alter table public.catatan add column if not exists urutan integer not null default 0;
+```
+
+## 3c. Buat tabel `auth_keys` (kunci Authenticator tersimpan)
+
+```sql
+create table if not exists public.auth_keys (
+  id bigint generated always as identity primary key,
+  user_id integer not null references public.users(user_id),
+  judul text not null,                  -- label/nama kunci (teks biasa, deskriptif)
+  kunci text not null,                  -- kunci TOTP terenkripsi AES-GCM
+  urutan integer not null default 0,    -- urutan tampil
+  created_at timestamptz not null default now()
+);
+
+create index if not exists auth_keys_user_id_idx on public.auth_keys(user_id);
 ```
 
 > **Kenapa dienkripsi, bukan di-hash?** Hash itu satu arah — cocok untuk
@@ -161,6 +184,17 @@ alter table public.catatan enable row level security;
 -- (js/crypto.js), bukan di RLS ini.
 create policy "Siapa saja boleh kelola catatan"
   on public.catatan for all
+  to anon
+  using (true)
+  with check (true);
+
+-- ---------- auth_keys ----------
+alter table public.auth_keys enable row level security;
+
+-- Proteksi data aktual ada di enkripsi (js/crypto.js + js/auth-keys.js),
+-- bukan di RLS ini. Semua query auth_keys selalu memfilter .eq('user_id').
+create policy "Siapa saja boleh kelola kunci authenticator"
+  on public.auth_keys for all
   to anon
   using (true)
   with check (true);
