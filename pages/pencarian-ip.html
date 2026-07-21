@@ -32,6 +32,30 @@
 }
 .my-ip-btn:active{ border-color:var(--orange); color:var(--orange); }
 .flag{ font-size:26px; margin-bottom:4px; display:block; }
+.section-title{
+  font-size:13px; font-weight:800; color:var(--text); margin:20px 0 8px;
+  display:flex; align-items:center; gap:6px;
+}
+.section-title:first-of-type{ margin-top:0; }
+.note-box{
+  font-size:12px; color:var(--text-soft); background:var(--surface-2);
+  padding:10px 12px; border-radius:10px; margin-top:10px; line-height:1.5;
+}
+.badge{
+  display:inline-block; padding:3px 10px; border-radius:99px; font-size:11.5px; font-weight:700;
+}
+.badge.yes{ background:rgba(220,38,38,.12); color:#dc2626; }
+.badge.no{ background:rgba(34,197,94,.12); color:#16a34a; }
+.badge.unknown{ background:rgba(148,163,184,.15); color:var(--text-soft); }
+.dns-block{ margin-top:4px; }
+.dns-row{
+  display:flex; gap:10px; padding:8px 2px; border-bottom:1px solid var(--border);
+  font-size:12.5px; align-items:baseline;
+}
+.dns-row:last-child{ border-bottom:none; }
+.dns-type{ font-weight:800; color:var(--orange); width:52px; flex-shrink:0; }
+.dns-val{ word-break:break-all; color:var(--text); }
+.dns-empty{ color:var(--text-soft); font-size:12px; padding:6px 2px; }
 </style>
 </head>
 <body>
@@ -62,8 +86,10 @@
       <span class="flag" id="rFlag">🌐</span>
       <div style="font-size:18px;font-weight:700;font-family:monospace" id="rIp">—</div>
       <div style="font-size:13px;color:var(--text-soft);margin-top:2px" id="rOrg">—</div>
+      <button class="my-ip-btn" style="margin-top:12px" onclick="copyResultAsJson()">Salin sebagai JSON</button>
     </div>
 
+    <div class="section-title">Informasi Lokasi Perkiraan</div>
     <div class="ip-grid">
       <div class="ip-field full">
         <div class="lbl">Alamat IP</div>
@@ -72,61 +98,66 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
       </div>
-      <div class="ip-field">
-        <div class="lbl">Negara</div>
-        <div class="val" id="fCountry">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Kode Negara</div>
-        <div class="val" id="fCountryCode">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Wilayah / State</div>
-        <div class="val" id="fRegion">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Kota</div>
-        <div class="val" id="fCity">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Kode Pos</div>
-        <div class="val" id="fPostal">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Zona Waktu</div>
-        <div class="val" id="fTimezone">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Latitude</div>
-        <div class="val" id="fLat">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Longitude</div>
-        <div class="val" id="fLon">—</div>
-      </div>
-      <div class="ip-field full">
-        <div class="lbl">Organisasi / ISP</div>
-        <div class="val" id="fOrg">—</div>
-      </div>
-      <div class="ip-field full">
-        <div class="lbl">ASN</div>
-        <div class="val" id="fAsn">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Tipe Koneksi</div>
-        <div class="val" id="fConnType">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Bahasa</div>
-        <div class="val" id="fLanguages">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Mata Uang</div>
-        <div class="val" id="fCurrency">—</div>
-      </div>
-      <div class="ip-field">
-        <div class="lbl">Hosting / Proxy</div>
-        <div class="val" id="fHosting">—</div>
+      <div class="ip-field"><div class="lbl">Benua</div><div class="val" id="fContinent">—</div></div>
+      <div class="ip-field"><div class="lbl">Negara</div><div class="val" id="fCountry">—</div></div>
+      <div class="ip-field"><div class="lbl">Kode Negara</div><div class="val" id="fCountryCode">—</div></div>
+      <div class="ip-field"><div class="lbl">Wilayah / State</div><div class="val" id="fRegion">—</div></div>
+      <div class="ip-field"><div class="lbl">Kota</div><div class="val" id="fCity">—</div></div>
+      <div class="ip-field"><div class="lbl">Kode Pos</div><div class="val" id="fPostal">—</div></div>
+      <div class="ip-field"><div class="lbl">Zona Waktu</div><div class="val" id="fTimezone">—</div></div>
+      <div class="ip-field"><div class="lbl">Latitude</div><div class="val" id="fLat">—</div></div>
+      <div class="ip-field"><div class="lbl">Longitude</div><div class="val" id="fLon">—</div></div>
+      <div class="ip-field full"><div class="lbl">Mata Uang</div><div class="val" id="fCurrency">—</div></div>
+    </div>
+    <div class="note-box">⚠️ Lokasi IP biasanya hanya perkiraan berbasis database geolokasi, bukan alamat rumah yang akurat.</div>
+
+    <div class="section-title">Informasi Jaringan</div>
+    <div class="ip-grid">
+      <div class="ip-field"><div class="lbl">Tipe IP</div><div class="val" id="fIpType">—</div></div>
+      <div class="ip-field"><div class="lbl">ASN</div><div class="val" id="fAsn">—</div></div>
+      <div class="ip-field full"><div class="lbl">Organisasi</div><div class="val" id="fOrg">—</div></div>
+      <div class="ip-field full"><div class="lbl">ISP</div><div class="val" id="fIsp">—</div></div>
+      <div class="ip-field full"><div class="lbl">Domain Terkait (PTR)</div><div class="val" id="fPtrDomain">—</div></div>
+      <div class="ip-field full"><div class="lbl">Reverse DNS / Hostname</div><div class="val" id="fReverse">—</div></div>
+    </div>
+
+    <div class="section-title">Informasi ISP / Organisasi (WHOIS)</div>
+    <div class="ip-grid">
+      <div class="ip-field full"><div class="lbl">Nama Jaringan</div><div class="val" id="fNetName">—</div></div>
+      <div class="ip-field full"><div class="lbl">CIDR / Range IP</div><div class="val" id="fCidr">—</div></div>
+      <div class="ip-field"><div class="lbl">Handle</div><div class="val" id="fHandle">—</div></div>
+      <div class="ip-field"><div class="lbl">Registry (RIR)</div><div class="val" id="fRegistry">—</div></div>
+      <div class="ip-field"><div class="lbl">Negara Registrasi</div><div class="val" id="fRegCountry">—</div></div>
+      <div class="ip-field"><div class="lbl">Tanggal Registrasi</div><div class="val" id="fRegDate">—</div></div>
+      <div class="ip-field full"><div class="lbl">Status Alokasi</div><div class="val" id="fRegStatus">—</div></div>
+    </div>
+
+    <div class="section-title">Informasi Keamanan</div>
+    <div class="ip-grid">
+      <div class="ip-field"><div class="lbl">VPN</div><div class="val" id="fVpn">—</div></div>
+      <div class="ip-field"><div class="lbl">Proxy</div><div class="val" id="fProxy">—</div></div>
+      <div class="ip-field"><div class="lbl">Tor Exit Node</div><div class="val" id="fTor">—</div></div>
+      <div class="ip-field"><div class="lbl">Hosting / Datacenter</div><div class="val" id="fHosting">—</div></div>
+      <div class="ip-field full"><div class="lbl">Anonymous (Terdeteksi Menyembunyikan Identitas)</div><div class="val" id="fAnon">—</div></div>
+    </div>
+
+    <div class="section-title">Informasi Koneksi</div>
+    <div class="ip-grid">
+      <div class="ip-field"><div class="lbl">Tipe Koneksi</div><div class="val" id="fConnType">—</div></div>
+      <div class="ip-field"><div class="lbl">Mobile</div><div class="val" id="fMobile">—</div></div>
+    </div>
+
+    <div class="section-title">Informasi Routing</div>
+    <div class="ip-grid">
+      <div class="ip-field"><div class="lbl">Origin ASN</div><div class="val" id="fAsn2">—</div></div>
+      <div class="ip-field full"><div class="lbl">ASN Organisasi</div><div class="val" id="fAsnOrg">—</div></div>
+      <div class="ip-field full"><div class="lbl">BGP Prefix / CIDR</div><div class="val" id="fCidr2">—</div></div>
+    </div>
+
+    <div id="dnsSection" class="hidden">
+      <div class="section-title">DNS Record Domain</div>
+      <div class="card" style="background:var(--surface-2);padding:12px 14px">
+        <div class="dns-block" id="dnsList"></div>
       </div>
     </div>
 
@@ -137,9 +168,12 @@
   </div>
 </div>
 
+<script src="../js/store.js"></script>
 <script src="../js/util.js"></script>
 <script>
 applyStoredTheme();
+
+let lastResultJson = null;
 
 async function lookupIp(){
   const raw = document.getElementById('ipInput').value.trim();
@@ -151,21 +185,42 @@ async function lookupIp(){
   btn.disabled = true; btn.textContent = 'Mencari...';
 
   try{
-    // ipapi.co — gratis, tanpa key, 1000 req/hari
-    const res = await fetch(`https://ipapi.co/${encodeURIComponent(raw)}/json/`);
+    // ipwho.is hanya menerima alamat IP, bukan nama domain.
+    // Kalau input bukan IP, resolve dulu ke IP lewat Google DNS-over-HTTPS.
+    let target = raw;
+    if(!isIpAddress(raw)){
+      target = await resolveDomain(raw);
+      if(!target){ msg.textContent = 'Domain tidak ditemukan / gagal di-resolve.'; return; }
+    }
+
+    // ipwho.is — gratis, tanpa key, CORS-friendly (lokasi, koneksi, currency, keamanan VPN/proxy/tor/hosting)
+    const res = await fetch(`https://ipwho.is/${encodeURIComponent(target)}`);
     if(!res.ok) throw new Error('Gagal menghubungi server.');
     const d = await res.json();
 
-    if(d.error){ msg.textContent = d.reason || 'IP atau domain tidak ditemukan.'; return; }
+    if(d.success === false){ msg.textContent = d.message || 'IP atau domain tidak ditemukan.'; return; }
 
-    // Coba enrichment tambahan via ip-api.com (gratis, no-key)
+    // Enrichment: reverse DNS / hostname & tipe koneksi via ip-api.com (gratis, no-key)
     let extra = {};
     try{
-      const r2 = await fetch(`https://ip-api.com/json/${encodeURIComponent(d.ip)}?fields=status,mobile,proxy,hosting,as,isp,connectionType`);
+      const r2 = await fetch(`https://ip-api.com/json/${encodeURIComponent(d.ip)}?fields=status,mobile,proxy,hosting,connectionType,reverse`);
       if(r2.ok){ extra = await r2.json(); }
     }catch(_){}
 
-    displayResult(d, extra);
+    // Enrichment: data WHOIS/network via RDAP (gratis, no-key, otomatis diarahkan ke RIR yang benar)
+    let rdap = null;
+    try{
+      const r3 = await fetch(`https://rdap.org/ip/${encodeURIComponent(d.ip)}`);
+      if(r3.ok){ rdap = await r3.json(); }
+    }catch(_){}
+
+    // Kalau input berupa domain, ambil juga daftar DNS record lengkap
+    let dnsRecords = null;
+    if(!isIpAddress(raw)){
+      dnsRecords = await fetchDnsRecords(raw.replace(/^https?:\/\//i,'').split('/')[0]);
+    }
+
+    displayResult(d, extra, raw, rdap, dnsRecords);
   }catch(err){
     msg.textContent = 'Terjadi kesalahan: ' + err.message;
   }finally{
@@ -173,11 +228,62 @@ async function lookupIp(){
   }
 }
 
+function isIpAddress(str){
+  const ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/;
+  const ipv6 = /^[0-9a-fA-F:]+:[0-9a-fA-F:]+$/;
+  return ipv4.test(str) || ipv6.test(str);
+}
+
+async function resolveDomain(host){
+  // Bersihkan kalau user tempel URL lengkap (https://... atau ada /path)
+  const clean = host.replace(/^https?:\/\//i, '').split('/')[0];
+
+  // Coba beberapa resolver DoH secara berurutan (Google dulu, lalu Cloudflare sebagai cadangan)
+  const resolvers = [
+    { url: `https://dns.google/resolve?name=${encodeURIComponent(clean)}&type=A`, headers: {} },
+    { url: `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(clean)}&type=A`, headers: { 'Accept': 'application/dns-json' } }
+  ];
+
+  for(const r of resolvers){
+    try{
+      const res = await fetch(r.url, { headers: r.headers });
+      if(!res.ok) continue;
+      const data = await res.json();
+      // Answer bisa berisi rantai CNAME diikuti record A — ambil record A pertama yang ada
+      const a = (data.Answer || []).find(rec => rec.type === 1);
+      if(a) return a.data;
+    }catch(_){ /* coba resolver berikutnya */ }
+  }
+  return null;
+}
+
+async function dohQuery(name, type){
+  try{
+    const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(name)}&type=${type}`);
+    if(!res.ok) return [];
+    const data = await res.json();
+    return (data.Answer || []).filter(rec => rec.type === RR_TYPE[type]).map(rec => rec.data);
+  }catch(_){
+    return [];
+  }
+}
+
+const RR_TYPE = { A:1, NS:2, CNAME:5, SOA:6, MX:15, TXT:16, AAAA:28 };
+
+async function fetchDnsRecords(domain){
+  const types = ['A','AAAA','CNAME','MX','NS','TXT','SOA'];
+  const results = {};
+  await Promise.all(types.map(async t => {
+    results[t] = await dohQuery(domain, t);
+  }));
+  return results;
+}
+
 async function useMyIp(){
   document.getElementById('ipInput').value = '';
   document.getElementById('ipMsg').textContent = '';
   try{
-    const r = await fetch('https://ipapi.co/json/');
+    const r = await fetch('https://ipwho.is/');
     const d = await r.json();
     if(d.ip) document.getElementById('ipInput').value = d.ip;
     lookupIp();
@@ -186,41 +292,140 @@ async function useMyIp(){
   }
 }
 
-function displayResult(d, ex){
-  // Header
-  document.getElementById('rIp').textContent  = d.ip || '—';
-  document.getElementById('rOrg').textContent = d.org || d.asn || '—';
+function displayResult(d, ex, originalInput, rdap, dnsRecords){
+  const conn = d.connection || {};
+  const tz = d.timezone || {};
+  const cur = d.currency || {};
+  const sec = d.security || {};
 
-  // Bendera emoji dari kode negara
+  // Header
+  const isDomainSearch = originalInput && !isIpAddress(originalInput);
+  document.getElementById('rIp').textContent  = isDomainSearch ? `${originalInput} → ${d.ip}` : (d.ip || '—');
+  document.getElementById('rOrg').textContent = conn.isp || conn.org || '—';
+
+  // Bendera emoji (sudah disediakan langsung oleh ipwho.is)
   const cc = (d.country_code || '').toUpperCase();
-  const flag = cc.length === 2
-    ? String.fromCodePoint(...[...cc].map(c => 0x1F1E0 - 65 + c.charCodeAt(0)))
-    : '🌐';
+  const flag = (d.flag && d.flag.emoji) ? d.flag.emoji
+    : (cc.length === 2 ? String.fromCodePoint(...[...cc].map(c => 0x1F1E0 - 65 + c.charCodeAt(0))) : '🌐');
   document.getElementById('rFlag').textContent = flag;
 
+  // 🌍 Lokasi
   set('fIp',         d.ip || '—');
-  set('fCountry',    d.country_name || '—');
+  set('fContinent',  d.continent || '—');
+  set('fCountry',    d.country || '—');
   set('fCountryCode',cc || '—');
   set('fRegion',     [d.region, d.region_code].filter(Boolean).join(' · ') || '—');
   set('fCity',       d.city || '—');
   set('fPostal',     d.postal || '—');
-  set('fTimezone',   d.timezone || '—');
+  set('fTimezone',   tz.id || '—');
   set('fLat',        d.latitude != null ? d.latitude : '—');
   set('fLon',        d.longitude != null ? d.longitude : '—');
-  set('fOrg',        d.org || '—');
-  set('fAsn',        d.asn || (ex.as || '—'));
-  set('fLanguages',  d.languages || '—');
-  set('fCurrency',   d.currency_name ? `${d.currency_name} (${d.currency})` : '—');
+  set('fCurrency',   cur.name ? `${cur.name} (${cur.code || ''})` : '—');
 
-  // Data dari ip-api.com
-  const connType = ex.connectionType || (ex.mobile ? 'Mobile' : '—');
+  // 🌐 Jaringan
+  set('fIpType',    d.type || (d.ip && d.ip.includes(':') ? 'IPv6' : 'IPv4'));
+  set('fAsn',       conn.asn ? `AS${conn.asn}` : '—');
+  set('fOrg',       conn.org || '—');
+  set('fIsp',       conn.isp || (ex.isp || '—'));
+  set('fPtrDomain', conn.domain || '—');
+  set('fReverse',   ex.reverse || '—');
+
+  // 🏢 WHOIS / RDAP
+  if(rdap){
+    set('fNetName',  rdap.name || '—');
+    const cidrs = (rdap.cidr0_cidrs || []).map(c => `${c.v4prefix || c.v6prefix}/${c.length}`).join(', ');
+    const range = rdap.startAddress && rdap.endAddress ? `${rdap.startAddress} – ${rdap.endAddress}` : '';
+    set('fCidr',     cidrs || range || '—');
+    set('fCidr2',    cidrs || range || '—');
+    set('fHandle',   rdap.handle || '—');
+    set('fRegistry', rdap.port43 || rdap.name || '—');
+    set('fRegCountry', rdap.country || cc || '—');
+    const regEvent = (rdap.events || []).find(ev => ev.eventAction === 'registration') || (rdap.events || [])[0];
+    set('fRegDate',  regEvent ? formatSimpleDate(regEvent.eventDate) : '—');
+    set('fRegStatus', (rdap.status || []).join(', ') || '—');
+  } else {
+    ['fNetName','fCidr','fCidr2','fHandle','fRegistry','fRegCountry','fRegDate','fRegStatus'].forEach(id => set(id, 'Tidak tersedia'));
+  }
+  set('fAsn2',     conn.asn ? `AS${conn.asn}` : '—');
+  set('fAsnOrg',   conn.org || '—');
+
+  // 🔒 Keamanan (langsung dari ipwho.is security block)
+  setBadge('fVpn',   sec.vpn);
+  setBadge('fProxy', sec.proxy);
+  setBadge('fTor',   sec.tor);
+  setBadge('fHosting', sec.hosting);
+  setBadge('fAnon',  sec.anonymous);
+
+  // 📡 Koneksi
+  const connType = ex.connectionType || conn.type || '—';
   set('fConnType', connType);
+  setBadge('fMobile', ex.mobile === true);
 
-  const hostingParts = [];
-  if(ex.proxy === true)   hostingParts.push('Proxy');
-  if(ex.hosting === true) hostingParts.push('Hosting / Datacenter');
-  if(ex.mobile === true)  hostingParts.push('Mobile');
-  set('fHosting', hostingParts.length ? hostingParts.join(', ') : 'Tidak terdeteksi');
+  // 🖥️ DNS Records (kalau input berupa domain)
+  const dnsSection = document.getElementById('dnsSection');
+  if(dnsRecords){
+    renderDnsRecords(dnsRecords);
+    dnsSection.classList.remove('hidden');
+  } else {
+    dnsSection.classList.add('hidden');
+  }
+
+  // Simpan struktur lengkap untuk tombol "Salin sebagai JSON"
+  lastResultJson = {
+    input: originalInput,
+    lokasi: {
+      alamat_ip: d.ip || null,
+      benua: d.continent || null,
+      negara: d.country || null,
+      kode_negara: cc || null,
+      wilayah: d.region || null,
+      kode_wilayah: d.region_code || null,
+      kota: d.city || null,
+      kode_pos: d.postal || null,
+      zona_waktu: tz.id || null,
+      latitude: d.latitude != null ? d.latitude : null,
+      longitude: d.longitude != null ? d.longitude : null,
+      mata_uang: cur.name ? { nama: cur.name, kode: cur.code || null } : null
+    },
+    jaringan: {
+      tipe_ip: d.type || (d.ip && d.ip.includes(':') ? 'IPv6' : 'IPv4'),
+      asn: conn.asn ? `AS${conn.asn}` : null,
+      organisasi: conn.org || null,
+      isp: conn.isp || ex.isp || null,
+      domain_terkait: conn.domain || null,
+      reverse_dns: ex.reverse || null
+    },
+    whois: rdap ? {
+      nama_jaringan: rdap.name || null,
+      cidr: (rdap.cidr0_cidrs || []).map(c => `${c.v4prefix || c.v6prefix}/${c.length}`).join(', ') || null,
+      range_ip: rdap.startAddress && rdap.endAddress ? `${rdap.startAddress} - ${rdap.endAddress}` : null,
+      handle: rdap.handle || null,
+      registry: rdap.port43 || rdap.name || null,
+      negara_registrasi: rdap.country || cc || null,
+      tanggal_registrasi: (() => {
+        const ev = (rdap.events || []).find(e => e.eventAction === 'registration') || (rdap.events || [])[0];
+        return ev ? ev.eventDate : null;
+      })(),
+      status: rdap.status || []
+    } : null,
+    keamanan: {
+      vpn: sec.vpn ?? null,
+      proxy: sec.proxy ?? null,
+      tor: sec.tor ?? null,
+      hosting: sec.hosting ?? null,
+      anonymous: sec.anonymous ?? null
+    },
+    koneksi: {
+      tipe_koneksi: ex.connectionType || conn.type || null,
+      mobile: ex.mobile === true
+    },
+    routing: {
+      origin_asn: conn.asn ? `AS${conn.asn}` : null,
+      asn_organisasi: conn.org || null,
+      cidr: (rdap && rdap.cidr0_cidrs) ? rdap.cidr0_cidrs.map(c => `${c.v4prefix || c.v6prefix}/${c.length}`).join(', ') : null
+    },
+    dns_records: dnsRecords || null
+  };
 
   // Peta
   if(d.latitude != null && d.longitude != null){
@@ -234,7 +439,48 @@ function displayResult(d, ex){
   document.getElementById('resultCard').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
+function setBadge(id, value){
+  const el = document.getElementById(id);
+  if(value === true){ el.innerHTML = '<span class="badge yes">Ya</span>'; }
+  else if(value === false){ el.innerHTML = '<span class="badge no">Tidak</span>'; }
+  else{ el.innerHTML = '<span class="badge unknown">Tidak diketahui</span>'; }
+}
+
+function formatSimpleDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' });
+}
+
+function renderDnsRecords(records){
+  const order = ['A','AAAA','CNAME','MX','NS','TXT','SOA'];
+  const list = document.getElementById('dnsList');
+  const rows = [];
+  order.forEach(type => {
+    const values = records[type] || [];
+    if(!values.length) return;
+    values.forEach(v => {
+      rows.push(`<div class="dns-row"><div class="dns-type">${type}</div><div class="dns-val">${escapeHtml(v)}</div></div>`);
+    });
+  });
+  list.innerHTML = rows.length ? rows.join('') : '<div class="dns-empty">Tidak ada record ditemukan.</div>';
+}
+
 function set(id, val){ document.getElementById(id).textContent = val; }
+
+function copyResultAsJson(){
+  if(!lastResultJson){ showToast('Belum ada hasil untuk disalin.'); return; }
+  const text = JSON.stringify(lastResultJson, null, 2);
+  navigator.clipboard.writeText(text).then(function(){
+    showToast('JSON disalin!');
+  }).catch(function(){
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('JSON disalin!');
+  });
+}
 
 function copyVal(id){
   const t = document.getElementById(id).textContent;
