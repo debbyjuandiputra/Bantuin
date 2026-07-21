@@ -36,7 +36,9 @@ const ICONS = {
   bg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
   uuid: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>`,
   auth: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`,
-  notes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>`
+  notes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>`,
+  palette: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="7" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="10" r="1.5" fill="currentColor" stroke="none"/><path d="M12 22c-2 0-4-2-4-4 0-1 1-2 4-2 3 0 4 1 4 2 0 2-2 4-4 4z"/></svg>`,
+  globe:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`
 };
 
 const FEATURES = [
@@ -49,6 +51,8 @@ const FEATURES = [
   { id:'kalkulator-statistik', title:'Statistik', desc:'Mean, median, modus & lebih', cat:['perhitungan'], icon:ICONS.stats, active:true, page:'pages/statistik.html' },
   { id:'uuid-generator', title:'UUID Generator', desc:'Buat ID unik instan', cat:['programming'], icon:ICONS.uuid, active:true, page:'pages/uuid-generator.html' },
   { id:'authenticator', title:'Generate Kode Authenticator', desc:'Kode OTP 2FA', cat:['programming'], icon:ICONS.auth, active:true, page:'pages/authenticator.html' },
+  { id:'cek-palet-warna', title:'Cek Palet Warna', desc:'Ekstrak 10 warna dominan dari gambar', cat:['perhitungan'], icon:ICONS.palette, active:true, page:'pages/cek-palet-warna.html' },
+  { id:'pencarian-ip', title:'Pencarian IP', desc:'Lokasi & info detail suatu IP/domain', cat:['lainnya'], icon:ICONS.globe, active:true, page:'pages/pencarian-ip.html' },
   { id:'aplikasi-premium', title:'Aplikasi Premium', desc:'CapCut Pro, Canva Pro & Zoom Pro', cat:['lainnya'], icon:ICONS.premium, active:true, page:'pages/aplikasi-premium.html' },
   // ---- SEGERA HADIR ----
   { id:'scan-dokumen', title:'Scan Dokumen', desc:'Segera hadir', cat:['dokumen'], icon:ICONS.scan, active:false },
@@ -164,7 +168,7 @@ function closeKontakModal(){ document.getElementById('kontakModal').classList.re
 function closeLoginPromoModal(){ document.getElementById('loginPromoModal').classList.remove('show'); }
 
 // ---------------- Modal Apa yang Baru (tampil sekali per perangkat) ----------------
-const WHATSNEW_KEY = 'bantuin_whatsnew_seen_v3';
+const WHATSNEW_KEY = 'bantuin_whatsnew_seen_v4';
 
 function closeWhatsNewModal(){
   document.getElementById('whatsNewModal').classList.remove('show');

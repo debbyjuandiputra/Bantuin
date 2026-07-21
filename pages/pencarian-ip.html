@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Bantuin — Pencarian IP</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.ip-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px;
+}
+.ip-field{
+  background:var(--surface-2); border-radius:12px; padding:12px 14px; position:relative;
+}
+.ip-field .lbl{ font-size:11px; font-weight:700; color:var(--text-soft); text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; }
+.ip-field .val{ font-size:13.5px; font-weight:600; color:var(--text); word-break:break-all; }
+.ip-field .copy-small{
+  position:absolute; top:10px; right:10px; background:none; border:none;
+  color:var(--text-soft); cursor:pointer; padding:2px; line-height:1;
+}
+.ip-field .copy-small:active{ color:var(--orange); }
+.ip-field.full{ grid-column:1/-1; }
+.map-link{
+  display:flex; align-items:center; gap:8px; padding:12px 14px;
+  background:var(--surface-2); border-radius:12px; font-size:13.5px; font-weight:600;
+  color:var(--orange); text-decoration:none; margin-top:10px;
+}
+.my-ip-btn{
+  background:none; border:1px solid var(--border); border-radius:10px; padding:8px 14px;
+  font-size:12px; font-weight:600; color:var(--text-soft); cursor:pointer; white-space:nowrap;
+}
+.my-ip-btn:active{ border-color:var(--orange); color:var(--orange); }
+.flag{ font-size:26px; margin-bottom:4px; display:block; }
+</style>
+</head>
+<body>
+<div class="page-head">
+  <button class="back-btn" onclick="history.back()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Pencarian IP</h2>
+</div>
+
+<div class="page-body">
+  <div class="card">
+    <div class="field">
+      <label>Alamat IP atau Domain</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="ipInput" placeholder="Contoh: 8.8.8.8 atau google.com"
+               style="flex:1" autocomplete="off" autocorrect="off" spellcheck="false"
+               onkeydown="if(event.key==='Enter')lookupIp()">
+        <button class="my-ip-btn" onclick="useMyIp()">IP Saya</button>
+      </div>
+    </div>
+    <button class="btn" onclick="lookupIp()" id="lookupBtn">Cari</button>
+    <div class="form-msg" id="ipMsg"></div>
+  </div>
+
+  <div class="card hidden" id="resultCard">
+    <div style="text-align:center;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px">
+      <span class="flag" id="rFlag">🌐</span>
+      <div style="font-size:18px;font-weight:700;font-family:monospace" id="rIp">—</div>
+      <div style="font-size:13px;color:var(--text-soft);margin-top:2px" id="rOrg">—</div>
+    </div>
+
+    <div class="ip-grid">
+      <div class="ip-field full">
+        <div class="lbl">Alamat IP</div>
+        <div class="val" id="fIp">—</div>
+        <button class="copy-small" onclick="copyVal('fIp')" title="Salin">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Negara</div>
+        <div class="val" id="fCountry">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Kode Negara</div>
+        <div class="val" id="fCountryCode">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Wilayah / State</div>
+        <div class="val" id="fRegion">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Kota</div>
+        <div class="val" id="fCity">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Kode Pos</div>
+        <div class="val" id="fPostal">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Zona Waktu</div>
+        <div class="val" id="fTimezone">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Latitude</div>
+        <div class="val" id="fLat">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Longitude</div>
+        <div class="val" id="fLon">—</div>
+      </div>
+      <div class="ip-field full">
+        <div class="lbl">Organisasi / ISP</div>
+        <div class="val" id="fOrg">—</div>
+      </div>
+      <div class="ip-field full">
+        <div class="lbl">ASN</div>
+        <div class="val" id="fAsn">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Tipe Koneksi</div>
+        <div class="val" id="fConnType">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Bahasa</div>
+        <div class="val" id="fLanguages">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Mata Uang</div>
+        <div class="val" id="fCurrency">—</div>
+      </div>
+      <div class="ip-field">
+        <div class="lbl">Hosting / Proxy</div>
+        <div class="val" id="fHosting">—</div>
+      </div>
+    </div>
+
+    <a id="mapLink" class="map-link hidden" href="#" target="_blank" rel="noopener">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Lihat di Peta
+    </a>
+  </div>
+</div>
+
+<script src="../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+async function lookupIp(){
+  const raw = document.getElementById('ipInput').value.trim();
+  const msg = document.getElementById('ipMsg');
+  const btn = document.getElementById('lookupBtn');
+  msg.textContent = '';
+  if(!raw){ msg.textContent = 'Masukkan alamat IP atau domain terlebih dahulu.'; return; }
+
+  btn.disabled = true; btn.textContent = 'Mencari...';
+
+  try{
+    // ipapi.co — gratis, tanpa key, 1000 req/hari
+    const res = await fetch(`https://ipapi.co/${encodeURIComponent(raw)}/json/`);
+    if(!res.ok) throw new Error('Gagal menghubungi server.');
+    const d = await res.json();
+
+    if(d.error){ msg.textContent = d.reason || 'IP atau domain tidak ditemukan.'; return; }
+
+    // Coba enrichment tambahan via ip-api.com (gratis, no-key)
+    let extra = {};
+    try{
+      const r2 = await fetch(`https://ip-api.com/json/${encodeURIComponent(d.ip)}?fields=status,mobile,proxy,hosting,as,isp,connectionType`);
+      if(r2.ok){ extra = await r2.json(); }
+    }catch(_){}
+
+    displayResult(d, extra);
+  }catch(err){
+    msg.textContent = 'Terjadi kesalahan: ' + err.message;
+  }finally{
+    btn.disabled = false; btn.textContent = 'Cari';
+  }
+}
+
+async function useMyIp(){
+  document.getElementById('ipInput').value = '';
+  document.getElementById('ipMsg').textContent = '';
+  try{
+    const r = await fetch('https://ipapi.co/json/');
+    const d = await r.json();
+    if(d.ip) document.getElementById('ipInput').value = d.ip;
+    lookupIp();
+  }catch(_){
+    document.getElementById('ipMsg').textContent = 'Gagal mendapatkan IP Anda.';
+  }
+}
+
+function displayResult(d, ex){
+  // Header
+  document.getElementById('rIp').textContent  = d.ip || '—';
+  document.getElementById('rOrg').textContent = d.org || d.asn || '—';
+
+  // Bendera emoji dari kode negara
+  const cc = (d.country_code || '').toUpperCase();
+  const flag = cc.length === 2
+    ? String.fromCodePoint(...[...cc].map(c => 0x1F1E0 - 65 + c.charCodeAt(0)))
+    : '🌐';
+  document.getElementById('rFlag').textContent = flag;
+
+  set('fIp',         d.ip || '—');
+  set('fCountry',    d.country_name || '—');
+  set('fCountryCode',cc || '—');
+  set('fRegion',     [d.region, d.region_code].filter(Boolean).join(' · ') || '—');
+  set('fCity',       d.city || '—');
+  set('fPostal',     d.postal || '—');
+  set('fTimezone',   d.timezone || '—');
+  set('fLat',        d.latitude != null ? d.latitude : '—');
+  set('fLon',        d.longitude != null ? d.longitude : '—');
+  set('fOrg',        d.org || '—');
+  set('fAsn',        d.asn || (ex.as || '—'));
+  set('fLanguages',  d.languages || '—');
+  set('fCurrency',   d.currency_name ? `${d.currency_name} (${d.currency})` : '—');
+
+  // Data dari ip-api.com
+  const connType = ex.connectionType || (ex.mobile ? 'Mobile' : '—');
+  set('fConnType', connType);
+
+  const hostingParts = [];
+  if(ex.proxy === true)   hostingParts.push('Proxy');
+  if(ex.hosting === true) hostingParts.push('Hosting / Datacenter');
+  if(ex.mobile === true)  hostingParts.push('Mobile');
+  set('fHosting', hostingParts.length ? hostingParts.join(', ') : 'Tidak terdeteksi');
+
+  // Peta
+  if(d.latitude != null && d.longitude != null){
+    const mapUrl = `https://www.openstreetmap.org/?mlat=${d.latitude}&mlon=${d.longitude}&zoom=10`;
+    const mapLink = document.getElementById('mapLink');
+    mapLink.href = mapUrl;
+    mapLink.classList.remove('hidden');
+  }
+
+  document.getElementById('resultCard').classList.remove('hidden');
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function set(id, val){ document.getElementById(id).textContent = val; }
+
+function copyVal(id){
+  const t = document.getElementById(id).textContent;
+  if(!t || t === '—') return;
+  navigator.clipboard.writeText(t).catch(function(){
+    const ta = document.createElement('textarea');
+    ta.value=t; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  });
+  showToast('Disalin!');
+}
+
+function showToast(msg){
+  let t = document.getElementById('_toast');
+  if(!t){ t=document.createElement('div'); t.id='_toast';
+    t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1F2430;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:.25s;pointer-events:none';
+    document.body.appendChild(t); }
+  t.textContent=msg; t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(20px)'; },1800);
+}
+</script>
+</body>
+</html>
