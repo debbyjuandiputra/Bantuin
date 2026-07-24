@@ -65,6 +65,23 @@
 }
 .freq-table td{ padding:7px 10px; border-bottom:1px solid var(--border); }
 .freq-table tr.is-modus td{ color:var(--orange); font-weight:700; }
+
+.n-row{
+  display:flex; align-items:center; gap:8px; margin-bottom:14px;
+}
+.n-row label{ font-size:13px; color:var(--text-soft); font-style:italic; font-weight:600; white-space:nowrap; }
+.n-row input[type="number"]{
+  width:80px; padding:8px 10px; border:1.5px solid var(--border); border-radius:10px;
+  background:var(--surface); color:var(--text); font-size:14px; font-weight:700;
+  text-align:center; outline:none; transition:border-color .2s;
+}
+.n-row input[type="number"]:focus{ border-color:var(--orange); }
+.n-set-btn{
+  padding:8px 16px; border-radius:10px; border:none; background:var(--orange);
+  color:#fff; font-size:13px; font-weight:700; cursor:pointer; transition:opacity .15s;
+}
+.n-set-btn:hover{ opacity:.85; }
+.n-hint{ font-size:11.5px; color:var(--text-soft); }
 </style>
 </head>
 <body>
@@ -101,6 +118,14 @@
   <!-- Input -->
   <div class="card">
     <h3>Masukkan Data</h3>
+
+    <div class="n-row">
+      <label>n =</label>
+      <input type="number" id="nInput" min="1" max="200" value="1" placeholder="n">
+      <button class="n-set-btn" onclick="setN()">Set</button>
+      <span class="n-hint">atau tekan Enter</span>
+    </div>
+
     <div class="data-inputs" id="dataInputs"></div>
 
     <div class="add-row">
@@ -143,7 +168,28 @@ applyStoredTheme();
 
 let dataCount = 0;
 
-function addRow(){
+function setN(){
+  const val = parseInt(document.getElementById('nInput').value, 10);
+  if(isNaN(val) || val < 1) return;
+  const capped = Math.min(val, 200);
+  document.getElementById('nInput').value = capped;
+  const current = document.querySelectorAll('#dataInputs .data-row').length;
+  if(capped > current){
+    for(let i = 0; i < capped - current; i++) addRow(false);
+  } else if(capped < current){
+    const rows = document.querySelectorAll('#dataInputs .data-row');
+    for(let i = rows.length - 1; i >= capped; i--) rows[i].remove();
+  }
+  syncNDisplay();
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('nInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') setN();
+  });
+});
+
+function addRow(focusLast = true){
   dataCount++;
   const wrap = document.getElementById('dataInputs');
   const row = document.createElement('div');
@@ -152,30 +198,35 @@ function addRow(){
   const idx = dataCount;
   row.innerHTML = `
     <label>x<sub style="font-size:9px">${idx}</sub></label>
-    <input type="number" id="xi-${idx}" placeholder="Nilai ke-${idx}" step="any">
+    <input type="number" id="xi-${idx}" placeholder="Nilai ke-${idx}" step="any" oninput="syncNDisplay()">
     <button class="rm-btn" onclick="removeRow(${idx})" title="Hapus">×</button>
   `;
   wrap.appendChild(row);
-  document.getElementById('xi-' + idx).focus();
+  syncNDisplay();
+  if(focusLast) document.getElementById('xi-' + idx).focus();
 }
 
 function removeRow(idx){
   const row = document.getElementById('row-' + idx);
   if(row) row.remove();
+  syncNDisplay();
+}
+
+function syncNDisplay(){
+  const count = document.querySelectorAll('#dataInputs .data-row').length;
+  document.getElementById('nInput').value = count;
 }
 
 function addOne(){ addRow(); }
-
 function addFive(){
   const current = document.querySelectorAll('#dataInputs .data-row').length;
   const toAdd = current === 1 ? 4 : 5;
-  for(let i = 0; i < toAdd; i++) addRow();
+  for(let i = 0; i < toAdd; i++) addRow(i === toAdd - 1);
 }
-
 function addTen(){
   const current = document.querySelectorAll('#dataInputs .data-row').length;
   const toAdd = current === 1 ? 9 : 10;
-  for(let i = 0; i < toAdd; i++) addRow();
+  for(let i = 0; i < toAdd; i++) addRow(i === toAdd - 1);
 }
 
 function getValues(){
@@ -198,18 +249,15 @@ function calculate(){
   }
   msg.textContent = '';
 
-  // Hitung frekuensi
   const freq = {};
   vals.forEach(v => { freq[v] = (freq[v] || 0) + 1; });
   const maxFreq = Math.max(...Object.values(freq));
 
-  // Temukan modus
   const modeVals = Object.keys(freq)
     .filter(k => freq[k] === maxFreq)
     .map(Number)
     .sort((a,b) => a - b);
 
-  // Tabel frekuensi
   const tbody = document.getElementById('freqBody');
   tbody.innerHTML = Object.entries(freq)
     .sort((a,b) => Number(a[0]) - Number(b[0]))

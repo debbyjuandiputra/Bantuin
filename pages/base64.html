@@ -3,9 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Bantuin — Base64 Encode & Decode</title>
+<title>Bantuin — Base64 Encode &amp; Decode</title>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
 <link rel="stylesheet" href="../css/style.css">
+<style>
+.upload-zone{
+  border:2px dashed var(--border); border-radius:12px; padding:20px 16px;
+  text-align:center; cursor:pointer; transition:.2s; background:var(--surface-2);
+  margin-bottom:10px;
+}
+.upload-zone:hover,.upload-zone.dragover{ border-color:var(--orange); background:rgba(245,137,27,.06); }
+.upload-zone p{ margin:0; color:var(--text-soft); font-size:13px; }
+.upload-zone b{ color:var(--orange); }
+.file-chip{
+  display:flex; align-items:center; gap:8px; background:var(--surface-2);
+  border-radius:10px; padding:8px 12px; font-size:12.5px; margin-bottom:10px;
+}
+.file-chip .name{ flex:1; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.file-chip .rm{ background:none; border:none; color:var(--text-soft); cursor:pointer; font-size:16px; padding:0; }
+.file-chip .rm:hover{ color:var(--danger); }
+.or-divider{
+  display:flex; align-items:center; gap:10px; margin:8px 0;
+  font-size:12px; color:var(--text-soft);
+}
+.or-divider::before,.or-divider::after{
+  content:''; flex:1; height:1px; background:var(--border);
+}
+</style>
 </head>
 <body>
 
@@ -23,9 +47,30 @@
       <button id="tabDecodeBtn" onclick="switchMode('decode')">Decode</button>
     </div>
 
+    <!-- Upload file (encode only) -->
+    <div id="fileSection">
+      <div class="upload-zone" id="uploadZone" onclick="fileInput.click()"
+        ondragover="event.preventDefault();this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="event.preventDefault();this.classList.remove('dragover');handleFile(event.dataTransfer.files[0])">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;color:var(--text-soft)">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <p><b>Upload file</b> atau drag &amp; drop</p>
+        <p style="margin-top:3px;font-size:11.5px">Semua jenis file · Maks 5 MB</p>
+      </div>
+      <input type="file" id="fileInput" style="display:none" onchange="handleFile(this.files[0])">
+      <div id="fileChip" style="display:none" class="file-chip">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span class="name" id="fileChipName"></span>
+        <button class="rm" onclick="clearFile()" title="Hapus file">×</button>
+      </div>
+      <div class="or-divider">atau ketik / tempel teks</div>
+    </div>
+
     <div class="field">
       <label id="inputLabel">Teks Asli</label>
-      <textarea id="b64Input" rows="6" placeholder="Ketik atau tempel teks di sini..."></textarea>
+      <textarea id="b64Input" rows="5" placeholder="Ketik atau tempel teks di sini..."></textarea>
     </div>
 
     <button class="btn" onclick="processBase64()">Proses</button>
@@ -33,12 +78,20 @@
 
     <div class="field" style="margin-top:16px">
       <label id="outputLabel">Hasil Base64</label>
-      <div class="copy-row">
-        <input type="text" id="b64Output" readonly placeholder="Hasil akan tampil di sini">
-        <button class="icon-btn" onclick="copyText(document.getElementById('b64Output').value)">
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <textarea id="b64Output" rows="4" readonly placeholder="Hasil akan tampil di sini" style="flex:1;resize:vertical"></textarea>
+        <button class="icon-btn" onclick="copyText(document.getElementById('b64Output').value)" style="flex-shrink:0;margin-top:2px">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
       </div>
+    </div>
+
+    <!-- Download hasil (file encode saja) -->
+    <div id="downloadSection" style="display:none;margin-top:8px">
+      <button class="btn secondary" id="downloadBtn" onclick="downloadResult()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Unduh hasil (.txt)
+      </button>
     </div>
   </div>
 </div>
@@ -51,19 +104,64 @@
 applyStoredTheme();
 
 let mode = 'encode';
+let fileBytes = null;   // ArrayBuffer saat file di-upload
+let fileName  = '';
 
 function switchMode(m){
   mode = m;
   document.getElementById('tabEncodeBtn').classList.toggle('active', m==='encode');
   document.getElementById('tabDecodeBtn').classList.toggle('active', m==='decode');
-  document.getElementById('inputLabel').textContent = m==='encode' ? 'Teks Asli' : 'Teks Base64';
+  document.getElementById('inputLabel').textContent  = m==='encode' ? 'Teks Asli' : 'Teks Base64';
   document.getElementById('outputLabel').textContent = m==='encode' ? 'Hasil Base64' : 'Hasil Teks Asli';
-  document.getElementById('b64Input').value = '';
+  document.getElementById('b64Input').value  = '';
   document.getElementById('b64Output').value = '';
   document.getElementById('b64Msg').textContent = '';
+  // Tampilkan/sembunyikan section file upload
+  document.getElementById('fileSection').style.display = m==='encode' ? '' : 'none';
+  clearFile();
+  document.getElementById('downloadSection').style.display = 'none';
 }
 
-// Encode/decode yang aman untuk karakter UTF-8 (emoji, huruf non-Latin, dll)
+/* ── File handling ── */
+function handleFile(file){
+  if(!file) return;
+  if(file.size > 5 * 1024 * 1024){
+    document.getElementById('b64Msg').textContent = 'Ukuran file maksimal 5 MB.';
+    return;
+  }
+  document.getElementById('b64Msg').textContent = '';
+  fileName = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    fileBytes = e.target.result; // ArrayBuffer
+    // Tampilkan chip file
+    document.getElementById('fileChipName').textContent = fileName;
+    document.getElementById('fileChip').style.display = 'flex';
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('b64Input').value = '';
+    document.getElementById('b64Input').placeholder = '(menggunakan file yang diunggah)';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function clearFile(){
+  fileBytes = null;
+  fileName  = '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileChip').style.display = 'none';
+  document.getElementById('uploadZone').style.display = '';
+  document.getElementById('b64Input').placeholder = 'Ketik atau tempel teks di sini...';
+  document.getElementById('b64Input').value = '';
+  document.getElementById('downloadSection').style.display = 'none';
+}
+
+/* ── Encode / Decode helpers ── */
+function arrayBufferToBase64(buf){
+  let binary = '';
+  const bytes = new Uint8Array(buf);
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary);
+}
 function utf8ToBase64(str){
   const bytes = new TextEncoder().encode(str);
   let binary = '';
@@ -76,21 +174,49 @@ function base64ToUtf8(b64){
   return new TextDecoder().decode(bytes);
 }
 
+let lastResultForDownload = '';
+
 function processBase64(){
-  const input = document.getElementById('b64Input').value;
   const msg = document.getElementById('b64Msg');
   msg.textContent = '';
-
-  if(!input){ msg.textContent = 'Masukkan teks terlebih dahulu.'; return; }
+  document.getElementById('downloadSection').style.display = 'none';
 
   try{
-    const result = mode === 'encode' ? utf8ToBase64(input) : base64ToUtf8(input.trim());
+    let result;
+    if(mode === 'encode'){
+      if(fileBytes !== null){
+        result = arrayBufferToBase64(fileBytes);
+        lastResultForDownload = result;
+        document.getElementById('downloadSection').style.display = '';
+      } else {
+        const input = document.getElementById('b64Input').value;
+        if(!input){ msg.textContent = 'Masukkan teks atau unggah file terlebih dahulu.'; return; }
+        result = utf8ToBase64(input);
+        lastResultForDownload = result;
+        document.getElementById('downloadSection').style.display = '';
+      }
+    } else {
+      const input = document.getElementById('b64Input').value.trim();
+      if(!input){ msg.textContent = 'Masukkan teks Base64 terlebih dahulu.'; return; }
+      result = base64ToUtf8(input);
+    }
     document.getElementById('b64Output').value = result;
   }catch(err){
     msg.textContent = mode === 'encode'
-      ? 'Gagal meng-encode teks ini.'
+      ? 'Gagal meng-encode.'
       : 'Teks bukan format Base64 yang valid.';
   }
+}
+
+function downloadResult(){
+  if(!lastResultForDownload) return;
+  const blob = new Blob([lastResultForDownload], {type:'text/plain'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = fileName ? `base64-${fileName}.txt` : 'base64-hasil.txt';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>

@@ -21,12 +21,6 @@
 }
 .formula-fraction .num{ border-bottom:2.5px solid var(--orange); padding:0 6px 3px; }
 .formula-fraction .den{ padding:3px 6px 0; }
-.formula-case{
-  display:inline-flex; flex-direction:column; align-items:flex-start;
-  gap:6px; vertical-align:middle; margin-left:8px; font-size:14px;
-}
-.formula-case div{ display:flex; align-items:center; gap:6px; }
-.formula-case .cond{ font-size:11px; color:var(--text-soft); }
 .formula-desc{
   font-size:13px; color:var(--text-soft); margin-top:10px; line-height:1.6;
 }
@@ -75,6 +69,23 @@
   font-size:13px; color:var(--text-soft); margin-top:10px; word-break:break-all; line-height:1.6;
 }
 .sorted-display b{ color:var(--orange); }
+
+.n-row{
+  display:flex; align-items:center; gap:8px; margin-bottom:14px;
+}
+.n-row label{ font-size:13px; color:var(--text-soft); font-style:italic; font-weight:600; white-space:nowrap; }
+.n-row input[type="number"]{
+  width:80px; padding:8px 10px; border:1.5px solid var(--border); border-radius:10px;
+  background:var(--surface); color:var(--text); font-size:14px; font-weight:700;
+  text-align:center; outline:none; transition:border-color .2s;
+}
+.n-row input[type="number"]:focus{ border-color:var(--orange); }
+.n-set-btn{
+  padding:8px 16px; border-radius:10px; border:none; background:var(--orange);
+  color:#fff; font-size:13px; font-weight:700; cursor:pointer; transition:opacity .15s;
+}
+.n-set-btn:hover{ opacity:.85; }
+.n-hint{ font-size:11.5px; color:var(--text-soft); }
 </style>
 </head>
 <body>
@@ -125,6 +136,14 @@
   <!-- Input -->
   <div class="card">
     <h3>Masukkan Data</h3>
+
+    <div class="n-row">
+      <label>n =</label>
+      <input type="number" id="nInput" min="1" max="200" value="1" placeholder="n">
+      <button class="n-set-btn" onclick="setN()">Set</button>
+      <span class="n-hint">atau tekan Enter</span>
+    </div>
+
     <div class="data-inputs" id="dataInputs"></div>
 
     <div class="add-row">
@@ -162,7 +181,28 @@ applyStoredTheme();
 
 let dataCount = 0;
 
-function addRow(){
+function setN(){
+  const val = parseInt(document.getElementById('nInput').value, 10);
+  if(isNaN(val) || val < 1) return;
+  const capped = Math.min(val, 200);
+  document.getElementById('nInput').value = capped;
+  const current = document.querySelectorAll('#dataInputs .data-row').length;
+  if(capped > current){
+    for(let i = 0; i < capped - current; i++) addRow(false);
+  } else if(capped < current){
+    const rows = document.querySelectorAll('#dataInputs .data-row');
+    for(let i = rows.length - 1; i >= capped; i--) rows[i].remove();
+  }
+  syncNDisplay();
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('nInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') setN();
+  });
+});
+
+function addRow(focusLast = true){
   dataCount++;
   const wrap = document.getElementById('dataInputs');
   const row = document.createElement('div');
@@ -171,30 +211,35 @@ function addRow(){
   const idx = dataCount;
   row.innerHTML = `
     <label>x<sub style="font-size:9px">${idx}</sub></label>
-    <input type="number" id="xi-${idx}" placeholder="Nilai ke-${idx}" step="any">
+    <input type="number" id="xi-${idx}" placeholder="Nilai ke-${idx}" step="any" oninput="syncNDisplay()">
     <button class="rm-btn" onclick="removeRow(${idx})" title="Hapus">×</button>
   `;
   wrap.appendChild(row);
-  document.getElementById('xi-' + idx).focus();
+  syncNDisplay();
+  if(focusLast) document.getElementById('xi-' + idx).focus();
 }
 
 function removeRow(idx){
   const row = document.getElementById('row-' + idx);
   if(row) row.remove();
+  syncNDisplay();
+}
+
+function syncNDisplay(){
+  const count = document.querySelectorAll('#dataInputs .data-row').length;
+  document.getElementById('nInput').value = count;
 }
 
 function addOne(){ addRow(); }
-
 function addFive(){
   const current = document.querySelectorAll('#dataInputs .data-row').length;
   const toAdd = current === 1 ? 4 : 5;
-  for(let i = 0; i < toAdd; i++) addRow();
+  for(let i = 0; i < toAdd; i++) addRow(i === toAdd - 1);
 }
-
 function addTen(){
   const current = document.querySelectorAll('#dataInputs .data-row').length;
   const toAdd = current === 1 ? 9 : 10;
-  for(let i = 0; i < toAdd; i++) addRow();
+  for(let i = 0; i < toAdd; i++) addRow(i === toAdd - 1);
 }
 
 function getValues(){
@@ -222,13 +267,11 @@ function calculate(){
   let median, formulaStr;
 
   if(n % 2 === 1){
-    // Ganjil
     const midIdx = Math.floor(n / 2);
     median = sorted[midIdx];
     const pos = midIdx + 1;
     formulaStr = `n = ${n} (ganjil) → posisi tengah ke-${pos} → Median = ${median}`;
   } else {
-    // Genap
     const lo = sorted[n/2 - 1], hi = sorted[n/2];
     median = (lo + hi) / 2;
     const medStr = Number.isInteger(median) ? median.toString() : median.toFixed(4).replace(/\.?0+$/,'');
@@ -236,7 +279,6 @@ function calculate(){
     median = medStr;
   }
 
-  // Highlight nilai tengah
   const highlighted = sorted.map((v, i) => {
     if(n % 2 === 1 && i === Math.floor(n/2)) return `<b>${v}</b>`;
     if(n % 2 === 0 && (i === n/2 - 1 || i === n/2)) return `<b>${v}</b>`;

@@ -72,12 +72,19 @@
 .n-row{
   display:flex; align-items:center; gap:8px; margin-bottom:14px;
 }
-.n-row label{ font-size:13px; color:var(--text-soft); font-style:italic; font-weight:600; }
-.n-row input{
-  width:70px; padding:8px 10px; border:1px solid var(--border); border-radius:10px;
-  background:var(--surface-2); color:var(--text-soft); font-size:14px; font-weight:700;
-  text-align:center; cursor:not-allowed;
+.n-row label{ font-size:13px; color:var(--text-soft); font-style:italic; font-weight:600; white-space:nowrap; }
+.n-row input[type="number"]{
+  width:80px; padding:8px 10px; border:1.5px solid var(--border); border-radius:10px;
+  background:var(--surface); color:var(--text); font-size:14px; font-weight:700;
+  text-align:center; outline:none; transition:border-color .2s;
 }
+.n-row input[type="number"]:focus{ border-color:var(--orange); }
+.n-set-btn{
+  padding:8px 16px; border-radius:10px; border:none; background:var(--orange);
+  color:#fff; font-size:13px; font-weight:700; cursor:pointer; transition:opacity .15s;
+}
+.n-set-btn:hover{ opacity:.85; }
+.n-hint{ font-size:11.5px; color:var(--text-soft); }
 </style>
 </head>
 <body>
@@ -115,11 +122,12 @@
   <div class="card">
     <h3>Masukkan Data</h3>
 
-    <!-- n (otomatis) -->
+    <!-- n — bisa diisi manual atau otomatis -->
     <div class="n-row">
       <label>n =</label>
-      <input type="text" id="nDisplay" value="1" readonly tabindex="-1">
-      <span style="font-size:12px;color:var(--text-soft)">(terisi otomatis)</span>
+      <input type="number" id="nInput" min="1" max="200" value="1" placeholder="n">
+      <button class="n-set-btn" onclick="setN()">Set</button>
+      <span class="n-hint">atau tekan Enter</span>
     </div>
 
     <div class="data-inputs" id="dataInputs"></div>
@@ -158,7 +166,29 @@ applyStoredTheme();
 
 let dataCount = 0;
 
-function addRow(){
+/* ── Set n langsung ── */
+function setN(){
+  const val = parseInt(document.getElementById('nInput').value, 10);
+  if(isNaN(val) || val < 1){ return; }
+  const capped = Math.min(val, 200);
+  document.getElementById('nInput').value = capped;
+  const current = document.querySelectorAll('#dataInputs .data-row').length;
+  if(capped > current){
+    for(let i = 0; i < capped - current; i++) addRow(false);
+  } else if(capped < current){
+    const rows = document.querySelectorAll('#dataInputs .data-row');
+    for(let i = rows.length - 1; i >= capped; i--) rows[i].remove();
+  }
+  syncNDisplay();
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('nInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') setN();
+  });
+});
+
+function addRow(focusLast = true){
   dataCount++;
   const wrap = document.getElementById('dataInputs');
   const row = document.createElement('div');
@@ -167,39 +197,38 @@ function addRow(){
   const idx = dataCount;
   row.innerHTML = `
     <label>x<sub style="font-size:9px">${idx}</sub></label>
-    <input type="number" id="xi-${idx}" placeholder="Nilai ke-${idx}" step="any">
+    <input type="number" id="xi-${idx}" placeholder="Nilai ke-${idx}" step="any"
+      oninput="syncNDisplay()">
     <button class="rm-btn" onclick="removeRow(${idx})" title="Hapus">×</button>
   `;
   wrap.appendChild(row);
-  updateN();
-  document.getElementById('xi-' + idx).focus();
+  syncNDisplay();
+  if(focusLast) document.getElementById('xi-' + idx).focus();
 }
 
 function removeRow(idx){
   const row = document.getElementById('row-' + idx);
   if(row) row.remove();
-  updateN();
+  syncNDisplay();
 }
 
-function updateN(){
+function syncNDisplay(){
   const count = document.querySelectorAll('#dataInputs .data-row').length;
-  document.getElementById('nDisplay').value = count;
+  document.getElementById('nInput').value = count;
 }
 
 function addOne(){ addRow(); }
 
 function addFive(){
   const current = document.querySelectorAll('#dataInputs .data-row').length;
-  const target = current <= 1 ? (current === 0 ? 5 : 5) : 5;
-  // Jika masih 1 box, tambahkan 4 (total jadi 5); jika 0, tambahkan 5
-  const toAdd = current === 1 ? 4 : (current === 0 ? 5 : 5);
-  for(let i = 0; i < toAdd; i++) addRow();
+  const toAdd = current === 1 ? 4 : 5;
+  for(let i = 0; i < toAdd; i++) addRow(i === toAdd - 1);
 }
 
 function addTen(){
   const current = document.querySelectorAll('#dataInputs .data-row').length;
-  const toAdd = current === 1 ? 9 : (current === 0 ? 10 : 10);
-  for(let i = 0; i < toAdd; i++) addRow();
+  const toAdd = current === 1 ? 9 : 10;
+  for(let i = 0; i < toAdd; i++) addRow(i === toAdd - 1);
 }
 
 function getValues(){
@@ -235,7 +264,6 @@ function calculate(){
 function resetAll(){
   document.getElementById('dataInputs').innerHTML = '';
   dataCount = 0;
-  updateN();
   document.getElementById('calcMsg').textContent = '';
   document.getElementById('resultCard').classList.add('hidden');
   addRow();

@@ -324,18 +324,8 @@ async function downloadPaletteImage(){
     const ctx = canvas.getContext('2d');
     ctx.scale(SCALE, SCALE);
 
-    // ---- Background gradient: orange keputihan ----
-    const bg = ctx.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, '#FFF4E8');
-    bg.addColorStop(0.45, '#FFFDFB');
-    bg.addColorStop(1, '#FFF7EE');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, W, H);
-
-    const glow = ctx.createRadialGradient(W*0.88, 46, 6, W*0.88, 46, 240);
-    glow.addColorStop(0, 'rgba(245,137,27,0.16)');
-    glow.addColorStop(1, 'rgba(245,137,27,0)');
-    ctx.fillStyle = glow;
+    // ---- Background: putih bersih ----
+    ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, W, H);
 
     // ---- Header ----
@@ -349,7 +339,7 @@ async function downloadPaletteImage(){
     ctx.font = '500 15px Inter, Arial, sans-serif';
     ctx.fillText(`${rows} warna dominan  ·  Format ${fmtLabel}`, PAD, 88);
 
-    ctx.strokeStyle = '#E9E2D8';
+    ctx.strokeStyle = '#E5E7EB';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(PAD, HEADER_H - 18);
@@ -390,7 +380,7 @@ async function downloadPaletteImage(){
 
     // ---- Footer: watermark di zona sendiri, jauh dari swatch ----
     const footerTop = HEADER_H + rows * ROW_H;
-    ctx.strokeStyle = '#E9E2D8';
+    ctx.strokeStyle = '#E5E7EB';
     ctx.beginPath();
     ctx.moveTo(PAD, footerTop + 20);
     ctx.lineTo(W - PAD, footerTop + 20);
