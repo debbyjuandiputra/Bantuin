@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Kode QR</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.qr-preview{
+  display:flex; align-items:center; justify-content:center; background:#fff; border-radius:14px;
+  padding:18px; margin:14px 0; min-height:200px;
+}
+#qrCanvasWrap canvas, #qrCanvasWrap img{ max-width:100%; border-radius:6px; }
+.qr-size-row{ display:flex; align-items:center; gap:10px; margin:12px 0; }
+.qr-size-row label{ font-size:13px; color:var(--text-soft); font-weight:600; flex-shrink:0; }
+.qr-size-row select{
+  flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+  background:var(--bg); color:var(--text); font-size:14px; outline:none;
+}
+
+.scan-tab-row{ display:flex; gap:8px; margin-bottom:14px; background:var(--surface-2); padding:4px; border-radius:12px; }
+.scan-tab-row button{
+  flex:1; padding:9px 0; border:none; border-radius:9px; background:transparent; font-weight:600;
+  font-size:13.5px; color:var(--text-soft);
+}
+.scan-tab-row button.active{ background:var(--orange); color:#fff; }
+
+.cam-wrap{
+  position:relative; border-radius:14px; overflow:hidden; background:#000; margin-bottom:12px;
+  aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;
+}
+.cam-wrap video{ width:100%; height:100%; object-fit:cover; }
+.cam-frame{
+  position:absolute; inset:14%; border:3px solid var(--orange); border-radius:16px;
+  box-shadow:0 0 0 999px rgba(0,0,0,.35);
+}
+.cam-hint{
+  position:absolute; bottom:10px; left:0; right:0; text-align:center; color:#fff;
+  font-size:12px; text-shadow:0 1px 3px rgba(0,0,0,.6);
+}
+
+.scan-result{
+  background:var(--surface-2); border-radius:12px; padding:14px; margin-top:14px; word-break:break-all;
+}
+.scan-result .lbl{ font-size:11.5px; color:var(--text-soft); margin-bottom:6px; }
+.scan-result .val{ font-size:14.5px; font-weight:600; color:var(--text); line-height:1.5; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../index.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Kode QR</h2>
+</div>
+
+<div class="page-body">
+  <div class="tab-row">
+    <button class="active" id="tabBuatBtn" onclick="switchMain('buat')">Buat QR</button>
+    <button id="tabScanBtn" onclick="switchMain('scan')">Scan QR</button>
+  </div>
+
+  <!-- ============ BUAT QR ============ -->
+  <div id="groupBuat">
+    <div class="card">
+      <h3>Buat Kode QR</h3>
+      <p class="desc">Masukkan teks, tautan, atau informasi apa pun untuk dibuat menjadi kode QR.</p>
+
+      <div class="field">
+        <label>Teks / Tautan</label>
+        <textarea id="qrText" rows="3" placeholder="Contoh: https://bantuin.app atau teks bebas..."></textarea>
+      </div>
+
+      <div class="qr-size-row">
+        <label>Ukuran</label>
+        <select id="qrSize">
+          <option value="200">Kecil (200px)</option>
+          <option value="300" selected>Sedang (300px)</option>
+          <option value="450">Besar (450px)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Logo di tengah QR (opsional)</label>
+        <div class="dropzone" onclick="document.getElementById('qrLogoInput').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>
+          <div id="qrLogoLabel">Ketuk untuk pilih logo (PNG/JPG)</div>
+        </div>
+        <input type="file" id="qrLogoInput" class="hidden" accept="image/*">
+        <button type="button" class="btn secondary hidden" id="qrLogoClearBtn" style="margin-top:8px" onclick="clearLogo()">Hapus Logo</button>
+      </div>
+
+      <button class="btn" onclick="generateQR()">Buat Kode QR</button>
+      <div class="form-msg" id="genMsg"></div>
+
+      <div class="qr-preview hidden" id="qrPreviewBox">
+        <div id="qrCanvasWrap"></div>
+      </div>
+
+      <button class="btn secondary hidden" id="downloadQrBtn" style="margin-top:4px" onclick="downloadQR()">Unduh PNG</button>
+    </div>
+  </div>
+
+  <!-- ============ SCAN QR ============ -->
+  <div id="groupScan" class="hidden">
+    <div class="card">
+      <h3>Scan Kode QR</h3>
+      <p class="desc">Pindai kode QR lewat kamera langsung, atau unggah gambar yang berisi kode QR.</p>
+
+      <div class="scan-tab-row">
+        <button class="active" id="scanCamBtn" onclick="switchScanMode('camera')">Kamera</button>
+        <button id="scanUpBtn" onclick="switchScanMode('upload')">Unggah Gambar</button>
+      </div>
+
+      <!-- Kamera -->
+      <div id="scanCameraPane">
+        <div class="cam-wrap">
+          <video id="camVideo" playsinline muted></video>
+          <div class="cam-frame"></div>
+          <div class="cam-hint">Arahkan kamera ke kode QR</div>
+        </div>
+        <button class="btn" id="camToggleBtn" onclick="toggleCamera()">Aktifkan Kamera</button>
+      </div>
+
+      <!-- Upload -->
+      <div id="scanUploadPane" class="hidden">
+        <div class="dropzone" onclick="document.getElementById('qrImgInput').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div id="qrImgLabel">Ketuk untuk pilih gambar kode QR</div>
+        </div>
+        <input type="file" id="qrImgInput" class="hidden" accept="image/*">
+      </div>
+
+      <div class="form-msg" id="scanMsg"></div>
+
+      <div class="scan-result hidden" id="scanResultBox">
+        <div class="lbl">Hasil Scan</div>
+        <div class="val" id="scanResultVal"></div>
+        <button class="btn secondary" style="margin-top:12px" onclick="copyText(document.getElementById('scanResultVal').textContent)">Salin Hasil</button>
+        <button class="btn" style="margin-top:8px" id="openLinkBtn" onclick="openScannedLink()">Buka Tautan</button>
+      </div>
+
+      <canvas id="scanCanvas" class="hidden"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/watermark-data.js"></script>
+<script>
+applyStoredTheme();
+
+// ---------------- Tab utama: Buat / Scan ----------------
+function switchMain(mode){
+  document.getElementById('tabBuatBtn').classList.toggle('active', mode==='buat');
+  document.getElementById('tabScanBtn').classList.toggle('active', mode==='scan');
+  document.getElementById('groupBuat').classList.toggle('hidden', mode!=='buat');
+  document.getElementById('groupScan').classList.toggle('hidden', mode!=='scan');
+  if(mode !== 'scan') stopCamera();
+}
+
+// ---------------- Buat QR ----------------
+let qrInstance = null;
+let lastQrValue = '';
+let finalQrCanvas = null;   // canvas final yang ditampilkan & diunduh (QR + watermark + logo)
+let logoImgData = null;     // dataURL logo yang dipilih user
+
+// ---- Muat gambar watermark (base64, sekali saja) ----
+let __wmImgCache = null;
+function loadWatermarkImg(){
+  if(__wmImgCache) return Promise.resolve(__wmImgCache);
+  return new Promise((resolve) => {
+    if(typeof WATERMARK_B64 === 'undefined'){ resolve(null); return; }
+    const img = new Image();
+    img.onload = function(){ __wmImgCache = img; resolve(img); };
+    img.onerror = function(){ resolve(null); };
+    img.src = WATERMARK_B64;
+  });
+}
+
+function loadImageFromDataUrl(dataUrl){
+  return new Promise((resolve) => {
+    if(!dataUrl){ resolve(null); return; }
+    const img = new Image();
+    img.onload = function(){ resolve(img); };
+    img.onerror = function(){ resolve(null); };
+    img.src = dataUrl;
+  });
+}
+
+// ---- Pilih logo untuk ditengah QR ----
+document.getElementById('qrLogoInput').addEventListener('change', function(){
+  const file = this.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    logoImgData = e.target.result;
+    document.getElementById('qrLogoLabel').textContent = file.name;
+    document.getElementById('qrLogoClearBtn').classList.remove('hidden');
+  };
+  reader.onerror = () => {
+    showToast('Gagal membaca file logo');
+  };
+  reader.readAsDataURL(file);
+});
+
+function clearLogo(){
+  logoImgData = null;
+  document.getElementById('qrLogoInput').value = '';
+  document.getElementById('qrLogoLabel').textContent = 'Ketuk untuk pilih logo (PNG/JPG)';
+  document.getElementById('qrLogoClearBtn').classList.add('hidden');
+}
+
+async function generateQR(){
+  const text = document.getElementById('qrText').value.trim();
+  const msg = document.getElementById('genMsg');
+  msg.textContent = '';
+
+  if(!text){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Masukkan teks atau tautan terlebih dahulu.';
+    return;
+  }
+
+  const size = parseInt(document.getElementById('qrSize').value, 10);
+  const hasLogo = !!logoImgData;
+
+  // Bikin QR mentah di elemen tersembunyi. Kalau ada logo, pakai correctLevel H
+  // (redundansi error-correction tertinggi) supaya QR tetap bisa dipindai
+  // walau bagian tengahnya ketutup logo.
+  const tempWrap = document.createElement('div');
+  tempWrap.style.display = 'none';
+  document.body.appendChild(tempWrap);
+
+  qrInstance = new QRCode(tempWrap, {
+    text: text,
+    width: size,
+    height: size,
+    colorDark: '#1F2430',
+    colorLight: '#ffffff',
+    correctLevel: hasLogo ? QRCode.CorrectLevel.H : QRCode.CorrectLevel.M
+  });
+
+  const rawCanvas = tempWrap.querySelector('canvas');
+  if(!rawCanvas){
+    document.body.removeChild(tempWrap);
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Gagal membuat kode QR.';
+    return;
+  }
+
+  lastQrValue = text;
+
+  try{
+    finalQrCanvas = await composeFinalQR(rawCanvas, size, hasLogo);
+  }catch(err){
+    finalQrCanvas = rawCanvas;
+  }
+  document.body.removeChild(tempWrap);
+
+  const previewWrap = document.getElementById('qrCanvasWrap');
+  previewWrap.innerHTML = '';
+  previewWrap.appendChild(finalQrCanvas);
+
+  document.getElementById('qrPreviewBox').classList.remove('hidden');
+  document.getElementById('downloadQrBtn').classList.remove('hidden');
+  document.getElementById('qrPreviewBox').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ---- Gabungkan QR + logo (di tengah QR) + watermark (di bawah, zona sendiri) ----
+async function composeFinalQR(rawCanvas, qrSize, hasLogo){
+  const wm = await loadWatermarkImg();
+  const logo = hasLogo ? await loadImageFromDataUrl(logoImgData) : null;
+
+  // Render di resolusi lebih tinggi dari ukuran tampil (supaya hasil unduhan
+  // tajam/tidak burik & tidak "kompres", terutama untuk watermark & logo).
+  const SCALE = 3;
+
+  const PAD = 18 * SCALE;                 // jarak QR ke tepi
+  const FOOTER_H = wm ? 56 * SCALE : 0;   // zona khusus watermark, ga pernah nimpa QR
+  const qrSizeScaled = qrSize * SCALE;
+  const canvas = document.createElement('canvas');
+  canvas.width = qrSizeScaled + PAD * 2;
+  canvas.height = qrSizeScaled + PAD * 2 + FOOTER_H;
+  const ctx = canvas.getContext('2d');
+
+  // Background putih
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Gambar QR — matikan smoothing supaya modul QR tetap tajam/kotak (bukan buram)
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(rawCanvas, PAD, PAD, qrSizeScaled, qrSizeScaled);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  qrSize = qrSizeScaled; // dipakai posisi logo/watermark di bawah (variabel parameter di-reuse)
+
+  // Logo di tengah QR (dengan kotak putih pembatas biar kontras & tetap kebaca)
+  if(logo){
+    const logoSize = Math.round(qrSize * 0.22);
+    const logoX = PAD + (qrSize - logoSize) / 2;
+    const logoY = PAD + (qrSize - logoSize) / 2;
+    const padBox = Math.round(logoSize * 0.12);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(logoX - padBox, logoY - padBox, logoSize + padBox * 2, logoSize + padBox * 2);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(logoX, logoY, logoSize, logoSize);
+    ctx.clip();
+    // gambar logo memenuhi kotak, dipotong tengah biar proporsional
+    const ratio = Math.max(logoSize / logo.width, logoSize / logo.height);
+    const drawW = logo.width * ratio;
+    const drawH = logo.height * ratio;
+    ctx.drawImage(logo, logoX + (logoSize - drawW)/2, logoY + (logoSize - drawH)/2, drawW, drawH);
+    ctx.restore();
+  }
+
+  // Watermark di zona bawah, terpisah dari QR, tidak menimpa apapun
+  if(wm){
+    const wmH = FOOTER_H - 20 * SCALE;
+    const wmW = wmH * (wm.width / wm.height);
+    const wmX = (canvas.width - wmW) / 2;
+    const wmY = qrSize + PAD * 2 + (FOOTER_H - wmH) / 2;
+    ctx.globalAlpha = 0.92;
+    ctx.drawImage(wm, wmX, wmY, wmW, wmH);
+    ctx.globalAlpha = 1;
+  }
+
+  return canvas;
+}
+
+function downloadQR(){
+  if(!finalQrCanvas){ showToast('Buat kode QR terlebih dahulu'); return; }
+  finalQrCanvas.toBlob(blob => downloadBlob(blob, 'kode-qr.png'));
+}
+
+// ---------------- Scan QR: switch mode ----------------
+function switchScanMode(mode){
+  document.getElementById('scanCamBtn').classList.toggle('active', mode==='camera');
+  document.getElementById('scanUpBtn').classList.toggle('active', mode==='upload');
+  document.getElementById('scanCameraPane').classList.toggle('hidden', mode!=='camera');
+  document.getElementById('scanUploadPane').classList.toggle('hidden', mode!=='upload');
+  document.getElementById('scanMsg').textContent = '';
+  if(mode !== 'camera') stopCamera();
+}
+
+// ---------------- Scan via kamera ----------------
+let camStream = null;
+let camRAF = null;
+
+async function toggleCamera(){
+  if(camStream){ stopCamera(); return; }
+
+  const msg = document.getElementById('scanMsg');
+  msg.style.color = 'var(--danger)';
+  msg.textContent = '';
+
+  try{
+    if(typeof jsQR === 'undefined'){
+      document.getElementById('scanMsg').textContent = 'Pustaka pemindai QR (jsQR) gagal dimuat. Pastikan koneksi internet aktif lalu coba lagi.';
+      stopCamera();
+      return;
+    }
+    const constraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 1280 },
+        advanced: [{ focusMode: 'continuous' }]
+      }
+    };
+    try{
+      camStream = await navigator.mediaDevices.getUserMedia(constraints);
+    }catch(e){
+      // fallback ke constraint paling sederhana kalau device/webview ga dukung yang di atas
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    }
+    const video = document.getElementById('camVideo');
+    video.srcObject = camStream;
+    await video.play();
+    document.getElementById('camToggleBtn').textContent = 'Matikan Kamera';
+    scanCameraLoop();
+  }catch(err){
+    msg.textContent = 'Tidak bisa mengakses kamera. Pastikan izin kamera sudah diberikan.';
+  }
+}
+
+function stopCamera(){
+  if(camRAF) cancelAnimationFrame(camRAF);
+  camRAF = null;
+  if(camStream){
+    camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+  }
+  const btn = document.getElementById('camToggleBtn');
+  if(btn) btn.textContent = 'Aktifkan Kamera';
+}
+
+function scanCameraLoop(){
+  const video = document.getElementById('camVideo');
+  const canvas = document.getElementById('scanCanvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  function tick(){
+    if(!camStream) return;
+    if(video.readyState === video.HAVE_ENOUGH_DATA){
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+      if(code && code.data){
+        showScanResult(code.data);
+        stopCamera();
+        return;
+      }
+    }
+    camRAF = requestAnimationFrame(tick);
+  }
+  camRAF = requestAnimationFrame(tick);
+}
+
+// ---------------- Scan via upload gambar ----------------
+document.getElementById('qrImgInput').addEventListener('change', function(){
+  const file = this.files[0];
+  const input = this;
+  const msg = document.getElementById('scanMsg');
+  msg.style.color = 'var(--danger)';
+  msg.textContent = '';
+  if(!file) return;
+
+  document.getElementById('qrImgLabel').textContent = file.name;
+
+  const reader = new FileReader();
+
+  reader.onerror = () => {
+    msg.textContent = 'Gagal membaca file gambar. Coba pilih gambar lain.';
+    input.value = '';
+  };
+
+  reader.onload = e => {
+    const img = new Image();
+
+    img.onerror = () => {
+      msg.textContent = 'Gambar tidak bisa dibuka. Pastikan formatnya JPG/PNG/WebP.';
+      input.value = '';
+    };
+
+    img.onload = () => {
+      let canvas, ctx;
+      try{
+        canvas = document.getElementById('scanCanvas');
+        // Sebagian WebView (terutama Android versi lama) melempar error saat
+        // getContext dipanggil dengan opsi { willReadFrequently }. Coba dulu
+        // dengan opsi itu, kalau gagal fallback ke context polos.
+        try{
+          ctx = canvas.getContext('2d', { willReadFrequently: true });
+        }catch(e){
+          ctx = null;
+        }
+        if(!ctx) ctx = canvas.getContext('2d');
+        if(!ctx) throw new Error('canvas 2d context tidak tersedia di WebView ini');
+
+        // Batasi resolusi biar getImageData ga berat/lemot di gambar hasil kamera HP
+        // yang biasanya beresolusi sangat tinggi, dan biar deteksi lebih stabil.
+        const MAX_DIM = 1600;
+        let w = img.naturalWidth || img.width;
+        let h = img.naturalHeight || img.height;
+        if(!w || !h){
+          msg.textContent = 'Gambar tidak valid, rusak, atau formatnya tidak didukung (mis. HEIC). Coba simpan ulang sebagai JPG/PNG.';
+          input.value = '';
+          return;
+        }
+        const scale = Math.min(1, MAX_DIM / Math.max(w, h));
+        canvas.width = Math.round(w * scale);
+        canvas.height = Math.round(h * scale);
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        if(typeof jsQR === 'undefined'){
+          msg.textContent = 'Pustaka pemindai QR (jsQR) gagal dimuat. Pastikan koneksi internet aktif lalu coba lagi.';
+          input.value = '';
+          return;
+        }
+
+        let imgData;
+        try{
+          imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }catch(getImgErr){
+          console.error('getImageData gagal:', getImgErr);
+          if(getImgErr.name === 'SecurityError'){
+            msg.textContent = 'Gambar tidak bisa diproses karena dibatasi keamanan browser/WebView (canvas tainted).';
+          } else {
+            msg.textContent = 'Terjadi kesalahan saat memproses gambar (' + (getImgErr.name || getImgErr.message || 'unknown') + ').';
+          }
+          input.value = '';
+          return;
+        }
+
+        const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+
+        if(code && code.data){
+          showScanResult(code.data);
+        } else {
+          msg.textContent = 'Kode QR tidak ditemukan pada gambar ini. Coba gambar yang lebih jelas/tidak buram.';
+        }
+      }catch(err){
+        console.error('Gagal memproses gambar QR:', err);
+        msg.textContent = 'Terjadi kesalahan saat memproses gambar (' + (err && (err.message || err.name) || 'unknown') + ').';
+      }finally{
+        // reset supaya file yang sama bisa dipilih ulang & memicu event change lagi
+        input.value = '';
+      }
+    };
+
+    img.src = e.target.result;
+  };
+
+  reader.readAsDataURL(file);
+});
+
+// ---------------- Tampilkan hasil scan ----------------
+function showScanResult(text){
+  document.getElementById('scanResultVal').textContent = text;
+  document.getElementById('scanResultBox').classList.remove('hidden');
+  document.getElementById('scanMsg').textContent = '';
+
+  const isUrl = /^https?:\/\//i.test(text.trim());
+  document.getElementById('openLinkBtn').classList.toggle('hidden', !isUrl);
+
+  document.getElementById('scanResultBox').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function openScannedLink(){
+  const text = document.getElementById('scanResultVal').textContent.trim();
+  if(/^https?:\/\//i.test(text)) window.open(text, '_blank');
+}
+</script>
+</body>
+</html>
