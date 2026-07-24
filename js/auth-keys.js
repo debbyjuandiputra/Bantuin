@@ -4,7 +4,7 @@
 // Tabel Supabase: auth_keys
 //   id        bigint identity primary key
 //   user_id   integer references users(user_id)
-//   judul     text     (nama/label kunci, plaintext — deskriptif untuk user)
+//   judul     text     (nama/label kunci, terenkripsi AES-GCM via crypto.js)
 //   kunci     text     (kunci TOTP terenkripsi AES-GCM via crypto.js)
 //   urutan    integer  default 0 (untuk drag-reorder)
 //   created_at timestamptz
@@ -34,7 +34,7 @@ async function listAuthKeys(){
   for(const row of data){
     result.push({
       id: row.id,
-      judul: row.judul,
+      judul: await decryptNoteField(row.judul, auth.session.user_id),
       kunci: await decryptNoteField(row.kunci, auth.session.user_id),
       urutan: row.urutan || 0,
       created_at: row.created_at
@@ -53,12 +53,13 @@ async function saveAuthKey({ id, judul, kunci }){
   if(!cleanKunci)  return { ok:false, msg:'Kunci (secret) wajib diisi.' };
 
   try{
+    const encJudul = await encryptNoteField(cleanJudul, auth.session.user_id);
     const encKunci = await encryptNoteField(cleanKunci, auth.session.user_id);
 
     if(id){
       const { error } = await sb
         .from(TABLE_AUTH_KEYS)
-        .update({ judul: cleanJudul, kunci: encKunci })
+        .update({ judul: encJudul, kunci: encKunci })
         .eq('id', id)
         .eq('user_id', auth.session.user_id);
       if(error) return { ok:false, msg: mapSupabaseError(error) };
@@ -76,7 +77,7 @@ async function saveAuthKey({ id, judul, kunci }){
 
     const { data, error } = await sb
       .from(TABLE_AUTH_KEYS)
-      .insert({ user_id: auth.session.user_id, judul: cleanJudul, kunci: encKunci,
+      .insert({ user_id: auth.session.user_id, judul: encJudul, kunci: encKunci,
                 urutan: nextUrutan, created_at: nowWIB() })
       .select('id')
       .single();
