@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — ANOVA</title>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+.formula-desc{ font-size:13px; color:var(--text-soft); line-height:1.6; }
+
+.at-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -2px; }
+.at-table{ border-collapse:collapse; width:100%; min-width:100%; }
+.at-table th, .at-table td{
+  border:1px solid var(--border); padding:0; text-align:center; white-space:nowrap;
+}
+.at-table th{
+  background:var(--surface-2); font-size:11.5px; color:var(--text-soft); font-weight:700;
+  padding:8px 6px;
+}
+.at-col-h{ display:flex; align-items:center; justify-content:center; gap:6px; }
+.at-col-h button{
+  width:18px; height:18px; min-width:18px; border-radius:6px; border:1px solid var(--border);
+  background:transparent; color:var(--text-soft); font-size:12px; line-height:1; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .15s, color .15s, border-color .15s;
+}
+.at-col-h button:hover{ background:var(--danger); border-color:var(--danger); color:#fff; }
+.at-table td.at-label{
+  background:var(--surface-2); padding:0;
+}
+.at-table td.at-label input{
+  width:74px; border:none; background:transparent; color:var(--text); font-size:13px;
+  font-weight:700; text-align:center; padding:9px 4px; outline:none;
+}
+.at-table td.at-cell input{
+  width:64px; border:none; background:transparent; color:var(--text); font-size:13.5px;
+  text-align:center; padding:9px 4px; outline:none;
+}
+.at-table td.at-cell input:focus, .at-table td.at-label input:focus{ background:var(--surface); }
+.at-table td.at-total, .at-table td.at-mean{
+  font-size:13px; font-weight:700; color:var(--orange); padding:9px 6px; background:var(--surface);
+}
+.at-table td.at-rm{ padding:0; background:var(--surface-2); }
+.at-table td.at-rm button{
+  width:100%; height:100%; min-height:34px; border:none; background:transparent;
+  color:var(--text-soft); font-size:16px; cursor:pointer;
+}
+.at-table td.at-rm button:hover{ color:var(--danger); }
+.at-table th.at-rm-h{ padding:6px; }
+.at-table th.at-rm-h button{
+  width:24px; height:24px; border-radius:7px; border:1px solid var(--border); background:transparent;
+  color:var(--text-soft); font-size:13px; line-height:1; cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+}
+.at-table th.at-rm-h button:hover{ background:var(--danger); border-color:var(--danger); color:#fff; }
+
+.at-actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.at-actions .add-btn{
+  flex:1; min-width:120px; padding:9px 0; border-radius:10px; border:1.5px dashed var(--border);
+  background:transparent; color:var(--text-soft); font-size:12.5px; font-weight:600; cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.at-actions .add-btn:hover{ border-color:var(--orange); color:var(--orange); }
+
+.res-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.res-box{ background:var(--surface-2); border-radius:12px; padding:12px; text-align:center; }
+.res-box .lbl{ font-size:11px; color:var(--text-soft); margin-bottom:4px; }
+.res-box .val{ font-size:19px; font-weight:800; font-family:'Poppins',sans-serif; color:var(--orange); }
+
+.res-table{ border-collapse:collapse; width:100%; margin-top:6px; }
+.res-table th, .res-table td{
+  border:1px solid var(--border); padding:8px 6px; text-align:center; font-size:12.5px;
+}
+.res-table th{ background:var(--surface-2); color:var(--text-soft); font-weight:700; font-size:11px; }
+.res-table td.ket-star{ font-weight:800; color:var(--orange); }
+
+.ket-legend{ font-size:11.5px; color:var(--text-soft); margin-top:10px; line-height:1.8; }
+.ket-legend b{ color:var(--text); }
+
+.explain-step{
+  background:var(--surface-2); border-radius:12px; padding:14px; margin-bottom:10px;
+}
+.explain-step h4{
+  font-size:13px; margin:0 0 8px; color:var(--orange); font-family:'Poppins',sans-serif;
+}
+.explain-step .line{ font-size:12.5px; color:var(--text); line-height:1.8; word-break:break-word; }
+.explain-step .line .lead{ color:var(--text-soft); }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../statistik.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>ANOVA</h2>
+</div>
+
+<div class="page-body">
+
+  <div class="formula-block" style="text-align:left;padding:16px">
+    <div class="formula-desc">
+      Analisis Ragam (ANOVA) Rancangan Acak Lengkap (RAL) digunakan untuk menguji apakah beberapa perlakuan memberikan pengaruh yang berbeda nyata terhadap suatu variabel yang diamati. Isi tabel di bawah dengan data hasil ulangan setiap perlakuan, lalu tekan "Hitung ANOVA".
+    </div>
+  </div>
+
+  <!-- Input tabel -->
+  <div class="card">
+    <h3>Tabel Data</h3>
+    <!-- <p class="desc">Ketuk nama perlakuan untuk mengubahnya. Gunakan tombol di bawah untuk menambah/menghapus kolom (ulangan) dan baris (perlakuan).</p> -->
+     <p class="desc"></p>
+    <div class="at-scroll">
+      <table class="at-table" id="atTable"></table>
+    </div>
+
+    <div class="at-actions">
+      <button class="add-btn" onclick="addColumn()">+ Ulangan (kolom)</button>
+      <button class="add-btn" onclick="addRow()">+ Perlakuan (baris)</button>
+    </div>
+
+    <div class="form-msg" id="calcMsg" style="margin-top:10px"></div>
+
+    <button class="btn" style="margin-top:14px" onclick="calculate()">Hitung ANOVA</button>
+    <button class="btn secondary" style="margin-top:8px" onclick="resetAll()">Reset</button>
+  </div>
+
+  <!-- Hasil -->
+  <div class="card hidden" id="resultCard">
+    <h3>Hasil ANOVA</h3>
+
+    <div class="res-grid">
+      <div class="res-box"><div class="lbl">FK (Faktor Koreksi)</div><div class="val" id="valFK">-</div></div>
+      <div class="res-box"><div class="lbl">KK (Koefisien Keragaman)</div><div class="val" id="valKK">-</div></div>
+    </div>
+
+    <div class="at-scroll">
+      <table class="res-table">
+        <thead>
+          <tr>
+            <th>SK</th><th>DB</th><th>JK</th><th>KT</th><th>Fhit</th>
+            <th>Ftab 0.05</th><th>Ftab 0.01</th><th>Ket</th>
+          </tr>
+        </thead>
+        <tbody id="anovaBody"></tbody>
+      </table>
+    </div>
+
+    <div class="ket-legend">
+      <div><b>TN</b> = Berbeda Tidak Nyata (Fhitung ≤ Ftabel 0.05)</div>
+      <div><b>*</b> = Berbeda Nyata (Fhitung &gt; Ftabel 0.05)</div>
+      <div><b>**</b> = Berbeda Sangat Nyata (Fhitung &gt; Ftabel 0.01)</div>
+    </div>
+
+    <button class="btn secondary" style="margin-top:14px" onclick="copyResult()">Salin Hasil</button>
+  </div>
+
+  <!-- Penjelasan -->
+  <div class="card hidden" id="explainCard">
+    <h3>Cara Perhitungan</h3>
+    <div id="explainBody"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/supabase-config.js"></script>
+<script src="../../js/store.js"></script>
+<script src="../../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+// ---------------- State ----------------
+// rows: [{ label: 'M0', values: [3,3,4,2] }, ...]
+let rows = [
+  { label:'M0', values:['', '', ''] },
+  { label:'M1', values:['', '', ''] },
+];
+
+function colCount(){ return rows.length ? rows[0].values.length : 0; }
+
+function renderTable(){
+  const nCol = colCount();
+  const t = document.getElementById('atTable');
+  let html = '<thead><tr><th>Perlakuan</th>';
+  for(let c=0;c<nCol;c++){
+    html += `<th>
+      <div class="at-col-h">
+        <span>Ulangan ${romanize(c+1)}</span>
+        <button onclick="removeColumn(${c})" title="Hapus kolom">×</button>
+      </div>
+    </th>`;
+  }
+  html += `<th class="at-rm-h"></th></tr></thead><tbody>`;
+
+  rows.forEach((r, ri) => {
+    html += `<tr>`;
+    html += `<td class="at-label"><input type="text" value="${escapeHtml(r.label)}" oninput="rows[${ri}].label=this.value"></td>`;
+    r.values.forEach((v, ci) => {
+      html += `<td class="at-cell"><input type="number" step="any" value="${v}" placeholder="0" oninput="rows[${ri}].values[${ci}]=this.value"></td>`;
+    });
+    html += `<td class="at-rm"><button onclick="removeRow(${ri})" title="Hapus baris">×</button></td>`;
+    html += `</tr>`;
+  });
+
+  html += `</tbody>`;
+  t.innerHTML = html;
+}
+
+function romanize(n){
+  const map = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
+  return map[n-1] || n;
+}
+
+function addColumn(){
+  rows.forEach(r => r.values.push(''));
+  renderTable();
+}
+
+function removeColumn(ci){
+  if(colCount() <= 2){
+    showMsg('Minimal harus ada 2 ulangan.', true);
+    return;
+  }
+  rows.forEach(r => r.values.splice(ci, 1));
+  renderTable();
+}
+
+function addRow(){
+  const n = colCount() || 2;
+  rows.push({ label: 'M' + rows.length, values: Array(n).fill('') });
+  renderTable();
+}
+
+function removeRow(idx){
+  if(rows.length <= 2){ 
+    showMsg('Minimal harus ada 2 perlakuan.', true); 
+    return; 
+  }
+  rows.splice(idx, 1);
+  renderTable();
+}
+
+function showMsg(text, isError){
+  const msg = document.getElementById('calcMsg');
+  msg.style.color = isError ? 'var(--danger)' : 'var(--success)';
+  msg.textContent = text;
+}
+
+function resetAll(){
+  rows = [
+    { label:'M0', values:['', '', ''] },
+    { label:'M1', values:['', '', ''] },
+  ];
+  renderTable();
+  document.getElementById('calcMsg').textContent = '';
+  document.getElementById('resultCard').classList.add('hidden');
+  document.getElementById('explainCard').classList.add('hidden');
+}
+
+// ---------------- Tabel F (Fisher-Snedecor) ----------------
+// Baris = df2 (galat), kolom = df1 (perlakuan) 1..10
+const F_DF1 = [1,2,3,4,5,6,7,8,9,10];
+const F_DF2_ROWS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,40,60,120,1000];
+
+const F005 = {
+1:[161.4,199.5,215.7,224.6,230.2,234.0,236.8,238.9,240.5,241.9],
+2:[18.51,19.00,19.16,19.25,19.30,19.33,19.35,19.37,19.38,19.40],
+3:[10.13,9.55,9.28,9.12,9.01,8.94,8.89,8.85,8.81,8.79],
+4:[7.71,6.94,6.59,6.39,6.26,6.16,6.09,6.04,6.00,5.96],
+5:[6.61,5.79,5.41,5.19,5.05,4.95,4.88,4.82,4.77,4.74],
+6:[5.99,5.14,4.76,4.53,4.39,4.28,4.21,4.15,4.10,4.06],
+7:[5.59,4.74,4.35,4.12,3.97,3.87,3.79,3.73,3.68,3.64],
+8:[5.32,4.46,4.07,3.84,3.69,3.58,3.50,3.44,3.39,3.35],
+9:[5.12,4.26,3.86,3.63,3.48,3.37,3.29,3.23,3.18,3.14],
+10:[4.96,4.10,3.71,3.48,3.33,3.22,3.14,3.07,3.02,2.98],
+11:[4.84,3.98,3.59,3.36,3.20,3.09,3.01,2.95,2.90,2.85],
+12:[4.75,3.89,3.49,3.26,3.11,3.00,2.91,2.85,2.80,2.75],
+13:[4.67,3.81,3.41,3.18,3.03,2.92,2.83,2.77,2.71,2.67],
+14:[4.60,3.74,3.34,3.11,2.96,2.85,2.76,2.70,2.65,2.60],
+15:[4.54,3.68,3.29,3.06,2.90,2.79,2.71,2.64,2.59,2.54],
+16:[4.49,3.63,3.24,3.01,2.85,2.74,2.66,2.59,2.54,2.49],
+17:[4.45,3.59,3.20,2.96,2.81,2.70,2.61,2.55,2.49,2.45],
+18:[4.41,3.55,3.16,2.93,2.77,2.66,2.58,2.51,2.46,2.41],
+19:[4.38,3.52,3.13,2.90,2.74,2.63,2.54,2.48,2.42,2.38],
+20:[4.35,3.49,3.10,2.87,2.71,2.60,2.51,2.45,2.39,2.35],
+21:[4.32,3.47,3.07,2.84,2.68,2.57,2.49,2.42,2.37,2.32],
+22:[4.30,3.44,3.05,2.82,2.66,2.55,2.46,2.40,2.34,2.30],
+23:[4.28,3.42,3.03,2.80,2.64,2.53,2.44,2.37,2.32,2.27],
+24:[4.26,3.40,3.01,2.78,2.62,2.51,2.42,2.36,2.30,2.25],
+25:[4.24,3.39,2.99,2.76,2.60,2.49,2.40,2.34,2.28,2.24],
+26:[4.23,3.37,2.98,2.74,2.59,2.47,2.39,2.32,2.27,2.22],
+27:[4.21,3.35,2.96,2.73,2.57,2.46,2.37,2.31,2.25,2.20],
+28:[4.20,3.34,2.95,2.71,2.56,2.45,2.36,2.29,2.24,2.19],
+29:[4.18,3.33,2.93,2.70,2.55,2.43,2.35,2.28,2.22,2.18],
+30:[4.17,3.32,2.92,2.69,2.53,2.42,2.33,2.27,2.21,2.16],
+40:[4.08,3.23,2.84,2.61,2.45,2.34,2.25,2.18,2.12,2.08],
+60:[4.00,3.15,2.76,2.53,2.37,2.25,2.17,2.10,2.04,1.99],
+120:[3.92,3.07,2.68,2.45,2.29,2.17,2.09,2.02,1.96,1.91],
+1000:[3.84,3.00,2.60,2.37,2.21,2.10,2.01,1.94,1.88,1.83],
+};
+
+const F001 = {
+1:[4052,4999.5,5403,5625,5764,5859,5928,5981,6022,6056],
+2:[98.50,99.00,99.17,99.25,99.30,99.33,99.36,99.37,99.39,99.40],
+3:[34.12,30.82,29.46,28.71,28.24,27.91,27.67,27.49,27.35,27.23],
+4:[21.20,18.00,16.69,15.98,15.52,15.21,14.98,14.80,14.66,14.55],
+5:[16.26,13.27,12.06,11.39,10.97,10.67,10.46,10.29,10.16,10.05],
+6:[13.75,10.92,9.78,9.15,8.75,8.47,8.26,8.10,7.98,7.87],
+7:[12.25,9.55,8.45,7.85,7.46,7.19,6.99,6.84,6.72,6.62],
+8:[11.26,8.65,7.59,7.01,6.63,6.37,6.18,6.03,5.91,5.81],
+9:[10.56,8.02,6.99,6.42,6.06,5.80,5.61,5.47,5.35,5.26],
+10:[10.04,7.56,6.55,5.99,5.64,5.39,5.20,5.06,4.94,4.85],
+11:[9.65,7.21,6.22,5.67,5.32,5.07,4.89,4.74,4.63,4.54],
+12:[9.33,6.93,5.95,5.41,5.06,4.82,4.64,4.50,4.39,4.30],
+13:[9.07,6.70,5.74,5.21,4.86,4.62,4.44,4.30,4.19,4.10],
+14:[8.86,6.51,5.56,5.04,4.69,4.46,4.28,4.14,4.03,3.94],
+15:[8.68,6.36,5.42,4.89,4.56,4.32,4.14,4.00,3.89,3.80],
+16:[8.53,6.23,5.29,4.77,4.44,4.20,4.03,3.89,3.78,3.69],
+17:[8.40,6.11,5.18,4.67,4.34,4.10,3.93,3.79,3.68,3.59],
+18:[8.29,6.01,5.09,4.58,4.25,4.01,3.84,3.71,3.60,3.51],
+19:[8.18,5.93,5.01,4.50,4.17,3.94,3.77,3.63,3.52,3.43],
+20:[8.10,5.85,4.94,4.43,4.10,3.87,3.70,3.56,3.46,3.37],
+21:[8.02,5.78,4.87,4.37,4.04,3.81,3.64,3.51,3.40,3.31],
+22:[7.95,5.72,4.82,4.31,3.99,3.76,3.59,3.45,3.35,3.26],
+23:[7.88,5.66,4.76,4.26,3.94,3.71,3.54,3.41,3.30,3.21],
+24:[7.82,5.61,4.72,4.22,3.90,3.67,3.50,3.36,3.26,3.17],
+25:[7.77,5.57,4.68,4.18,3.85,3.63,3.46,3.32,3.22,3.13],
+26:[7.72,5.53,4.64,4.14,3.82,3.59,3.42,3.29,3.18,3.09],
+27:[7.68,5.49,4.60,4.11,3.78,3.56,3.39,3.26,3.15,3.06],
+28:[7.64,5.45,4.57,4.07,3.75,3.53,3.36,3.23,3.12,3.03],
+29:[7.60,5.42,4.54,4.04,3.73,3.50,3.33,3.20,3.09,3.00],
+30:[7.56,5.39,4.51,4.02,3.70,3.47,3.30,3.17,3.07,2.98],
+40:[7.31,5.18,4.31,3.83,3.51,3.29,3.12,2.99,2.89,2.80],
+60:[7.08,4.98,4.13,3.65,3.34,3.12,2.95,2.82,2.72,2.63],
+120:[6.85,4.79,3.95,3.48,3.17,2.96,2.79,2.66,2.56,2.47],
+1000:[6.63,4.61,3.78,3.32,3.02,2.80,2.64,2.51,2.41,2.32],
+};
+
+function lookupF(table, df1, df2){
+  const d1 = Math.min(Math.max(Math.round(df1),1), 10);
+  let d2 = Math.round(df2);
+  if(d2 < 1) d2 = 1;
+
+  if(F_DF2_ROWS.includes(d2)){
+    return table[d2][d1-1];
+  }
+  if(d2 > 1000){
+    return table[1000][d1-1];
+  }
+  // interpolasi linear antar dua baris df2 terdekat
+  let lower = F_DF2_ROWS[0], upper = F_DF2_ROWS[F_DF2_ROWS.length-1];
+  for(let i=0;i<F_DF2_ROWS.length-1;i++){
+    if(F_DF2_ROWS[i] < d2 && d2 < F_DF2_ROWS[i+1]){
+      lower = F_DF2_ROWS[i]; upper = F_DF2_ROWS[i+1]; break;
+    }
+  }
+  const vLow = table[lower][d1-1], vHigh = table[upper][d1-1];
+  const frac = (d2 - lower) / (upper - lower);
+  return vLow + (vHigh - vLow) * frac;
+}
+
+// ---------------- Format angka ----------------
+function fmt(n, dec){
+  if(!isFinite(n)) return '-';
+  dec = dec === undefined ? 2 : dec;
+  return Number(n.toFixed(dec)).toString();
+}
+
+// ---------------- Hitung ANOVA ----------------
+function calculate(){
+  const t = rows.length;                 // banyak perlakuan
+  const r = colCount();                  // banyak ulangan
+  const msg = document.getElementById('calcMsg');
+
+  // Validasi
+  let allFilled = true;
+  const dataMatrix = rows.map(row => row.values.map(v => {
+    const num = parseFloat(v);
+    if(v === '' || v === null || isNaN(num)) allFilled = false;
+    return num;
+  }));
+
+  if(t < 2 || r < 2){
+    showMsg('Minimal 2 perlakuan dan 2 ulangan diperlukan.', true);
+    return;
+  }
+  if(!allFilled){
+    showMsg('Lengkapi semua sel data terlebih dahulu.', true);
+    return;
+  }
+  msg.textContent = '';
+
+  // Total & rerata tiap perlakuan
+  const totals = dataMatrix.map(vals => vals.reduce((a,b)=>a+b,0));
+  const means  = totals.map(tt => tt / r);
+  const grandTotal = totals.reduce((a,b)=>a+b,0);
+  const N = t * r;
+
+  // FK
+  const FK = (grandTotal * grandTotal) / N;
+
+  // JK Total = sum(x^2) - FK
+  let sumSq = 0;
+  dataMatrix.forEach(vals => vals.forEach(v => sumSq += v*v));
+  const JKTotal = sumSq - FK;
+
+  // JK Perlakuan = sum(Total_i^2 / r) - FK
+  const JKPerlakuan = totals.reduce((a, tt) => a + (tt*tt)/r, 0) - FK;
+
+  // JK Galat
+  const JKGalat = JKTotal - JKPerlakuan;
+
+  // DB
+  const DBPerlakuan = t - 1;
+  const DBGalat = t * (r - 1);
+  const DBTotal = N - 1;
+
+  // KT
+  const KTPerlakuan = JKPerlakuan / DBPerlakuan;
+  const KTGalat = JKGalat / DBGalat;
+  const KTTotal = JKTotal / DBTotal;
+
+  // Fhitung
+  const Fhit = KTPerlakuan / KTGalat;
+
+  // Ftabel
+  const Ftab05 = lookupF(F005, DBPerlakuan, DBGalat);
+  const Ftab01 = lookupF(F001, DBPerlakuan, DBGalat);
+
+  // Keterangan
+  let ket = 'TN';
+  if(Fhit > Ftab01) ket = '**';
+  else if(Fhit > Ftab05) ket = '*';
+
+  // KK
+  const grandMean = grandTotal / N;
+  const KK = (Math.sqrt(KTGalat) / grandMean) * 100;
+
+  // -------- Render hasil --------
+  document.getElementById('valFK').textContent = fmt(FK, 2);
+  document.getElementById('valKK').textContent = fmt(KK, 2) + '%';
+
+  document.getElementById('anovaBody').innerHTML = `
+    <tr>
+      <td>Perlakuan</td><td>${DBPerlakuan}</td><td>${fmt(JKPerlakuan)}</td><td>${fmt(KTPerlakuan)}</td>
+      <td>${fmt(Fhit)}</td><td>${fmt(Ftab05)}</td><td>${fmt(Ftab01)}</td>
+      <td class="ket-star">${ket}</td>
+    </tr>
+    <tr>
+      <td>Galat</td><td>${DBGalat}</td><td>${fmt(JKGalat)}</td><td>${fmt(KTGalat)}</td>
+      <td>-</td><td>-</td><td>-</td><td>-</td>
+    </tr>
+    <tr>
+      <td>Total</td><td>${DBTotal}</td><td>${fmt(JKTotal)}</td><td>${fmt(KTTotal)}</td>
+      <td>-</td><td>-</td><td>-</td><td>-</td>
+    </tr>
+  `;
+
+  document.getElementById('resultCard').classList.remove('hidden');
+
+  // -------- Penjelasan langkah demi langkah --------
+  const totalsLine = rows.map((row,i) => `${escapeHtml(row.label)} = ${dataMatrix[i].join(' + ')} = ${fmt(totals[i])}`).join('<br>');
+  const meansLine = rows.map((row,i) => `${escapeHtml(row.label)} = ${fmt(totals[i])} ÷ ${r} = ${fmt(means[i])}`).join('<br>');
+  const sqTerms = totals.map(tt => `${fmt(tt)}²/${r}`).join(' + ');
+
+  document.getElementById('explainBody').innerHTML = `
+    <div class="explain-step">
+      <h4>1. Total &amp; Rerata per Perlakuan</h4>
+      <div class="line">${totalsLine}</div>
+      <div class="line" style="margin-top:6px">${meansLine}</div>
+      <div class="line" style="margin-top:6px"><span class="lead">Total Umum (Grand Total)</span> = ${totals.join(' + ')} = ${fmt(grandTotal)}</div>
+    </div>
+
+    <div class="explain-step">
+      <h4>2. Faktor Koreksi (FK)</h4>
+      <div class="line">FK = (Total Umum)² ÷ (t × r)</div>
+      <div class="line">FK = ${fmt(grandTotal)}² ÷ (${t} × ${r}) = ${fmt(grandTotal*grandTotal,2)} ÷ ${N} = <b>${fmt(FK)}</b></div>
+    </div>
+
+    <div class="explain-step">
+      <h4>3. Jumlah Kuadrat (JK)</h4>
+      <div class="line"><span class="lead">JK Total</span> = Σx² − FK = ${fmt(sumSq,2)} − ${fmt(FK)} = <b>${fmt(JKTotal)}</b></div>
+      <div class="line" style="margin-top:6px"><span class="lead">JK Perlakuan</span> = Σ(Total perlakuan²/r) − FK</div>
+      <div class="line">= (${sqTerms}) − ${fmt(FK)} = <b>${fmt(JKPerlakuan)}</b></div>
+      <div class="line" style="margin-top:6px"><span class="lead">JK Galat</span> = JK Total − JK Perlakuan = ${fmt(JKTotal)} − ${fmt(JKPerlakuan)} = <b>${fmt(JKGalat)}</b></div>
+    </div>
+
+    <div class="explain-step">
+      <h4>4. Derajat Bebas (DB)</h4>
+      <div class="line">DB Perlakuan = t − 1 = ${t} − 1 = <b>${DBPerlakuan}</b></div>
+      <div class="line">DB Galat = t(r − 1) = ${t}(${r} − 1) = <b>${DBGalat}</b></div>
+      <div class="line">DB Total = (t × r) − 1 = ${N} − 1 = <b>${DBTotal}</b></div>
+    </div>
+
+    <div class="explain-step">
+      <h4>5. Kuadrat Tengah (KT)</h4>
+      <div class="line">KT Perlakuan = JK Perlakuan ÷ DB Perlakuan = ${fmt(JKPerlakuan)} ÷ ${DBPerlakuan} = <b>${fmt(KTPerlakuan)}</b></div>
+      <div class="line">KT Galat = JK Galat ÷ DB Galat = ${fmt(JKGalat)} ÷ ${DBGalat} = <b>${fmt(KTGalat)}</b></div>
+      <div class="line">KT Total = JK Total ÷ DB Total = ${fmt(JKTotal)} ÷ ${DBTotal} = <b>${fmt(KTTotal)}</b></div>
+      <!-- <div class="line" style="margin-top:6px;color:var(--text-soft)">*KT Total biasanya tidak dipakai dalam pengujian F, karena Fhitung hanya membandingkan KT Perlakuan dengan KT Galat. Nilainya disajikan sekadar sebagai pelengkap tabel.</div> -->
+    </div>
+
+    <div class="explain-step">
+      <h4>6. F Hitung &amp; F Tabel</h4>
+      <div class="line">Fhitung = KT Perlakuan ÷ KT Galat = ${fmt(KTPerlakuan)} ÷ ${fmt(KTGalat)} = <b>${fmt(Fhit)}</b></div>
+      <div class="line" style="margin-top:6px">Ftabel diperoleh dari tabel distribusi F dengan dua derajat bebas:</div>
+      <div class="line">• db pembilang (kolom) = DB Perlakuan = <b>${DBPerlakuan}</b></div>
+      <div class="line">• db penyebut (baris) = DB Galat = <b>${DBGalat}</b></div>
+      <div class="line" style="margin-top:6px">Pada taraf signifikansi 5% (α = 0.05), pertemuan kolom db=${DBPerlakuan} dan baris db=${DBGalat} pada tabel F 0.05 menghasilkan Ftabel (0.05) = <b>${fmt(Ftab05)}</b>.</div>
+      <div class="line">Pada taraf signifikansi 1% (α = 0.01), pertemuan kolom dan baris yang sama pada tabel F 0.01 menghasilkan Ftabel (0.01) = <b>${fmt(Ftab01)}</b>.</div>
+      <div class="line" style="margin-top:6px;color:var(--text-soft)">*Nilai diambil dari tabel F baku. Jika db penyebut tidak persis tercantum di tabel, nilai dihitung dengan interpolasi linear antara dua baris db terdekat.</div>
+      <div class="line" style="margin-top:6px">
+        Karena Fhitung (${fmt(Fhit)}) ${ket==='**' ? '&gt; Ftabel 0.01, maka perlakuan berbeda <b>sangat nyata (**)</b>' : ket==='*' ? '&gt; Ftabel 0.05 tetapi ≤ Ftabel 0.01, maka perlakuan berbeda <b>nyata (*)</b>' : '≤ Ftabel 0.05, maka perlakuan <b>tidak berbeda nyata (TN)</b>'}.
+      </div>
+    </div>
+
+    <div class="explain-step">
+      <h4>7. Koefisien Keragaman (KK)</h4>
+      <div class="line">KK = (√KT Galat ÷ Rerata Umum) × 100%</div>
+      <div class="line">Rerata Umum = ${fmt(grandTotal)} ÷ ${N} = ${fmt(grandMean)}</div>
+      <div class="line">KK = (√${fmt(KTGalat)} ÷ ${fmt(grandMean)}) × 100% = <b>${fmt(KK)}%</b></div>
+    </div>
+  `;
+
+  document.getElementById('explainCard').classList.remove('hidden');
+}
+
+function copyResult(){
+  const fk = document.getElementById('valFK').textContent;
+  const kk = document.getElementById('valKK').textContent;
+  const rowsText = Array.from(document.querySelectorAll('#anovaBody tr')).map(tr =>
+    Array.from(tr.children).map(td => td.textContent).join(' | ')
+  ).join('\n');
+  copyText(`FK = ${fk}\nKK = ${kk}\n\nSK | DB | JK | KT | Fhit | Ftab0.05 | Ftab0.01 | Ket\n${rowsText}`);
+}
+
+renderTable();
+</script>
+</body>
+</html>
