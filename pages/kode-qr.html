@@ -397,8 +397,10 @@ async function toggleCamera(){
   }catch(err){
     console.error('Gagal mengakses kamera:', err);
     const name = err && err.name;
+    // if(name === 'NotAllowedError' || name === 'PermissionDeniedError'){
+    //   msg.textContent = 'Izin kamera ditolak. Di aplikasi WebView, izin kamera harus dikabulkan lewat pengaturan native aplikasi (bukan cuma browser) — lihat catatan developer.';
     if(name === 'NotAllowedError' || name === 'PermissionDeniedError'){
-      msg.textContent = 'Izin kamera ditolak. Di aplikasi WebView, izin kamera harus dikabulkan lewat pengaturan native aplikasi (bukan cuma browser) — lihat catatan developer.';
+      msg.textContent = 'Izin kamera ditolak atau perangkat tidak didukung.';
     } else if(name === 'NotFoundError' || name === 'DevicesNotFoundError'){
       msg.textContent = 'Tidak ditemukan kamera pada perangkat ini.';
     } else if(name === 'NotReadableError' || name === 'TrackStartError'){
