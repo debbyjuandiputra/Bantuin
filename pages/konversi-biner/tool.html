@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title id="pageTitle">Bantuin — Konversi Biner</title>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+.copy-row{ display:flex; gap:8px; align-items:stretch; }
+.copy-row input{
+  flex:1; padding:12px 14px; border:1px solid var(--border); border-radius:12px;
+  background:var(--bg); color:var(--text); font-size:14.5px; outline:none;
+}
+.icon-btn{
+  width:44px; flex-shrink:0; border-radius:12px; border:1px solid var(--border);
+  background:var(--surface-2); color:var(--text); display:flex; align-items:center; justify-content:center;
+}
+.icon-btn svg{ width:18px; height:18px; }
+.swap-row{ display:flex; justify-content:center; margin:2px 0 10px; }
+.swap-btn{
+  width:38px; height:38px; border-radius:50%; border:1px solid var(--border);
+  background:var(--surface-2); color:var(--orange); display:flex; align-items:center; justify-content:center;
+}
+.swap-btn svg{ width:18px; height:18px; }
+.explain-note{ font-size:12.5px; color:var(--text-soft); line-height:1.7; margin-top:4px; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../konversi-biner.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2 id="headTitle">Konversi</h2>
+</div>
+
+<div class="page-body">
+
+  <div class="card">
+    <h3 id="inputLabel">Input</h3>
+    <div class="field">
+      <textarea id="kbInput" rows="4" placeholder="Ketik atau tempel di sini..."></textarea>
+    </div>
+
+    <div class="swap-row">
+      <button class="swap-btn" onclick="swapDirection()" title="Tukar arah konversi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      </button>
+    </div>
+
+    <button class="btn" onclick="convertNow()">Konversi</button>
+    <div class="form-msg" id="kbMsg"></div>
+
+    <div class="field" style="margin-top:16px">
+      <label id="outputLabel">Hasil</label>
+      <div class="copy-row">
+        <input type="text" id="kbOutput" readonly placeholder="Hasil akan tampil di sini">
+        <button class="icon-btn" onclick="copyText(document.getElementById('kbOutput').value)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="explain-note" id="explainNote"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/supabase-config.js"></script>
+<script src="../../js/store.js"></script>
+<script src="../../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+const FORMATS = {
+  text:    { label:'Teks',    isText:true },
+  ascii:   { label:'ASCII',   isText:true },
+  binary:  { label:'Biner',   base:2,  pad:8 },
+  decimal: { label:'Desimal', base:10, pad:0 },
+  hex:     { label:'HEX',     base:16, pad:2 },
+  octal:   { label:'Oktal',   base:8,  pad:3 },
+};
+const VALID_IDS = Object.keys(FORMATS);
+
+function getParams(){
+  const p = new URLSearchParams(location.search);
+  let from = p.get('from'), to = p.get('to');
+  if(!VALID_IDS.includes(from)) from = 'text';
+  if(!VALID_IDS.includes(to))   to   = 'binary';
+  if(from === to) to = (from === 'text') ? 'binary' : 'text';
+  return { from, to };
+}
+
+let { from, to } = getParams();
+
+function applyLabels(){
+  const fLabel = FORMATS[from].label, tLabel = FORMATS[to].label;
+  document.title = `Bantuin — ${fLabel} ke ${tLabel}`;
+  document.getElementById('pageTitle').textContent = document.title;
+  document.getElementById('headTitle').textContent = `${fLabel} ke ${tLabel}`;
+  document.getElementById('inputLabel').textContent = `Masukkan ${fLabel}`;
+  document.getElementById('outputLabel').textContent = `Hasil ${tLabel}`;
+  document.getElementById('kbInput').placeholder =
+    FORMATS[from].isText ? 'Ketik teks di sini...' : `Masukkan nilai ${fLabel} (pisahkan dengan spasi jika lebih dari satu)...`;
+
+  let note;
+  if(FORMATS[from].isText && !FORMATS[to].isText){
+    note = `Setiap karakter akan diubah menjadi kode ${tLabel}-nya (kode ASCII/Unicode per karakter), dipisahkan spasi.`;
+  } else if(!FORMATS[from].isText && FORMATS[to].isText){
+    note = `Setiap kelompok angka ${fLabel} (dipisahkan spasi) dianggap sebagai satu kode karakter, lalu diubah kembali menjadi ${tLabel}.`;
+  } else if(FORMATS[from].isText && FORMATS[to].isText){
+    note = `Text dan ASCII pada dasarnya merepresentasikan karakter yang sama — hasil konversi berupa teks apa adanya.`;
+  } else {
+    note = `Bilangan ${fLabel} akan dikonversi langsung menjadi bilangan ${tLabel} (basis ${FORMATS[from].base} → basis ${FORMATS[to].base}).`;
+  }
+  document.getElementById('explainNote').textContent = note;
+
+  document.getElementById('kbInput').value = '';
+  document.getElementById('kbOutput').value = '';
+  document.getElementById('kbMsg').textContent = '';
+}
+
+function padCode(str, base, pad){
+  if(!pad) return str;
+  return str.padStart(pad, '0');
+}
+
+function textToCode(str, toId){
+  const f = FORMATS[toId];
+  const bytes = Array.from(new TextEncoder().encode(str)); // aman untuk unicode/emoji
+  return bytes.map(b => {
+    let s = b.toString(f.base);
+    if(toId === 'hex') s = s.toUpperCase();
+    return padCode(s, f.base, f.pad);
+  }).join(' ');
+}
+
+function codeToText(str, fromId){
+  const f = FORMATS[fromId];
+  const tokens = str.trim().split(/\s+/).filter(Boolean);
+  const bytes = tokens.map(tok => {
+    const n = parseInt(tok, f.base);
+    if(isNaN(n) || n < 0 || n > 255) throw new Error('invalid');
+    return n;
+  });
+  return new TextDecoder().decode(new Uint8Array(bytes));
+}
+
+function numberToNumber(str, fromId, toId){
+  const fBase = FORMATS[fromId].base, tBase = FORMATS[toId].base;
+  const cleaned = str.trim().replace(/\s+/g, '');
+  if(!cleaned) throw new Error('empty');
+  const n = parseInt(cleaned, fBase);
+  if(isNaN(n)) throw new Error('invalid');
+  let out = n.toString(tBase);
+  if(toId === 'hex') out = out.toUpperCase();
+  return out;
+}
+
+function convertNow(){
+  const input = document.getElementById('kbInput').value;
+  const msg = document.getElementById('kbMsg');
+  const outEl = document.getElementById('kbOutput');
+  msg.textContent = ''; msg.style.color = 'var(--danger)';
+  outEl.value = '';
+
+  if(!input.trim()){ msg.textContent = 'Masukkan data terlebih dahulu.'; return; }
+
+  try{
+    let result;
+    const fText = FORMATS[from].isText, tText = FORMATS[to].isText;
+
+    if(fText && tText){
+      result = input;
+    } else if(fText && !tText){
+      result = textToCode(input, to);
+    } else if(!fText && tText){
+      result = codeToText(input, from);
+    } else {
+      result = numberToNumber(input, from, to);
+    }
+
+    outEl.value = result;
+  }catch(err){
+    msg.textContent = `Format ${FORMATS[from].label} tidak valid untuk dikonversi.`;
+  }
+}
+
+function swapDirection(){
+  const params = new URLSearchParams(location.search);
+  const newFrom = to, newTo = from;
+  params.set('from', newFrom);
+  params.set('to', newTo);
+  location.search = params.toString();
+}
+
+applyLabels();
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Konversi Biner</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.kb-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:4px 16px 40px;
+}
+.kb-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:12px; display:flex; align-items:center; gap:10px; cursor:pointer;
+  transition:border-color .15s, transform .1s;
+}
+.kb-card:active{ transform:scale(.98); }
+.kb-card:hover{ border-color:var(--orange); }
+.kb-ic{
+  width:36px; height:36px; border-radius:10px; flex-shrink:0;
+  background:linear-gradient(145deg,var(--orange),var(--orange-dark));
+  color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;
+}
+.kb-card b{ font-size:12.5px; line-height:1.35; display:block; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../index.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Konversi Biner</h2>
+</div>
+
+<div style="padding:74px 16px 4px;font-size:13px;color:var(--text-soft);line-height:1.6">
+  
+</div>
+
+<div class="kb-grid" id="kbGrid"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-config.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+// { from, to, tag }  -> tag ditampilkan di ikon kotak kecil
+const KB_LIST = [
+  ['text','binary','010'],   ['binary','text','TEXT'],
+  ['hex','binary','010'],    ['binary','hex','HEX'],
+  ['ascii','binary','010'],  ['binary','ascii','ASCII'],
+  ['decimal','binary','010'],['binary','decimal','DEC'],
+  ['text','ascii','ASCII'],  ['ascii','text','TEXT'],
+  ['hex','decimal','DEC'],   ['decimal','hex','HEX'],
+  ['octal','binary','010'],  ['binary','octal','OCT'],
+  ['octal','decimal','DEC'], ['decimal','octal','OCT'],
+  ['hex','octal','OCT'],     ['octal','hex','HEX'],
+  ['text','octal','OCT'],    ['octal','text','TEXT'],
+  ['text','hex','HEX'],      ['hex','text','TEXT'],
+  ['text','decimal','DEC'],  ['decimal','text','TEXT'],
+];
+
+const KB_LABEL = { text:'Teks', ascii:'ASCII', binary:'Biner', decimal:'Desimal', hex:'HEX', octal:'Oktal' };
+
+function renderKB(){
+  const grid = document.getElementById('kbGrid');
+  grid.innerHTML = KB_LIST.map(([from,to,tag]) => `
+    <div class="kb-card" onclick="openTool('${from}','${to}')">
+      <div class="kb-ic">${tag}</div>
+      <b>${KB_LABEL[from]} ke ${KB_LABEL[to]}</b>
+    </div>
+  `).join('');
+}
+
+function openTool(from, to){
+  location.href = `konversi-biner/tool.html?from=${from}&to=${to}`;
+}
+
+renderKB();
+</script>
+</body>
+</html>
