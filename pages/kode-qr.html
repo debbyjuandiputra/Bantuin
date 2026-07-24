@@ -110,12 +110,12 @@
       <p class="desc">Pindai kode QR lewat kamera langsung, atau unggah gambar yang berisi kode QR.</p>
 
       <div class="scan-tab-row">
-        <button class="active" id="scanCamBtn" onclick="switchScanMode('camera')">Kamera</button>
-        <button id="scanUpBtn" onclick="switchScanMode('upload')">Unggah Gambar</button>
+        <button id="scanCamBtn" onclick="switchScanMode('camera')">Kamera</button>
+        <button class="active" id="scanUpBtn" onclick="switchScanMode('upload')">Unggah Gambar</button>
       </div>
 
       <!-- Kamera -->
-      <div id="scanCameraPane">
+      <div id="scanCameraPane" class="hidden">
         <div class="cam-wrap">
           <video id="camVideo" playsinline muted></video>
           <div class="cam-frame"></div>
@@ -125,7 +125,7 @@
       </div>
 
       <!-- Upload -->
-      <div id="scanUploadPane" class="hidden">
+      <div id="scanUploadPane">
         <div class="dropzone" onclick="document.getElementById('qrImgInput').click()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <div id="qrImgLabel">Ketuk untuk pilih gambar kode QR</div>
@@ -371,6 +371,10 @@ async function toggleCamera(){
       stopCamera();
       return;
     }
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      msg.textContent = 'Kamera tidak tersedia di WebView ini. Biasanya karena halaman tidak dibuka lewat HTTPS, atau WebView aplikasi belum mendukung akses kamera (lihat catatan developer).';
+      return;
+    }
     const constraints = {
       video: {
         facingMode: { ideal: 'environment' },
@@ -391,7 +395,19 @@ async function toggleCamera(){
     document.getElementById('camToggleBtn').textContent = 'Matikan Kamera';
     scanCameraLoop();
   }catch(err){
-    msg.textContent = 'Tidak bisa mengakses kamera. Pastikan izin kamera sudah diberikan.';
+    console.error('Gagal mengakses kamera:', err);
+    const name = err && err.name;
+    if(name === 'NotAllowedError' || name === 'PermissionDeniedError'){
+      msg.textContent = 'Izin kamera ditolak. Di aplikasi WebView, izin kamera harus dikabulkan lewat pengaturan native aplikasi (bukan cuma browser) — lihat catatan developer.';
+    } else if(name === 'NotFoundError' || name === 'DevicesNotFoundError'){
+      msg.textContent = 'Tidak ditemukan kamera pada perangkat ini.';
+    } else if(name === 'NotReadableError' || name === 'TrackStartError'){
+      msg.textContent = 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi lain yang memakai kamera lalu coba lagi.';
+    } else if(name === 'SecurityError'){
+      msg.textContent = 'Akses kamera diblokir karena halaman tidak dibuka lewat HTTPS (secure context).';
+    } else {
+      msg.textContent = 'Tidak bisa mengakses kamera (' + (name || (err && err.message) || 'unknown') + '). Pastikan izin kamera sudah diberikan lewat WebView aplikasi.';
+    }
   }
 }
 
