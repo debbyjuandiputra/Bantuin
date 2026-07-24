@@ -353,7 +353,7 @@ function displayResult(d, ex, originalInput, rdap, dnsRecords){
 
   // Header
   const isDomainSearch = originalInput && !isIpAddress(originalInput);
-  document.getElementById('rIp').textContent  = isDomainSearch ? `${originalInput} → ${d.ip}` : (d.ip || '—');
+  document.getElementById('rIp').textContent  = isDomainSearch ? `${originalInput}` : (d.ip || '—');
   document.getElementById('rOrg').textContent = conn.isp || conn.org || '—';
 
   // Bendera emoji (sudah disediakan langsung oleh ipwho.is)

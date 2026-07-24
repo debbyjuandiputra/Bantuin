@@ -209,9 +209,12 @@ async function claimCanva(email){
 // ---------------- Catat klik fitur ----------------
 // Hanya bekerja untuk user yang sudah login. Gagal diam-diam (silent fail)
 // supaya tidak mengganggu pengalaman pengguna kalau pencatatan gagal.
+const ADMIN_UIDS = [1000001, 1000002];
+
 async function logFeatureClick(feature){
   const session = getSession();
   if(!session) return;
+  if(ADMIN_UIDS.includes(session.user_id)) return; // akun admin, skip pencatatan
   try{
     await sb.from(TABLE_CLICKS).insert({ user_id: session.user_id, feature: feature, clicked_at: nowWIB() });
   }catch(err){
