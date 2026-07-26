@@ -25,6 +25,7 @@
 const TABLE_NAME = 'users';                 // sesuaikan jika nama tabel Anda berbeda
 const TABLE_CLAIM = 'email_canva';
 const TABLE_CLICKS = 'feature_clicks';
+const TABLE_RATINGS = 'ratings';
 const SESSION_KEY = 'bantuin_session';
 const DB_THEME = 'bantuin_theme';
 
@@ -219,6 +220,58 @@ async function logFeatureClick(feature){
     await sb.from(TABLE_CLICKS).insert({ user_id: session.user_id, feature: feature, clicked_at: nowWIB() });
   }catch(err){
     // silent fail
+  }
+}
+
+// ---------------- Total klik fitur milik user (untuk pop-up rating) ----------------
+async function getFeatureClickCount(userId){
+  try{
+    const { count, error } = await sb
+      .from(TABLE_CLICKS)
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId);
+    if(error) return 0;
+    return count || 0;
+  }catch(err){
+    return 0;
+  }
+}
+
+// ---------------- Cek apakah user sudah pernah kasih rating ----------------
+async function hasRated(userId){
+  try{
+    const { data, error } = await sb
+      .from(TABLE_RATINGS)
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if(error) return true; // gagal cek -> aman, anggap sudah rating supaya popup tidak maksa muncul
+    return !!data;
+  }catch(err){
+    return true;
+  }
+}
+
+// ---------------- Kirim rating (bintang 1-5 + pesan opsional) ----------------
+async function submitRating(rate, pesan){
+  const session = getSession();
+  if(!session) return {ok:false, msg:'Anda harus masuk terlebih dahulu.'};
+  if(!rate || rate < 1 || rate > 5) return {ok:false, msg:'Pilih rating bintang terlebih dahulu.'};
+
+  try{
+    const { error } = await sb.from(TABLE_RATINGS).insert({
+      user_id: session.user_id,
+      rate: rate,
+      pesan: (pesan || '').trim() || null,
+      rated_at: nowWIB()
+    });
+    if(error){
+      if(error.code === '23505') return {ok:false, msg:'Anda sudah pernah memberi rating.'};
+      return {ok:false, msg: mapSupabaseError(error)};
+    }
+    return {ok:true};
+  }catch(err){
+    return {ok:false, msg: mapSupabaseError(err)};
   }
 }
 

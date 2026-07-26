@@ -87,9 +87,28 @@ function renderFeatures(){
 }
 
 // Dipanggil saat kartu fitur diklik: catat klik (kalau sudah login),
-// lalu buka halaman fiturnya. Tamu tetap bisa langsung membuka fitur.
-function openFeature(featureId, page){
-  logFeatureClick(featureId);
+// cek apakah saatnya menampilkan pop-up rating (kelipatan 7 klik & belum
+// pernah rating), lalu buka halaman fiturnya. Tamu tetap bisa langsung
+// membuka fitur (tidak pernah kena pop-up rating).
+async function openFeature(featureId, page){
+  const session = getSession();
+  await logFeatureClick(featureId);
+
+  if(session){
+    try{
+      const count = await getFeatureClickCount(session.user_id);
+      if(count > 0 && count % 7 === 0){
+        const already = await hasRated(session.user_id);
+        if(!already){
+          showRatingPopup(() => { location.href = page; });
+          return; // navigasi ditunda sampai pop-up ditutup
+        }
+      }
+    }catch(err){
+      // gagal cek -> lanjut navigasi seperti biasa, jangan blokir pengguna
+    }
+  }
+
   location.href = page;
 }
 
@@ -230,4 +249,75 @@ if(currentSession && sessionStorage.getItem('bantuin_show_claim')){
   setTimeout(function(){
     document.getElementById('claimCanvaModal').classList.add('show');
   }, 600);
+}
+
+// ==========================================================
+// Pop-up Rating — muncul untuk user login yang total klik fiturnya
+// (feature_clicks) kelipatan 7 dan belum pernah kasih rating.
+// Dipicu dari openFeature() di atas, sebelum berpindah halaman.
+// ==========================================================
+let selectedRating = 0;
+let pendingNavigateAfterRating = null;
+
+function showRatingPopup(onDone){
+  pendingNavigateAfterRating = onDone || null;
+  selectedRating = 0;
+  renderStars();
+  document.getElementById('ratingMsg').textContent = '';
+  document.getElementById('ratingPesan').value = '';
+  document.getElementById('ratingModal').classList.add('show');
+}
+
+function closeRatingPopupAndContinue(){
+  document.getElementById('ratingModal').classList.remove('show');
+  const cont = pendingNavigateAfterRating;
+  pendingNavigateAfterRating = null;
+  if(cont) cont();
+}
+
+function selectStar(n){
+  selectedRating = n;
+  renderStars();
+}
+
+function renderStars(){
+  const wrap = document.getElementById('ratingStars');
+  if(!wrap) return;
+  wrap.innerHTML = [1,2,3,4,5].map(n => `
+    <button type="button" class="star-btn ${n <= selectedRating ? 'filled' : ''}" onclick="selectStar(${n})" aria-label="${n} bintang">
+      <svg viewBox="0 0 24 24" fill="${n <= selectedRating ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 8.5 22 9.5 17 14.5 18.5 21.5 12 18 5.5 21.5 7 14.5 2 9.5 9 8.5 12 2"/></svg>
+    </button>
+  `).join('');
+}
+
+async function submitRatingPopup(){
+  const msg = document.getElementById('ratingMsg');
+  const btn = document.getElementById('ratingSubmitBtn');
+  const pesan = document.getElementById('ratingPesan').value;
+
+  if(selectedRating < 1){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Pilih rating bintang terlebih dahulu.';
+    return;
+  }
+
+  msg.textContent = '';
+  btn.disabled = true; btn.textContent = 'Mengirim...';
+
+  const res = await submitRating(selectedRating, pesan);
+
+  btn.disabled = false; btn.textContent = 'Kirim Rating';
+
+  if(res.ok){
+    msg.style.color = 'var(--success)';
+    msg.textContent = 'Terima kasih atas ratingnya!';
+    setTimeout(closeRatingPopupAndContinue, 1200);
+  } else {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = res.msg;
+  }
+}
+
+function skipRatingPopup(){
+  closeRatingPopupAndContinue();
 }

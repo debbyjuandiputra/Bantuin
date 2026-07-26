@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title id="pageTitle">Bantuin — Konversi File</title>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../konversi-dokumen.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2 id="headTitle">Konversi File</h2>
+</div>
+
+<div class="page-body">
+  <div class="card">
+    <h3 id="cardTitle">Konversi</h3>
+    <p class="desc" id="cardDesc"></p>
+
+    <div class="dropzone" onclick="document.getElementById('fileInput').click()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <div id="fileLabel">Ketuk untuk pilih file</div>
+    </div>
+    <input type="file" id="fileInput" class="hidden">
+
+    <button class="btn" style="margin-top:12px" id="convertBtn">Konversi</button>
+    <div class="form-msg" id="convMsg"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script>
+  // PENTING: docx.js (docx@8.5.0) dan docx-preview SAMA-SAMA memakai nama
+  // variabel global "docx". docx-preview dimuat setelah ini dan akan MENIMPA
+  // window.docx, jadi referensi Document/Packer/TextRun dari docx.js harus
+  // diselamatkan dulu ke variabel lain sebelum itu terjadi.
+  window.DocxJS = window.docx;
+</script>
+<!-- docx-preview: merender DOCX ke HTML/CSS lengkap dengan ukuran halaman, margin,
+     font, spasi, dsb. sesuai setingan Word aslinya (jauh lebih akurat dari mammoth) -->
+<script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://unpkg.com/docx-preview@0.3.5/dist/docx-preview.min.js"></script>
+<script>
+  // Setelah docx-preview dimuat, window.docx sekarang berisi library docx-preview
+  // (renderAsync dkk). Simpan itu juga ke nama sendiri biar jelas & tidak bentrok.
+  window.DocxPreview = window.docx;
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/supabase-config.js"></script>
+<script src="../../js/store.js"></script>
+<script src="../../js/util.js"></script>
+<script>
+applyStoredTheme();
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const TYPES = {
+  pdf2docx: {
+    title: 'PDF ke DOCX',
+    desc: 'Mengambil teks dari PDF dan menyusunnya menjadi dokumen Word (.docx) asli, per baris sesuai posisi teks aslinya, lengkap dengan ukuran font, bold/italic, dan indentasi kiri yang mendekati aslinya. Tata letak kompleks (gambar, kolom, tabel) tidak selalu terjaga sempurna.',
+    accept: '.pdf',
+    label: 'Ketuk untuk pilih file PDF',
+    btn: 'Konversi ke DOCX',
+    run: convertPdfToDocx
+  },
+  docx2pdf: {
+    title: 'DOCX ke PDF',
+    desc: 'Mengubah dokumen Word (.docx) menjadi file PDF.',
+    accept: '.docx',
+    label: 'Ketuk untuk pilih file DOCX',
+    btn: 'Konversi ke PDF',
+    run: convertDocxToPdf
+  },
+  xlsx2csv: {
+    title: 'XLSX ke CSV',
+    desc: 'Mengubah sheet pertama pada file Excel menjadi file CSV.',
+    accept: '.xlsx,.xls',
+    label: 'Ketuk untuk pilih file XLSX',
+    btn: 'Konversi ke CSV',
+    run: convertXlsxToCsv
+  },
+  csv2xlsx: {
+    title: 'CSV ke XLSX',
+    desc: 'Mengubah file CSV menjadi file Excel (.xlsx).',
+    accept: '.csv',
+    label: 'Ketuk untuk pilih file CSV',
+    btn: 'Konversi ke XLSX',
+    run: convertCsvToXlsx
+  },
+};
+
+function getType(){
+  const p = new URLSearchParams(location.search);
+  const t = p.get('type');
+  return TYPES[t] ? t : 'pdf2docx';
+}
+
+const currentType = getType();
+const cfg = TYPES[currentType];
+
+function applyLabels(){
+  document.title = `Bantuin — ${cfg.title}`;
+  document.getElementById('pageTitle').textContent = document.title;
+  document.getElementById('headTitle').textContent = cfg.title;
+  document.getElementById('cardTitle').textContent = cfg.title;
+  document.getElementById('cardDesc').textContent = cfg.desc;
+  document.getElementById('fileInput').setAttribute('accept', cfg.accept);
+  document.getElementById('fileLabel').textContent = cfg.label;
+  document.getElementById('convertBtn').textContent = cfg.btn;
+  document.getElementById('convertBtn').onclick = cfg.run;
+}
+
+document.getElementById('fileInput').addEventListener('change', function(){
+  document.getElementById('fileLabel').textContent = this.files[0] ? this.files[0].name : cfg.label;
+});
+
+function setMsg(text, isError){
+  const msg = document.getElementById('convMsg');
+  msg.style.color = isError ? 'var(--danger)' : 'var(--success)';
+  msg.textContent = text;
+}
+
+// ---------------- PDF -> DOCX (docx asli lewat library docx.js, bukan trik HTML) ----------------
+// Selain teksnya, sekarang juga diambil: ukuran font tiap baris (dari matrix
+// transform PDF), bold/italic (dari nama font), dan indentasi kiri (dari posisi
+// X relatif terhadap margin kiri halaman) — supaya scale, ukuran huruf, dan
+// spacing/indentasi ikut terbawa ke DOCX, bukan cuma teks polosnya saja.
+async function extractPdfLines(pdf){
+  const lines = [];
+  for(let p = 1; p <= pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+
+    // Kelompokkan item teks per baris berdasarkan posisi Y (toleransi 2px)
+    const lineMap = [];
+    content.items.forEach(item => {
+      if(!item.str || !item.str.trim()) return;
+      const y = item.transform[5];
+      let bucket = lineMap.find(b => Math.abs(b.y - y) < 2);
+      if(!bucket){ bucket = { y, items: [] }; lineMap.push(bucket); }
+      bucket.items.push(item);
+    });
+
+    lineMap.sort((a, b) => b.y - a.y); // urut atas ke bawah
+
+    // Margin kiri halaman: posisi X paling kecil di antara semua baris, dipakai
+    // sebagai patokan "tanpa indentasi" untuk baris-baris lain di halaman ini.
+    const pageLeftX = lineMap.length
+      ? Math.min(...lineMap.map(b => Math.min(...b.items.map(it => it.transform[4]))))
+      : 0;
+
+    lineMap.forEach(bucket => {
+      const sortedItems = bucket.items.slice().sort((a, b) => a.transform[4] - b.transform[4]);
+      const text = sortedItems
+        .map(it => it.str)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if(!text) return;
+
+      // Ukuran font baris = tinggi rata-rata glyph (dari matrix transform),
+      // dalam satuan pt (satuan default ruang koordinat PDF).
+      const sizes = bucket.items.map(it => Math.hypot(it.transform[2], it.transform[3])).filter(s => s > 0);
+      const fontSize = sizes.length ? sizes.reduce((a, b) => a + b, 0) / sizes.length : 11;
+
+      // Deteksi bold/italic dari nama font (mis. "Helvetica-BoldOblique").
+      const fontNames = bucket.items.map(it => {
+        const style = content.styles && content.styles[it.fontName];
+        return ((style && style.fontFamily) || it.fontName || '').toLowerCase();
+      }).join(' ');
+      const bold = /bold|black|heavy|semibold/.test(fontNames);
+      const italic = /italic|oblique/.test(fontNames);
+
+      // Indentasi kiri relatif terhadap margin kiri halaman, dalam pt.
+      const indentPt = Math.max(0, sortedItems[0].transform[4] - pageLeftX);
+
+      lines.push({ text, fontSize, bold, italic, indentPt });
+    });
+
+    if(p < pdf.numPages) lines.push({ pageBreak: true });
+  }
+  return lines;
+}
+
+async function convertPdfToDocx(){
+  const file = document.getElementById('fileInput').files[0];
+  if(!file){ setMsg('Pilih file PDF terlebih dahulu.', true); return; }
+  setMsg('Memproses...', false);
+
+  try{
+    if(!window.DocxJS || !window.DocxJS.Document){
+      setMsg('Gagal memuat library pembuat DOCX (docx.js) dari CDN. Cek koneksi internet lalu coba lagi.', true);
+      return;
+    }
+    const arrayBuffer = await file.arrayBuffer();
+
+    let pdf;
+    try{
+      pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    }catch(loadErr){
+      // pdf.js melempar error khusus untuk PDF yang benar-benar dikunci password,
+      // jadi pesan "terkunci" hanya ditampilkan kalau memang itu penyebabnya.
+      if(loadErr && (loadErr.name === 'PasswordException' || loadErr instanceof pdfjsLib.PasswordException)){
+        setMsg('File PDF ini dilindungi password. Buka & hapus passwordnya dulu (lewat Word/Acrobat), baru unggah ulang.', true);
+      } else if(loadErr && (loadErr.name === 'InvalidPDFException' || loadErr instanceof pdfjsLib.InvalidPDFException)){
+        setMsg('File ini bukan PDF yang valid atau rusak.', true);
+      } else {
+        console.error(loadErr);
+        setMsg('Gagal membuka file PDF ini: ' + (loadErr && loadErr.message ? loadErr.message : 'error tidak diketahui') + '.', true);
+      }
+      return;
+    }
+
+    const lines = await extractPdfLines(pdf);
+
+    if(!lines.some(l => !l.pageBreak)){
+      setMsg('Tidak ada teks yang bisa diekstrak dari PDF ini (kemungkinan hasil scan/gambar, bukan teks asli).', true);
+      return;
+    }
+
+    const { Document, Packer, Paragraph, TextRun, PageBreak } = window.DocxJS;
+    const children = [];
+    lines.forEach(line => {
+      if(line.pageBreak){
+        children.push(new Paragraph({ children: [new PageBreak()] }));
+      } else {
+        // pt -> half-point (satuan ukuran font di docx.js) dan pt -> twips
+        // (satuan indentasi/spacing di docx.js, 1pt = 20 twips).
+        const sizeHalfPt = Math.max(12, Math.round(line.fontSize * 2));
+        const indentTwips = line.indentPt > 3 ? Math.round(line.indentPt * 20) : 0;
+
+        children.push(new Paragraph({
+          indent: indentTwips ? { left: indentTwips } : undefined,
+          spacing: { after: 120 },
+          children: [new TextRun({
+            text: line.text,
+            size: sizeHalfPt,
+            bold: line.bold,
+            italics: line.italic
+          })]
+        }));
+      }
+    });
+
+    const doc = new Document({ sections: [{ properties: {}, children }] });
+    const blob = await Packer.toBlob(doc);
+    downloadBlob(blob, file.name.replace(/\.pdf$/i, '') + '.docx');
+    setMsg('Berhasil! File .docx telah diunduh.', false);
+  }catch(err){
+    console.error(err);
+    setMsg('Gagal mengonversi file ini: ' + (err && err.message ? err.message : 'error tidak diketahui') + '.', true);
+  }
+}
+
+// ---------------- DOCX -> PDF ----------------
+// Dulu pakai mammoth (cuma menyisakan teks polos ke HTML generik) lalu di-print
+// ke PDF dengan margin default html2pdf. Karena mammoth sengaja membuang
+// formatting manual (ukuran font, spacing, ukuran halaman, dst.), hasilnya tidak
+// pernah cocok dengan file Word aslinya.
+// Sekarang pakai docx-preview: library ini membaca XML docx lalu merender ulang
+// setiap halaman persis seperti yang dilihat di Word (ukuran kertas, margin,
+// font & ukurannya, line spacing, tabel, dst). Tiap halaman hasil render lalu
+// di-screenshot dengan html2canvas dan ditempel satu-satu ke halaman PDF
+// berukuran sama, jadi styling & tata letaknya ikut terbawa.
+async function convertDocxToPdf(){
+  const file = document.getElementById('fileInput').files[0];
+  if(!file){ setMsg('Pilih file DOCX terlebih dahulu.', true); return; }
+  setMsg('Memproses...', false);
+
+  // Panggung render disembunyikan (bukan display:none, karena html2canvas perlu
+  // elemen benar-benar ter-layout) di luar area yang terlihat pengguna.
+  const stage = document.createElement('div');
+  stage.style.position = 'fixed';
+  stage.style.left = '-99999px';
+  stage.style.top = '0';
+  stage.style.background = '#fff';
+  document.body.appendChild(stage);
+
+  try{
+    if(!window.DocxPreview || !window.DocxPreview.renderAsync){
+      setMsg('Gagal memuat library pembaca DOCX (docx-preview) dari CDN. Cek koneksi internet lalu coba lagi.', true);
+      document.body.removeChild(stage);
+      return;
+    }
+    const arrayBuffer = await file.arrayBuffer();
+
+    await window.DocxPreview.renderAsync(arrayBuffer, stage, stage, {
+      inWrapper: true,
+      ignoreWidth: false,
+      ignoreHeight: false,
+      ignoreFonts: false,
+      breakPages: true,
+      experimental: true,
+      useBase64URL: true
+    });
+
+    // Setiap file .docx-preview page di dalam wrapper mewakili satu halaman Word,
+    // sudah dalam ukuran px yang sesuai ukuran kertas & margin asli dokumen.
+    const pageEls = stage.querySelectorAll('.docx-wrapper > section.docx, .docx-wrapper > .docx');
+    if(!pageEls.length) throw new Error('Tidak ada halaman yang berhasil dirender dari file ini.');
+
+    const { jsPDF } = window.jspdf;
+    let pdf = null;
+
+    for(let i = 0; i < pageEls.length; i++){
+      const pageEl = pageEls[i];
+      const canvas = await html2canvas(pageEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+      // Konversi ukuran halaman dari px (96dpi) ke mm supaya proporsi halaman PDF
+      // sama persis dengan halaman Word aslinya (A4, Letter, custom, dll ikut).
+      const widthMm = (pageEl.offsetWidth / 96) * 25.4;
+      const heightMm = (pageEl.offsetHeight / 96) * 25.4;
+      const orientation = widthMm > heightMm ? 'l' : 'p';
+
+      if(!pdf){
+        pdf = new jsPDF({ orientation, unit: 'mm', format: [widthMm, heightMm] });
+      } else {
+        pdf.addPage([widthMm, heightMm], orientation);
+      }
+      pdf.addImage(imgData, 'JPEG', 0, 0, widthMm, heightMm);
+    }
+
+    const filename = file.name.replace(/\.docx$/i, '') + '.pdf';
+    pdf.save(filename);
+    setMsg('Berhasil! File PDF telah diunduh.', false);
+  }catch(err){
+    console.error(err);
+    setMsg('Gagal mengonversi file ini: ' + (err && err.message ? err.message : 'pastikan file DOCX tidak rusak.'), true);
+  }finally{
+    document.body.removeChild(stage);
+  }
+}
+
+// ---------------- XLSX -> CSV ----------------
+function convertXlsxToCsv(){
+  const file = document.getElementById('fileInput').files[0];
+  if(!file){ setMsg('Pilih file XLSX terlebih dahulu.', true); return; }
+  setMsg('Memproses...', false);
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const csv = XLSX.utils.sheet_to_csv(sheet);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      downloadBlob(blob, file.name.replace(/\.(xlsx|xls)$/i, '') + '.csv');
+      setMsg('Berhasil! File CSV telah diunduh.', false);
+    }catch(err){
+      console.error(err);
+      setMsg('Gagal mengonversi file ini.', true);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ---------------- CSV -> XLSX ----------------
+function convertCsvToXlsx(){
+  const file = document.getElementById('fileInput').files[0];
+  if(!file){ setMsg('Pilih file CSV terlebih dahulu.', true); return; }
+  setMsg('Memproses...', false);
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, { type: 'string' });
+      const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([out], { type: 'application/octet-stream' });
+      downloadBlob(blob, file.name.replace(/\.csv$/i, '') + '.xlsx');
+      setMsg('Berhasil! File XLSX telah diunduh.', false);
+    }catch(err){
+      console.error(err);
+      setMsg('Gagal mengonversi file ini.', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+applyLabels();
+</script>
+</body>
+</html>

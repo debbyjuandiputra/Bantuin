@@ -174,6 +174,21 @@
   </div>
 </div>
 
+<!-- Modal Rating -->
+<div class="modal-bg" id="ratingModal">
+  <div class="modal-box">
+    <h3>Suka pakai Bantuin?</h3>
+    <p style="font-size:13px;color:var(--text-soft);margin-bottom:14px">Beri rating supaya kami tahu apa yang perlu ditingkatkan.</p>
+    <div id="ratingStars" style="display:flex;justify-content:center;gap:6px;margin-bottom:14px"></div>
+    <div class="field">
+      <textarea id="ratingPesan" rows="3" placeholder="Pesan/masukan (opsional)"></textarea>
+    </div>
+    <div class="form-msg" id="ratingMsg" style="margin-top:8px"></div>
+    <button class="btn" style="margin-top:12px" id="ratingSubmitBtn" onclick="submitRatingPopup()">Kirim Rating</button>
+    <button class="btn outline" style="margin-top:8px" onclick="skipRatingPopup()">Nanti Saja</button>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-config.js"></script>
 <script src="js/legal.js"></script>

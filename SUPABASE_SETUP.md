@@ -119,6 +119,37 @@ create index if not exists auth_keys_user_id_idx on public.auth_keys(user_id);
 > `judul` dan `isi` dienkripsi (bisa didekripsi), bukan di-hash.
 > Lihat komentar lengkap di `js/crypto.js` untuk penjelasan & batasannya.
 
+## 3d. Buat tabel `ratings` (pop-up rating aplikasi)
+
+Pop-up rating muncul otomatis untuk user yang **sudah login** setiap total
+klik fiturnya (jumlah baris di `feature_clicks` milik user tersebut)
+mencapai kelipatan 7 (7, 14, 21, dst) — **dan** dia belum pernah mengisi
+rating sebelumnya. Sekali sudah rating, kolom `user_id` yang `unique` di
+bawah ini memastikan pop-up tidak akan muncul lagi untuk user itu.
+
+```sql
+create table if not exists public.ratings (
+  id bigint generated always as identity primary key,
+  user_id integer not null unique references public.users(user_id), -- unique = 1 user 1 rating
+  rate smallint not null check (rate between 1 and 5),
+  pesan text,                           -- opsional
+  rated_at timestamptz not null default now()
+);
+```
+
+## 3e. Tambahkan policy SELECT ke `feature_clicks` (dibutuhkan pop-up rating)
+
+Sebelumnya tabel `feature_clicks` hanya punya policy INSERT. Supaya
+aplikasi bisa menghitung total klik fitur milik user (untuk cek kelipatan
+7), tambahkan policy SELECT berikut:
+
+```sql
+create policy "Siapa saja boleh menghitung klik fitur"
+  on public.feature_clicks for select
+  to anon
+  using (true);
+```
+
 ## 4. Aktifkan Row Level Security (RLS)
 
 ```sql
@@ -198,6 +229,26 @@ create policy "Siapa saja boleh kelola kunci authenticator"
   to anon
   using (true)
   with check (true);
+
+-- ---------- ratings ----------
+alter table public.ratings enable row level security;
+
+-- Izinkan insert rating baru. Duplikat (user sudah pernah rating)
+-- otomatis ditolak oleh constraint unique(user_id) di atas.
+create policy "Siapa saja boleh memberi rating"
+  on public.ratings for insert
+  to anon
+  with check (true);
+
+-- Izinkan select agar aplikasi bisa cek "user ini sudah pernah rating
+-- belum?" sebelum menampilkan pop-up.
+create policy "Siapa saja boleh cek status rating"
+  on public.ratings for select
+  to anon
+  using (true);
+
+-- Tidak ada policy UPDATE/DELETE -> rating yang sudah masuk tidak bisa
+-- diubah/dihapus lewat aplikasi (hanya lewat dashboard Supabase Anda).
 ```
 
 > **Soal jam pada `created_at` / `clicked_at` / `catatan.created_at` /
@@ -237,4 +288,5 @@ catatan klik fitur, dan fitur Catatan semuanya ditangani penuh oleh
 - `updateProfile` → simpan Nama Lengkap & Email opsional ke tabel `users`.
 - `claimCanva` → insert ke tabel `email_canva`, ditolak otomatis kalau email sudah pernah klaim.
 - `logFeatureClick` → insert ke tabel `feature_clicks`, hanya berjalan kalau ada sesi login aktif.
+- `getFeatureClickCount` / `hasRated` / `submitRating` → dipakai pop-up rating di `js/home.js` (fungsi `openFeature`): setiap klik fitur, total klik user dihitung dari `feature_clicks`; kalau kelipatan 7 dan `ratings` belum punya baris untuk user itu, pop-up rating ditampilkan (menunda perpindahan halaman) sebelum akhirnya membuka fitur yang diklik.
 - `listNotes` / `getNote` / `saveNote` / `deleteNote` (di `js/notes.js`) → CRUD ke tabel `catatan`, judul & isi otomatis dienkripsi/didekripsi lewat `js/crypto.js`. Fitur ini wajib login (tidak ada mode tamu).
