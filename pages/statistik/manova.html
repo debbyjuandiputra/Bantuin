@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — MANOVA</title>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+.formula-desc{ font-size:13px; color:var(--text-soft); line-height:1.6; }
+
+.info-btn{
+  width:26px; height:26px; min-width:26px; border-radius:50%; border:1.5px solid var(--border);
+  background:transparent; color:var(--text-soft); font-size:13px; font-weight:800; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; margin-left:auto;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.info-btn:hover, .info-btn.active{ background:var(--orange); border-color:var(--orange); color:#fff; }
+
+
+.at-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -2px; }
+.at-table{ border-collapse:collapse; width:100%; min-width:100%; }
+.at-table th, .at-table td{
+  border:1px solid var(--border); padding:0; text-align:center; white-space:nowrap;
+}
+.at-table th{
+  background:var(--surface-2); font-size:11.5px; color:var(--text-soft); font-weight:700;
+  padding:8px 6px;
+}
+.at-table th.vh{ font-size:10.5px; padding:6px 4px; }
+.at-col-h{ display:flex; align-items:center; justify-content:center; gap:6px; }
+.at-col-h button{
+  width:18px; height:18px; min-width:18px; border-radius:6px; border:1px solid var(--border);
+  background:transparent; color:var(--text-soft); font-size:12px; line-height:1; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .15s, color .15s, border-color .15s;
+}
+.at-col-h button:hover{ background:var(--danger); border-color:var(--danger); color:#fff; }
+.at-table td.at-label{
+  background:var(--surface-2); padding:0;
+}
+.at-table td.at-label input{
+  width:64px; border:none; background:transparent; color:var(--text); font-size:13px;
+  font-weight:700; text-align:center; padding:9px 4px; outline:none;
+}
+.at-table td.at-cell{ padding:2px; }
+.at-table td.at-cell input{
+  width:52px; border:none; background:transparent; color:var(--text); font-size:13px;
+  text-align:center; padding:7px 3px; outline:none;
+}
+.at-table td.at-cell input:focus, .at-table td.at-label input:focus{ background:var(--surface); }
+.at-table td.at-rm{ padding:0; background:var(--surface-2); }
+.at-table td.at-rm button{
+  width:100%; height:100%; min-height:34px; border:none; background:transparent;
+  color:var(--text-soft); font-size:16px; cursor:pointer;
+}
+.at-table td.at-rm button:hover{ color:var(--danger); }
+.at-table th.at-rm-h{ padding:6px; }
+.at-table th.at-rm-h button{
+  width:24px; height:24px; border-radius:7px; border:1px solid var(--border); background:transparent;
+  color:var(--text-soft); font-size:13px; line-height:1; cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+}
+.at-table th.at-rm-h button:hover{ background:var(--danger); border-color:var(--danger); color:#fff; }
+
+.at-actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.at-actions .add-btn{
+  flex:1; min-width:110px; padding:9px 0; border-radius:10px; border:1.5px dashed var(--border);
+  background:transparent; color:var(--text-soft); font-size:12px; font-weight:600; cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.at-actions .add-btn:hover{ border-color:var(--orange); color:var(--orange); }
+
+.var-manage{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.var-chip{
+  display:flex; align-items:center; gap:4px; background:var(--surface-2); border-radius:10px;
+  padding:4px 4px 4px 10px;
+}
+.var-chip input{
+  width:48px; border:none; background:transparent; color:var(--text); font-size:12.5px;
+  font-weight:700; outline:none;
+}
+.var-chip button{
+  width:20px; height:20px; border-radius:6px; border:none; background:transparent;
+  color:var(--text-soft); font-size:13px; line-height:1; cursor:pointer;
+}
+.var-chip button:hover{ background:var(--danger); color:#fff; }
+.var-add{
+  padding:6px 12px; border-radius:10px; border:1.5px dashed var(--border); background:transparent;
+  color:var(--text-soft); font-size:12.5px; font-weight:600; cursor:pointer; transition:border-color .2s, color .2s;
+}
+.var-add:hover{ border-color:var(--orange); color:var(--orange); }
+
+.res-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.res-box{ background:var(--surface-2); border-radius:12px; padding:12px; text-align:center; }
+.res-box .lbl{ font-size:11px; color:var(--text-soft); margin-bottom:4px; }
+.res-box .val{ font-size:19px; font-weight:800; font-family:'Poppins',sans-serif; color:var(--orange); }
+
+.res-table{ border-collapse:collapse; width:100%; margin-top:6px; }
+.res-table th, .res-table td{
+  border:1px solid var(--border); padding:8px 6px; text-align:center; font-size:12.5px;
+}
+.res-table th{ background:var(--surface-2); color:var(--text-soft); font-weight:700; font-size:11px; }
+.res-table td.ket-star{ font-weight:800; color:var(--orange); }
+
+.mat-title{ font-size:12.5px; font-weight:700; color:var(--text); margin:14px 0 4px; }
+.mat-title small{ color:var(--text-soft); font-weight:500; }
+
+.ket-legend{ font-size:11.5px; color:var(--text-soft); margin-top:10px; line-height:1.8; }
+.ket-legend b{ color:var(--text); }
+
+.explain-step{
+  background:var(--surface-2); border-radius:12px; padding:14px; margin-bottom:10px;
+}
+.explain-step h4{
+  font-size:13px; margin:0 0 8px; color:var(--orange); font-family:'Poppins',sans-serif;
+}
+.explain-step .line{ font-size:12.5px; color:var(--text); line-height:1.8; word-break:break-word; }
+.explain-step .line .lead{ color:var(--text-soft); }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../statistik.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>MANOVA</h2>
+  <button class="info-btn" onclick="toggleInfo()" title="Info">?</button>
+</div>
+
+<div class="page-body">
+
+  <div class="formula-block hidden" id="infoBlock" style="text-align:left;padding:16px">
+    <div class="formula-desc">
+      MANOVA (Multivariate Analysis of Variance) satu arah digunakan untuk menguji apakah beberapa kelompok/perlakuan memberikan pengaruh yang berbeda nyata secara bersama-sama terhadap dua atau lebih variabel terikat sekaligus. Atur nama variabel, isi tabel data tiap kelompok &amp; ulangan, lalu tekan "Hitung MANOVA".
+    </div>
+  </div>
+
+  <!-- Input tabel -->
+  <div class="card">
+    <h3>Variabel Terikat</h3>
+    <p class="desc"></p>
+    <div class="var-manage" id="varManage"></div>
+    <button class="var-add" onclick="addVar()">+ Variabel</button>
+
+    <h3 style="margin-top:18px">Tabel Data</h3>
+    <p class="desc"></p>
+    <div class="at-scroll">
+      <table class="at-table" id="mtTable"></table>
+    </div>
+
+    <div class="at-actions">
+      <button class="add-btn" onclick="addColumn()">+ Ulangan (kolom)</button>
+      <button class="add-btn" onclick="addRow()">+ Kelompok (baris)</button>
+    </div>
+
+    <div class="form-msg" id="calcMsg" style="margin-top:10px"></div>
+
+    <button class="btn" style="margin-top:14px" onclick="calculate()">Hitung MANOVA</button>
+    <button class="btn secondary" style="margin-top:8px" onclick="resetAll()">Reset</button>
+  </div>
+
+  <!-- Hasil -->
+  <div class="card hidden" id="resultCard">
+    <h3>Hasil MANOVA</h3>
+
+    <div class="res-grid">
+      <div class="res-box"><div class="lbl">Wilks' Lambda (Λ)</div><div class="val" id="valLambda">-</div></div>
+      <div class="res-box"><div class="lbl">Chi-Square Hitung</div><div class="val" id="valChi">-</div></div>
+    </div>
+
+    <div class="at-scroll">
+      <table class="res-table">
+        <thead>
+          <tr>
+            <th>Sumber</th><th>DB</th><th>χ² Hitung</th>
+            <th>χ² Tabel 0.05</th><th>χ² Tabel 0.01</th><th>Ket</th>
+          </tr>
+        </thead>
+        <tbody id="manovaBody"></tbody>
+      </table>
+    </div>
+
+    <div class="ket-legend">
+      <div><b>TN</b> = Berbeda Tidak Nyata (χ²hitung ≤ χ²tabel 0.05)</div>
+      <div><b>*</b> = Berbeda Nyata (χ²hitung &gt; χ²tabel 0.05)</div>
+      <div><b>**</b> = Berbeda Sangat Nyata (χ²hitung &gt; χ²tabel 0.01)</div>
+    </div>
+
+    <div class="mat-title">Rerata Tiap Kelompok</div>
+    <div class="at-scroll"><div id="meanTableWrap"></div></div>
+
+    <div class="mat-title">Matriks H <small>(SSCP Antar Kelompok)</small></div>
+    <div class="at-scroll"><div id="hMatrixWrap"></div></div>
+
+    <div class="mat-title">Matriks E <small>(SSCP Galat)</small></div>
+    <div class="at-scroll"><div id="eMatrixWrap"></div></div>
+
+    <div class="mat-title">Matriks T = H + E <small>(SSCP Total)</small></div>
+    <div class="at-scroll"><div id="tMatrixWrap"></div></div>
+
+    <button class="btn secondary" style="margin-top:14px" onclick="copyResult()">Salin Hasil</button>
+  </div>
+
+  <!-- Penjelasan -->
+  <div class="card hidden" id="explainCard">
+    <h3>Cara Perhitungan</h3>
+    <div id="explainBody"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/supabase-config.js"></script>
+<script src="../../js/store.js"></script>
+<script src="../../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+function toggleInfo(){
+  document.getElementById('infoBlock').classList.toggle('hidden');
+  document.querySelector('.info-btn').classList.toggle('active');
+}
+
+// ---------------- State ----------------
+// varNames: ['Y1','Y2', ...]
+// groups: [{ label:'K1', reps: [ [y1,y2,...], [y1,y2,...], ... ] }, ...]
+let varNames = ['Y1', 'Y2'];
+let groups = [
+  { label:'K1', reps: [ ['',''], ['',''], ['',''] ] },
+  { label:'K2', reps: [ ['',''], ['',''], ['',''] ] },
+];
+
+function colCount(){ return groups.length ? groups[0].reps.length : 0; }
+function varCount(){ return varNames.length; }
+
+// ---------------- Render: manajemen variabel ----------------
+function renderVarManage(){
+  const wrap = document.getElementById('varManage');
+  wrap.innerHTML = varNames.map((vn, vi) => `
+    <div class="var-chip">
+      <input type="text" value="${escapeHtml(vn)}" oninput="varNames[${vi}]=this.value; renderTable()">
+      <button onclick="removeVar(${vi})" title="Hapus variabel">×</button>
+    </div>
+  `).join('');
+}
+
+function addVar(){
+  varNames.push('Y' + (varNames.length + 1));
+  groups.forEach(g => g.reps.forEach(rep => rep.push('')));
+  renderVarManage();
+  renderTable();
+}
+
+function removeVar(vi){
+  if(varCount() <= 2){
+    showMsg('Minimal harus ada 2 variabel terikat untuk MANOVA.', true);
+    return;
+  }
+  varNames.splice(vi, 1);
+  groups.forEach(g => g.reps.forEach(rep => rep.splice(vi, 1)));
+  renderVarManage();
+  renderTable();
+}
+
+// ---------------- Render: tabel data ----------------
+function renderTable(){
+  const nCol = colCount();
+  const nVar = varCount();
+  const t = document.getElementById('mtTable');
+
+  let html = '<thead><tr><th rowspan="2">Kelompok</th>';
+  for(let c=0;c<nCol;c++){
+    html += `<th colspan="${nVar}">
+      <div class="at-col-h">
+        <span>Ulangan ${romanize(c+1)}</span>
+        <button onclick="removeColumn(${c})" title="Hapus kolom">×</button>
+      </div>
+    </th>`;
+  }
+  html += `<th rowspan="2" class="at-rm-h"></th></tr><tr>`;
+  for(let c=0;c<nCol;c++){
+    varNames.forEach(vn => { html += `<th class="vh">${escapeHtml(vn)}</th>`; });
+  }
+  html += `</tr></thead><tbody>`;
+
+  groups.forEach((g, gi) => {
+    html += `<tr>`;
+    html += `<td class="at-label"><input type="text" value="${escapeHtml(g.label)}" oninput="groups[${gi}].label=this.value"></td>`;
+    for(let c=0;c<nCol;c++){
+      for(let vi=0; vi<nVar; vi++){
+        const val = (g.reps[c] && g.reps[c][vi] !== undefined) ? g.reps[c][vi] : '';
+        html += `<td class="at-cell"><input type="number" step="any" value="${val}" placeholder="0" oninput="setVal(${gi},${c},${vi},this.value)"></td>`;
+      }
+    }
+    html += `<td class="at-rm"><button onclick="removeRow(${gi})" title="Hapus kelompok">×</button></td>`;
+    html += `</tr>`;
+  });
+
+  html += `</tbody>`;
+  t.innerHTML = html;
+}
+
+function setVal(gi, ci, vi, val){
+  groups[gi].reps[ci][vi] = val;
+}
+
+function romanize(n){
+  const map = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
+  return map[n-1] || n;
+}
+
+function addColumn(){
+  const nVar = varCount();
+  groups.forEach(g => g.reps.push(Array(nVar).fill('')));
+  renderTable();
+}
+
+function removeColumn(ci){
+  if(colCount() <= 2){
+    showMsg('Minimal harus ada 2 ulangan.', true);
+    return;
+  }
+  groups.forEach(g => g.reps.splice(ci, 1));
+  renderTable();
+}
+
+function addRow(){
+  const n = colCount() || 3;
+  const nVar = varCount();
+  groups.push({ label: 'K' + (groups.length + 1), reps: Array.from({length:n}, () => Array(nVar).fill('')) });
+  renderTable();
+}
+
+function removeRow(idx){
+  if(groups.length <= 2){
+    showMsg('Minimal harus ada 2 kelompok.', true);
+    return;
+  }
+  groups.splice(idx, 1);
+  renderTable();
+}
+
+function showMsg(text, isError){
+  const msg = document.getElementById('calcMsg');
+  msg.style.color = isError ? 'var(--danger)' : 'var(--success)';
+  msg.textContent = text;
+}
+
+function resetAll(){
+  varNames = ['Y1', 'Y2'];
+  groups = [
+    { label:'K1', reps: [ ['',''], ['',''], ['',''] ] },
+    { label:'K2', reps: [ ['',''], ['',''], ['',''] ] },
+  ];
+  renderVarManage();
+  renderTable();
+  document.getElementById('calcMsg').textContent = '';
+  document.getElementById('resultCard').classList.add('hidden');
+  document.getElementById('explainCard').classList.add('hidden');
+}
+
+// ---------------- Util matematika ----------------
+function fmt(n, dec){
+  if(!isFinite(n)) return '-';
+  dec = dec === undefined ? 2 : dec;
+  return Number(n.toFixed(dec)).toString();
+}
+
+// Determinan matriks persegi (eliminasi Gauss)
+function determinant(m){
+  const n = m.length;
+  const a = m.map(row => row.slice());
+  let det = 1;
+  for(let i=0;i<n;i++){
+    let maxRow = i;
+    for(let k=i+1;k<n;k++){
+      if(Math.abs(a[k][i]) > Math.abs(a[maxRow][i])) maxRow = k;
+    }
+    if(Math.abs(a[maxRow][i]) < 1e-12) return 0;
+    if(maxRow !== i){
+      const tmp = a[i]; a[i] = a[maxRow]; a[maxRow] = tmp;
+      det *= -1;
+    }
+    det *= a[i][i];
+    for(let k=i+1;k<n;k++){
+      const factor = a[k][i] / a[i][i];
+      for(let j=i;j<n;j++) a[k][j] -= factor * a[i][j];
+    }
+  }
+  return det;
+}
+
+// Nilai kritis Chi-Square (aproksimasi Wilson–Hilferty)
+function chiCritical(df, alpha){
+  const z = alpha === 0.05 ? 1.6448536 : 2.3263479;
+  const term = 1 - 2/(9*df) + z*Math.sqrt(2/(9*df));
+  return df * Math.pow(term, 3);
+}
+
+function matrixTable(m){
+  let html = '<table class="res-table"><thead><tr><th></th>';
+  for(let l=0;l<m.length;l++) html += `<th>${escapeHtml(varNames[l] || ('V'+(l+1)))}</th>`;
+  html += '</tr></thead><tbody>';
+  m.forEach((row, i) => {
+    html += `<tr><th>${escapeHtml(varNames[i] || ('V'+(i+1)))}</th>`;
+    row.forEach(v => html += `<td>${fmt(v, 3)}</td>`);
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+// ---------------- Hitung MANOVA ----------------
+function calculate(){
+  const k = groups.length;   // banyak kelompok
+  const r = colCount();      // banyak ulangan
+  const p = varCount();      // banyak variabel terikat
+
+  let allFilled = true;
+  groups.forEach(g => g.reps.forEach(rep => rep.forEach(v => {
+    const num = parseFloat(v);
+    if(v === '' || v === null || isNaN(num)) allFilled = false;
+  })));
+
+  if(k < 2 || r < 2){
+    showMsg('Minimal 2 kelompok dan 2 ulangan diperlukan.', true);
+    return;
+  }
+  if(p < 2){
+    showMsg('Minimal 2 variabel terikat diperlukan (jika hanya 1, gunakan ANOVA biasa).', true);
+    return;
+  }
+  if(!allFilled){
+    showMsg('Lengkapi semua sel data terlebih dahulu.', true);
+    return;
+  }
+  document.getElementById('calcMsg').textContent = '';
+
+  const N = k * r;
+  const data = groups.map(g => g.reps.map(rep => rep.map(v => parseFloat(v))));
+
+  // Rerata tiap kelompok per variabel
+  const groupMeans = data.map(gData => {
+    const sums = Array(p).fill(0);
+    gData.forEach(rep => rep.forEach((v, j) => sums[j] += v));
+    return sums.map(s => s / r);
+  });
+
+  // Rerata umum per variabel
+  const grandMean = Array(p).fill(0);
+  data.forEach(gData => gData.forEach(rep => rep.forEach((v, j) => grandMean[j] += v)));
+  for(let j=0;j<p;j++) grandMean[j] /= N;
+
+  // Matriks H (antar kelompok)
+  const H = Array.from({length:p}, () => Array(p).fill(0));
+  for(let j=0;j<p;j++){
+    for(let l=0;l<p;l++){
+      let sum = 0;
+      for(let i=0;i<k;i++){
+        sum += r * (groupMeans[i][j] - grandMean[j]) * (groupMeans[i][l] - grandMean[l]);
+      }
+      H[j][l] = sum;
+    }
+  }
+
+  // Matriks E (galat)
+  const E = Array.from({length:p}, () => Array(p).fill(0));
+  for(let j=0;j<p;j++){
+    for(let l=0;l<p;l++){
+      let sum = 0;
+      for(let i=0;i<k;i++){
+        for(let c=0;c<r;c++){
+          sum += (data[i][c][j] - groupMeans[i][j]) * (data[i][c][l] - groupMeans[i][l]);
+        }
+      }
+      E[j][l] = sum;
+    }
+  }
+
+  // Matriks T = H + E
+  const T = H.map((row, j) => row.map((v, l) => v + E[j][l]));
+
+  const detE = determinant(E);
+  const detT = determinant(T);
+  const wilks = detT !== 0 ? detE / detT : NaN;
+
+  const dfH = k - 1;
+  const dfChi = p * dfH;
+  const bartlettFactor = N - 1 - (p + k) / 2;
+  const chi2 = wilks > 0 ? -bartlettFactor * Math.log(wilks) : Infinity;
+
+  const chi005 = chiCritical(dfChi, 0.05);
+  const chi001 = chiCritical(dfChi, 0.01);
+
+  let ket = 'TN';
+  if(chi2 > chi001) ket = '**';
+  else if(chi2 > chi005) ket = '*';
+
+  // -------- Render hasil --------
+  document.getElementById('valLambda').textContent = fmt(wilks, 4);
+  document.getElementById('valChi').textContent = fmt(chi2, 3);
+
+  document.getElementById('manovaBody').innerHTML = `
+    <tr>
+      <td>Antar Kelompok</td><td>${dfChi}</td><td>${fmt(chi2)}</td>
+      <td>${fmt(chi005)}</td><td>${fmt(chi001)}</td>
+      <td class="ket-star">${ket}</td>
+    </tr>
+  `;
+
+  // Tabel rerata kelompok
+  let meanHtml = '<table class="res-table"><thead><tr><th>Kelompok</th>';
+  varNames.forEach(vn => meanHtml += `<th>${escapeHtml(vn)}</th>`);
+  meanHtml += '</tr></thead><tbody>';
+  groups.forEach((g, i) => {
+    meanHtml += `<tr><td>${escapeHtml(g.label)}</td>`;
+    groupMeans[i].forEach(m => meanHtml += `<td>${fmt(m)}</td>`);
+    meanHtml += '</tr>';
+  });
+  meanHtml += '</tbody></table>';
+  document.getElementById('meanTableWrap').innerHTML = meanHtml;
+
+  document.getElementById('hMatrixWrap').innerHTML = matrixTable(H);
+  document.getElementById('eMatrixWrap').innerHTML = matrixTable(E);
+  document.getElementById('tMatrixWrap').innerHTML = matrixTable(T);
+
+  document.getElementById('resultCard').classList.remove('hidden');
+
+  // -------- Penjelasan langkah demi langkah --------
+  const meansLine = groups.map((g, i) => `${escapeHtml(g.label)}: ` + varNames.map((vn,j) => `${escapeHtml(vn)}=${fmt(groupMeans[i][j])}`).join(', ')).join('<br>');
+  const grandLine = varNames.map((vn,j) => `${escapeHtml(vn)}=${fmt(grandMean[j])}`).join(', ');
+
+  document.getElementById('explainBody').innerHTML = `
+    <div class="explain-step">
+      <h4>1. Rerata Tiap Kelompok &amp; Rerata Umum</h4>
+      <div class="line">${meansLine}</div>
+      <div class="line" style="margin-top:6px"><span class="lead">Rerata Umum (Grand Mean)</span>: ${grandLine}</div>
+    </div>
+
+    <div class="explain-step">
+      <h4>2. Matriks H (SSCP Antar Kelompok)</h4>
+      <div class="line">H[j,l] = Σᵢ nᵢ (x̄ᵢⱼ − x̄ⱼ)(x̄ᵢₗ − x̄ₗ), dengan nᵢ = ${r} (ulangan tiap kelompok)</div>
+      <div class="line" style="margin-top:6px">Elemen diagonal H setara JK Perlakuan pada ANOVA biasa untuk masing-masing variabel.</div>
+    </div>
+
+    <div class="explain-step">
+      <h4>3. Matriks E (SSCP Galat)</h4>
+      <div class="line">E[j,l] = Σᵢ Σc (xᵢcⱼ − x̄ᵢⱼ)(xᵢcₗ − x̄ᵢₗ)</div>
+      <div class="line" style="margin-top:6px">Elemen diagonal E setara JK Galat pada ANOVA biasa untuk masing-masing variabel.</div>
+    </div>
+
+    <div class="explain-step">
+      <h4>4. Matriks T = H + E (SSCP Total)</h4>
+      <div class="line">T dipakai sebagai pembagi pada rumus Wilks' Lambda.</div>
+    </div>
+
+    <div class="explain-step">
+      <h4>5. Wilks' Lambda (Λ)</h4>
+      <div class="line">Λ = det(E) ÷ det(T)</div>
+      <div class="line">Λ = ${fmt(detE,3)} ÷ ${fmt(detT,3)} = <b>${fmt(wilks,4)}</b></div>
+      <div class="line" style="margin-top:6px;color:var(--text-soft)">Semakin kecil Λ (mendekati 0), semakin besar perbedaan antar kelompok pada seluruh variabel terikat secara bersama-sama.</div>
+    </div>
+
+    <div class="explain-step">
+      <h4>6. Transformasi ke Chi-Square (Aproksimasi Bartlett)</h4>
+      <div class="line">χ² = −[N − 1 − (p + k)/2] × ln(Λ)</div>
+      <div class="line">N = ${N}, p (jumlah variabel) = ${p}, k (jumlah kelompok) = ${k}</div>
+      <div class="line">χ² = −[${N} − 1 − (${p} + ${k})/2] × ln(${fmt(wilks,4)}) = <b>${fmt(chi2)}</b></div>
+      <div class="line" style="margin-top:6px">Derajat bebas: db = p(k − 1) = ${p}(${k} − 1) = <b>${dfChi}</b></div>
+    </div>
+
+    <div class="explain-step">
+      <h4>7. Bandingkan dengan χ² Tabel</h4>
+      <div class="line">χ²tabel (0.05, db=${dfChi}) = <b>${fmt(chi005)}</b></div>
+      <div class="line">χ²tabel (0.01, db=${dfChi}) = <b>${fmt(chi001)}</b></div>
+      <div class="line" style="margin-top:6px">
+        Karena χ²hitung (${fmt(chi2)}) ${ket==='**' ? '&gt; χ²tabel 0.01, maka kelompok berbeda <b>sangat nyata (**)</b> secara multivariat' : ket==='*' ? '&gt; χ²tabel 0.05 tetapi ≤ χ²tabel 0.01, maka kelompok berbeda <b>nyata (*)</b> secara multivariat' : '≤ χ²tabel 0.05, maka kelompok <b>tidak berbeda nyata (TN)</b> secara multivariat'}.
+      </div>
+      <div class="line" style="margin-top:6px;color:var(--text-soft)">*Nilai kritis dihitung dengan aproksimasi Wilson–Hilferty, mendekati nilai tabel Chi-Square baku.</div>
+    </div>
+  `;
+
+  document.getElementById('explainCard').classList.remove('hidden');
+}
+
+function copyResult(){
+  const lambda = document.getElementById('valLambda').textContent;
+  const chi = document.getElementById('valChi').textContent;
+  const rowsText = Array.from(document.querySelectorAll('#manovaBody tr')).map(tr =>
+    Array.from(tr.children).map(td => td.textContent).join(' | ')
+  ).join('\n');
+  copyText(`Wilks' Lambda = ${lambda}\nChi-Square Hitung = ${chi}\n\nSumber | DB | χ²Hitung | χ²Tabel0.05 | χ²Tabel0.01 | Ket\n${rowsText}`);
+}
+
+renderVarManage();
+renderTable();
+</script>
+</body>
+</html>
