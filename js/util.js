@@ -47,6 +47,118 @@ function downloadBlob(blob, filename){
   document.body.appendChild(a); a.click();
   document.body.removeChild(a);
   setTimeout(()=> URL.revokeObjectURL(url), 3000);
+  // Catat ke riwayat "Unduhan" (menu hamburger) — gagal diam-diam kalau IndexedDB tidak tersedia
+  saveDownloadRecord(blob, filename).catch(()=>{});
+}
+
+// ==========================================================
+// Riwayat Unduhan — disimpan di IndexedDB (perangkat), otomatis
+// dihapus setelah 3 hari. Dipakai oleh semua fitur yang memanggil
+// downloadBlob() (Kode QR, Palet Warna, Konversi File, Catatan, dll)
+// supaya muncul di menu "Unduhan" pada hamburger menu.
+// ==========================================================
+const DL_DB_NAME = 'bantuin_downloads';
+const DL_STORE = 'files';
+const DL_EXPIRE_MS = 3 * 24 * 60 * 60 * 1000; // 3 hari
+
+function openDownloadsDB(){
+  return new Promise((resolve, reject) => {
+    if(!('indexedDB' in window)) return reject(new Error('IndexedDB tidak didukung'));
+    const req = indexedDB.open(DL_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if(!db.objectStoreNames.contains(DL_STORE)){
+        const store = db.createObjectStore(DL_STORE, { keyPath:'id', autoIncrement:true });
+        store.createIndex('created_at', 'created_at');
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function cleanupOldDownloads(db){
+  return new Promise((resolve) => {
+    const cutoff = Date.now() - DL_EXPIRE_MS;
+    try{
+      const tx = db.transaction(DL_STORE, 'readwrite');
+      const idx = tx.objectStore(DL_STORE).index('created_at');
+      const req = idx.openCursor(IDBKeyRange.upperBound(cutoff));
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if(cursor){ cursor.delete(); cursor.continue(); }
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    }catch(e){ resolve(); }
+  });
+}
+
+async function saveDownloadRecord(blob, filename){
+  try{
+    const db = await openDownloadsDB();
+    await cleanupOldDownloads(db);
+    return new Promise((resolve) => {
+      const tx = db.transaction(DL_STORE, 'readwrite');
+      tx.objectStore(DL_STORE).add({ filename, blob, size: blob.size, created_at: Date.now() });
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    });
+  }catch(e){ return false; }
+}
+
+async function getDownloadRecords(){
+  try{
+    const db = await openDownloadsDB();
+    await cleanupOldDownloads(db);
+    return new Promise((resolve) => {
+      const tx = db.transaction(DL_STORE, 'readonly');
+      const req = tx.objectStore(DL_STORE).getAll();
+      req.onsuccess = () => resolve((req.result || []).sort((a,b)=> b.created_at - a.created_at));
+      req.onerror = () => resolve([]);
+    });
+  }catch(e){ return []; }
+}
+
+async function deleteDownloadRecord(id){
+  try{
+    const db = await openDownloadsDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(DL_STORE, 'readwrite');
+      tx.objectStore(DL_STORE).delete(id);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    });
+  }catch(e){ return false; }
+}
+
+async function clearDownloadRecords(){
+  try{
+    const db = await openDownloadsDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(DL_STORE, 'readwrite');
+      tx.objectStore(DL_STORE).clear();
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    });
+  }catch(e){ return false; }
+}
+
+function formatFileSize(bytes){
+  if(!bytes && bytes !== 0) return '-';
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function formatExpiryLabel(createdAt){
+  const remain = (createdAt + DL_EXPIRE_MS) - Date.now();
+  if(remain <= 0) return 'Akan segera dihapus';
+  const jam = Math.floor(remain / (60 * 60 * 1000));
+  if(jam < 1) return 'Terhapus dalam <1 jam';
+  if(jam < 24) return `Terhapus dalam ${jam} jam`;
+  const hari = Math.floor(jam / 24);
+  return `Terhapus dalam ${hari} hari`;
 }
 
 // ---------------- Waktu WIB (+7) ----------------

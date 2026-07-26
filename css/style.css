@@ -247,6 +247,17 @@ input, select, textarea{ font-family:'Inter', sans-serif; }
 
 .empty-state{ text-align:center; padding:40px 20px; color:var(--text-soft); }
 
+/* ---------- Unduhan ---------- */
+.download-item{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:12px 4px; border-bottom:1px solid var(--border);
+}
+.download-item:last-child{ border-bottom:none; }
+.download-item .dl-info{ min-width:0; }
+.download-item .dl-info b{ display:block; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.download-item .dl-info span{ font-size:11px; color:var(--text-soft); }
+.download-item .dl-actions{ display:flex; gap:6px; flex-shrink:0; }
+
 /* ---------- Feature page layout ---------- */
 .page-head{
   position:fixed; top:0; left:0; right:0; z-index:1000; height:58px; display:flex; align-items:center; gap:12px;

@@ -163,6 +163,87 @@ function doLogout(){
   window.location.href = 'index.html';
 }
 
+// ---------------- Modal Unduhan ----------------
+function openUnduhan(){
+  document.getElementById('unduhanModal').classList.add('show');
+  closeAllOverlays();
+  renderUnduhanList();
+}
+function closeUnduhanModal(){ document.getElementById('unduhanModal').classList.remove('show'); }
+
+async function renderUnduhanList(){
+  const wrap = document.getElementById('unduhanList');
+  wrap.innerHTML = `<div class="empty-state">Memuat...</div>`;
+  const items = await getDownloadRecords();
+  if(!items.length){
+    wrap.innerHTML = `<div class="empty-state">Belum ada file yang diunduh.</div>`;
+    return;
+  }
+  wrap.innerHTML = items.map(it => `
+    <div class="download-item">
+      <div class="dl-info">
+        <b>${escapeHtml(it.filename)}</b>
+        <span>${formatFileSize(it.size)} &bull; ${formatExpiryLabel(it.created_at)}</span>
+      </div>
+      <div class="dl-actions">
+        <button class="icon-btn" onclick="shareDownloadedFile(${it.id})" aria-label="Bagikan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
+        </button>
+        <button class="icon-btn" onclick="redownloadFile(${it.id})" aria-label="Unduh ulang">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="icon-btn" onclick="removeUnduhanItem(${it.id})" aria-label="Hapus" style="color:var(--danger)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Bagikan file lewat dialog Share bawaan OS (Android/iOS) — ini biasanya JAUH
+// lebih andal dipakai di dalam aplikasi WebView (Median.co dkk) dibanding
+// trigger <a download> pada blob URL, karena beberapa versi WebView Android
+// tidak selalu meneruskan unduhan blob: ke Download Manager sistem. Lewat
+// Share, pengguna bisa pilih "Simpan ke File/Downloads", kirim ke WhatsApp,
+// simpan ke Galeri (untuk gambar), dll — jalur yang jauh lebih konsisten.
+async function shareDownloadedFile(id){
+  const items = await getDownloadRecords();
+  const item = items.find(i => i.id === id);
+  if(!item) return;
+
+  try{
+    const file = new File([item.blob], item.filename, { type: item.blob.type || 'application/octet-stream' });
+    if(navigator.canShare && navigator.canShare({ files:[file] })){
+      await navigator.share({ files:[file], title: item.filename });
+    } else if(navigator.share){
+      await navigator.share({ title: item.filename, text: `File: ${item.filename}` });
+      showToast('Perangkat ini tidak mendukung berbagi file langsung.');
+    } else {
+      showToast('Fitur bagikan tidak didukung di perangkat/aplikasi ini.');
+    }
+  }catch(e){
+    if(e.name !== 'AbortError') showToast('Gagal membagikan file.');
+  }
+}
+
+async function redownloadFile(id){
+  const items = await getDownloadRecords();
+  const item = items.find(i => i.id === id);
+  if(!item) return;
+  const url = URL.createObjectURL(item.blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = item.filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 3000);
+  showToast('Mengunduh ulang...');
+}
+
+async function removeUnduhanItem(id){
+  await deleteDownloadRecord(id);
+  renderUnduhanList();
+}
+
 // ---------------- Modal Kebijakan ----------------
 function openPolicy(){
   document.getElementById('legalTextHolder').textContent = LEGAL_TEXT;
