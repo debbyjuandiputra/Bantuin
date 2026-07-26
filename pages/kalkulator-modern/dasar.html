@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Bantuin — Kalkulator Dasar</title>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+.calc-page{
+  display:flex; flex-direction:column; height:100dvh; background:var(--bg);
+}
+.calc-display{
+  flex:0 0 auto; background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:58px 18px 16px; min-height:140px;
+  display:flex; flex-direction:column; justify-content:flex-end; align-items:flex-end;
+}
+.calc-expr{ font-size:15px; color:var(--text-soft); text-align:right; min-height:20px; word-break:break-all; }
+.calc-result{
+  font-family:'Poppins',sans-serif; font-weight:700; font-size:44px;
+  color:var(--text); text-align:right; word-break:break-all; line-height:1.1;
+  transition:font-size .15s;
+}
+.calc-result.small{ font-size:30px; }
+.calc-result.xsmall{ font-size:22px; }
+
+.calc-grid{
+  flex:1 1 auto; display:grid;
+  grid-template-columns:repeat(4,1fr);
+  grid-template-rows:repeat(5,1fr);
+  gap:1px; background:var(--border);
+  overflow:hidden;
+}
+.ck{
+  display:flex; align-items:center; justify-content:center;
+  background:var(--surface-2); font-size:22px; font-weight:600;
+  color:var(--text); cursor:pointer; transition:background .1s;
+  font-family:'Inter',sans-serif;
+  -webkit-tap-highlight-color:transparent; user-select:none;
+}
+.ck:active{ filter:brightness(.88); }
+.ck.num{ background:var(--surface); }
+.ck.op{ background:var(--surface-2); color:var(--orange); font-size:26px; }
+.ck.eq{ background:var(--orange); color:#fff; font-size:26px; }
+.ck.eq:active{ background:var(--orange-dark); }
+.ck.ac{ color:var(--orange); }
+.ck.span2{ grid-column:span 2; }
+</style>
+</head>
+<body>
+
+<div class="page-head" style="position:fixed;top:0;left:0;right:0;z-index:100">
+  <button class="back-btn" onclick="history.back()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Kalkulator Dasar</h2>
+</div>
+
+<div class="calc-page">
+  <div class="calc-display">
+    <div class="calc-expr" id="expr"></div>
+    <div class="calc-result" id="result">0</div>
+  </div>
+
+  <div class="calc-grid">
+    <div class="ck ac" onclick="clearAll()">AC</div>
+    <div class="ck op" onclick="toggleSign()">+/−</div>
+    <div class="ck op" onclick="press('%')">%</div>
+    <div class="ck op" onclick="press('÷')">÷</div>
+
+    <div class="ck num" onclick="press('7')">7</div>
+    <div class="ck num" onclick="press('8')">8</div>
+    <div class="ck num" onclick="press('9')">9</div>
+    <div class="ck op" onclick="press('×')">×</div>
+
+    <div class="ck num" onclick="press('4')">4</div>
+    <div class="ck num" onclick="press('5')">5</div>
+    <div class="ck num" onclick="press('6')">6</div>
+    <div class="ck op" onclick="press('−')">−</div>
+
+    <div class="ck num" onclick="press('1')">1</div>
+    <div class="ck num" onclick="press('2')">2</div>
+    <div class="ck num" onclick="press('3')">3</div>
+    <div class="ck op" onclick="press('+')">+</div>
+
+    <div class="ck num span2" onclick="press('0')" style="justify-content:flex-start;padding-left:28px">0</div>
+    <div class="ck num" onclick="press(',')">.</div>
+    <div class="ck eq" onclick="calculate()">=</div>
+  </div>
+</div>
+
+<script src="../../js/store.js"></script>
+<script src="../../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+let cur = '0', prev = '', op = '', justCalc = false;
+
+const elRes = document.getElementById('result');
+const elExp = document.getElementById('expr');
+
+function fmt(n){
+  const r = parseFloat(parseFloat(n).toPrecision(12));
+  return r.toLocaleString('id-ID',{maximumFractionDigits:10});
+}
+
+function updateDisplay(){
+  const s = fmt(cur);
+  elRes.textContent = s;
+  elRes.className = 'calc-result' + (s.length > 12 ? ' xsmall' : s.length > 9 ? ' small' : '');
+}
+
+window.press = function(k){
+  if(['+','−','×','÷'].includes(k)){
+    prev = cur; op = k;
+    elExp.textContent = fmt(cur) + ' ' + k;
+    justCalc = false;
+    cur = '0';
+    return;
+  }
+  if(justCalc){ cur = '0'; justCalc = false; }
+  if(k === ','){
+    if(cur.includes(',')) return;
+    cur += ',';
+  } else if(k === '%'){
+    cur = String(parseFloat(cur) / 100);
+  } else {
+    cur = cur === '0' ? k : cur + k;
+  }
+  updateDisplay();
+};
+
+window.clearAll = function(){ cur='0';prev='';op='';justCalc=false; elExp.textContent=''; updateDisplay(); };
+
+window.toggleSign = function(){ cur = String(-parseFloat(cur.replace(',','.'))); updateDisplay(); };
+
+window.calculate = function(){
+  if(!op || prev === '') return;
+  const a = parseFloat(prev.replace(',','.'));
+  const b = parseFloat(cur.replace(',','.'));
+  let r;
+  if(op==='÷'){ r = b===0 ? 'Error' : a/b; }
+  else if(op==='×') r=a*b;
+  else if(op==='−') r=a-b;
+  else r=a+b;
+
+  elExp.textContent = fmt(prev)+' '+op+' '+fmt(cur)+' =';
+  cur = typeof r === 'number' ? String(r) : r;
+  op=''; prev=''; justCalc=true;
+  updateDisplay();
+};
+
+updateDisplay();
+</script>
+</body>
+</html>
