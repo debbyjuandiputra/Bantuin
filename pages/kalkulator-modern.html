@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Bantuin — Kalkulator Modern</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+/* ============================
+   LAYOUT UTAMA
+============================= */
+.calc-page{
+  display:flex; flex-direction:column; height:100dvh;
+  background:var(--bg);
+}
+
+/* ============================
+   DISPLAY (layar hasil)
+============================= */
+.calc-display{
+  flex:0 0 auto;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:52px 18px 14px;   /* 52px = ruang untuk page-head fixed */
+  min-height:130px;
+  display:flex; flex-direction:column; justify-content:flex-end; align-items:flex-end;
+}
+.calc-expr{
+  font-size:15px; color:var(--text-soft); min-height:20px;
+  text-align:right; word-break:break-all; line-height:1.4;
+  font-family:'Inter',sans-serif; max-height:56px; overflow:hidden;
+}
+.calc-result{
+  font-family:'Poppins',sans-serif; font-weight:700;
+  font-size:36px; color:var(--text); line-height:1.1;
+  text-align:right; word-break:break-all;
+  transition:font-size .15s;
+}
+.calc-result.small{ font-size:26px; }
+.calc-result.xsmall{ font-size:20px; }
+
+/* ============================
+   TOOLBAR ATAS KEYBOARD (riwayat + nav)
+============================= */
+.kb-topbar{
+  display:flex; align-items:center; gap:0;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:0 4px; height:44px;
+}
+.kb-topbar-btn{
+  flex:0 0 auto; width:44px; height:44px;
+  display:flex; align-items:center; justify-content:center;
+  border:none; background:transparent; color:var(--text-soft);
+  border-radius:10px; font-size:20px; cursor:pointer;
+}
+.kb-topbar-btn:active{ background:var(--surface-2); }
+.kb-topbar-sep{ flex:1; }
+
+/* ============================
+   TAB KEYBOARD (pilih panel)
+============================= */
+.kb-tabs{
+  display:flex; gap:8px; padding:8px 10px 0;
+  background:var(--surface); overflow-x:auto;
+  scrollbar-width:none;
+}
+.kb-tabs::-webkit-scrollbar{ display:none; }
+.kb-tab{
+  flex:0 0 auto; border:1.5px solid var(--border);
+  background:var(--surface-2); color:var(--text-soft);
+  border-radius:99px; padding:5px 14px;
+  font-size:12.5px; font-weight:600; cursor:pointer;
+  white-space:nowrap; transition:.15s;
+  font-family:'Inter',sans-serif;
+}
+.kb-tab.active{
+  background:var(--text); color:var(--surface);
+  border-color:var(--text);
+}
+.kb-tab:active{ opacity:.75; }
+
+/* ============================
+   PANEL KEYBOARD
+============================= */
+.kb-panels{
+  flex:1 1 auto; overflow:hidden; background:var(--surface);
+  padding:6px 4px 8px;
+}
+.kb-panel{ display:none; }
+.kb-panel.active{ display:grid; }
+
+/* Panel 1 — operator dasar: 4 kolom */
+.kb-panel.op{ grid-template-columns:repeat(4,1fr); gap:4px; }
+/* Panel 2 — f(x)/log/ln: 6 kolom */
+.kb-panel.fn{ grid-template-columns:repeat(6,1fr); gap:3px; }
+/* Panel 3 — abc: 8 kolom */
+.kb-panel.abc{ grid-template-columns:repeat(8,1fr); gap:3px; }
+
+/* ============================
+   TOMBOL KEYBOARD
+============================= */
+.kb-key{
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  border:1px solid var(--border);
+  border-radius:10px; background:var(--surface-2);
+  color:var(--text); cursor:pointer;
+  font-family:'Inter',sans-serif;
+  transition:background .1s, transform .08s;
+  position:relative; min-height:52px;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.kb-key:active{ background:var(--border); transform:scale(.94); }
+
+/* Tombol angka — putih/surface lebih cerah */
+.kb-key.num{ background:var(--surface); }
+.kb-key.num:active{ background:var(--surface-2); }
+
+/* Tombol operator utama — oranye */
+.kb-key.op-main{
+  background:var(--orange); color:#fff; border-color:var(--orange-dark);
+}
+.kb-key.op-main:active{ background:var(--orange-dark); }
+
+/* Tombol hapus — merah lembut */
+.kb-key.del{
+  background:rgba(224,71,61,.12); color:var(--danger); border-color:rgba(224,71,61,.25);
+}
+.kb-key.del:active{ background:rgba(224,71,61,.22); }
+
+/* Ukuran teks tombol */
+.kb-key .kl{
+  font-size:17px; font-weight:600; line-height:1;
+}
+.kb-key .kl.math{
+  font-size:15px;
+}
+.kb-key .kl.small{
+  font-size:12px;
+}
+/* Sub-label (subscript kecil di bawah simbol) */
+.kb-key .ksub{
+  font-size:9px; color:var(--text-soft); margin-top:1px; line-height:1;
+}
+.kb-key.op-main .ksub{ color:rgba(255,255,255,.7); }
+
+/* Tombol span 2 kolom (= dan enter) */
+.kb-key.span2{ grid-column:span 2; }
+
+/* ============================
+   TOMBOL HAPUS SVG
+============================= */
+.kb-key.del svg{ color:var(--danger); }
+
+/* ============================
+   PANEL ABC — huruf lebih kecil
+============================= */
+.kb-panel.abc .kb-key{ min-height:44px; border-radius:8px; }
+.kb-panel.abc .kl{ font-size:15px; }
+/* Tombol non-aktif (segera hadir) */
+.kb-key.disabled-key{
+  opacity:.38; cursor:not-allowed; pointer-events:none;
+}
+
+/* ============================
+   RESPONSIVE — kalau layar sempit
+============================= */
+@media(max-height:680px){
+  .calc-display{ min-height:100px; padding-top:52px; }
+  .kb-key{ min-height:44px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="page-head" style="position:fixed;top:0;left:0;right:0;z-index:100">
+  <button class="back-btn" onclick="history.back()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Kalkulator Modern</h2>
+</div>
+
+<div class="calc-page">
+
+  <!-- LAYAR DISPLAY -->
+  <div class="calc-display" id="calcDisplay">
+    <div class="calc-expr" id="calcExpr"></div>
+    <div class="calc-result" id="calcResult">0</div>
+  </div>
+
+  <!-- TOOLBAR ATAS KEYBOARD -->
+  <div class="kb-topbar">
+    <!-- abc toggle -->
+    <button class="kb-topbar-btn" id="abcBtn" onclick="toggleAbc()" title="Huruf">
+      <span style="font-size:13px;font-weight:700;font-family:'Inter',sans-serif;color:var(--text-soft)">abc</span>
+    </button>
+    <!-- Riwayat -->
+    <button class="kb-topbar-btn" onclick="showHistory()" title="Riwayat">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.85"/></svg>
+    </button>
+    <!-- AC -->
+    <button class="kb-topbar-btn" onclick="clearAll()" title="Hapus Semua" style="font-size:13px;font-weight:700;font-family:'Inter',sans-serif;color:var(--danger)">
+      AC
+    </button>
+    <div class="kb-topbar-sep"></div>
+    <!-- Cursor kiri -->
+    <button class="kb-topbar-btn" onclick="moveCursor(-1)" title="Kiri">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <!-- Cursor kanan -->
+    <button class="kb-topbar-btn" onclick="moveCursor(1)" title="Kanan">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+    <!-- Enter / sama dengan -->
+    <button class="kb-topbar-btn" onclick="calculate()" title="Hitung" style="color:var(--orange)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>
+    </button>
+    <!-- Hapus satu -->
+    <button class="kb-topbar-btn del" onclick="backspace()" title="Hapus">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+    </button>
+  </div>
+
+  <!-- TAB PANEL -->
+  <div class="kb-tabs" id="kbTabs">
+    <button class="kb-tab active" data-tab="op" onclick="switchTab('op',this)">
+      + − <br>× ÷
+    </button>
+    <button class="kb-tab" data-tab="fn" style="pointer-events:none;opacity:.38">
+      f(x) &nbsp;e<br>log &nbsp;ln
+    </button>
+    <button class="kb-tab" data-tab="trig" style="pointer-events:none;opacity:.38">
+      sin cos<br>tan cot
+    </button>
+    <button class="kb-tab" data-tab="calc" style="pointer-events:none;opacity:.38">
+      lim &nbsp;dx<br>∫Σ ∞
+    </button>
+    <!-- Tab abc dibuat via JS supaya bisa toggle -->
+  </div>
+
+  <!-- PANEL 1: OPERATOR DASAR -->
+  <div class="kb-panels">
+
+    <div class="kb-panel op active" id="panel-op">
+      <!-- Baris 1 -->
+      <div class="kb-key" onclick="ins('(')" ><span class="kl">(</span></div>
+      <div class="kb-key" onclick="ins(')')"><span class="kl">)</span></div>
+      <div class="kb-key" onclick="ins('%')"><span class="kl math">%</span></div>
+      <div class="kb-key" onclick="insAbs()"><span class="kl">|x|</span></div>
+      <!-- Baris 2 -->
+      <div class="kb-key num" onclick="ins('7')"><span class="kl">7</span></div>
+      <div class="kb-key num" onclick="ins('8')"><span class="kl">8</span></div>
+      <div class="kb-key num" onclick="ins('9')"><span class="kl">9</span></div>
+      <div class="kb-key op-main" onclick="ins('÷')"><span class="kl">÷</span></div>
+      <!-- Baris 3 -->
+      <div class="kb-key num" onclick="ins('4')"><span class="kl">4</span></div>
+      <div class="kb-key num" onclick="ins('5')"><span class="kl">5</span></div>
+      <div class="kb-key num" onclick="ins('6')"><span class="kl">6</span></div>
+      <div class="kb-key op-main" onclick="ins('×')"><span class="kl">×</span></div>
+      <!-- Baris 4 -->
+      <div class="kb-key num" onclick="ins('1')"><span class="kl">1</span></div>
+      <div class="kb-key num" onclick="ins('2')"><span class="kl">2</span></div>
+      <div class="kb-key num" onclick="ins('3')"><span class="kl">3</span></div>
+      <div class="kb-key op-main" onclick="ins('−')"><span class="kl">−</span></div>
+      <!-- Baris 5 -->
+      <div class="kb-key num" onclick="ins('0')"><span class="kl">0</span></div>
+      <div class="kb-key num" onclick="ins(',')"><span class="kl">,</span></div>
+      <div class="kb-key op-main" onclick="calculate()"><span class="kl">=</span></div>
+      <div class="kb-key op-main" onclick="ins('+')"><span class="kl">+</span></div>
+    </div>
+
+    <!-- PANEL 2: f(x) / log / ln -->
+    <div class="kb-panel fn" id="panel-fn">
+      <!-- Baris 1 -->
+      <div class="kb-key" onclick="ins('|□|')" title="Nilai mutlak">
+        <span class="kl math">|□|</span>
+      </div>
+      <div class="kb-key" onclick="openFuncDef('fx')">
+        <span class="kl small">f(x)</span>
+        <span class="ksub">definisi</span>
+      </div>
+      <div class="kb-key" onclick="ins('log₁₀(')">
+        <span class="kl small">log<sub style="font-size:8px">10</sub></span>
+      </div>
+      <div class="kb-key" onclick="ins('√(')">
+        <span class="kl math">□√□</span>
+      </div>
+      <div class="kb-key" onclick="ins('i')">
+        <span class="kl">i</span>
+      </div>
+      <div class="kb-key" onclick="ins('[□,□,□]')" title="Vektor/matriks">
+        <span class="kl small" style="font-size:10px">□,□,□</span>
+      </div>
+      <!-- Baris 2 -->
+      <div class="kb-key" onclick="ins('^(□/□)')" title="Pangkat pecahan">
+        <span class="kl small">□<sup style="font-size:9px">□</sup><sub style="font-size:8px">□</sub></span>
+      </div>
+      <div class="kb-key" onclick="callFunc()">
+        <span class="kl small">f(□)</span>
+        <span class="ksub">panggil</span>
+      </div>
+      <div class="kb-key" onclick="ins('log₂(')">
+        <span class="kl small">log<sub style="font-size:8px">2</sub></span>
+      </div>
+      <div class="kb-key" onclick="ins('P(')">
+        <span class="kl math">□P□</span>
+        <span class="ksub">permutasi</span>
+      </div>
+      <div class="kb-key" onclick="ins('z')">
+        <span class="kl">z</span>
+      </div>
+      <div class="kb-key" onclick="ins('!')">
+        <span class="kl">!</span>
+        <span class="ksub">faktorial</span>
+      </div>
+      <!-- Baris 3 -->
+      <div class="kb-key" onclick="ins('e')">
+        <span class="kl">e</span>
+        <span class="ksub">2.718…</span>
+      </div>
+      <div class="kb-key" onclick="openFuncDef('fxy')">
+        <span class="kl small">f(x,y)</span>
+        <span class="ksub">definisi</span>
+      </div>
+      <div class="kb-key" onclick="ins('log(')">
+        <span class="kl small">log<sub style="font-size:8px">□</sub></span>
+      </div>
+      <div class="kb-key" onclick="ins('C(')">
+        <span class="kl math">□C□</span>
+        <span class="ksub">kombinasi</span>
+      </div>
+      <div class="kb-key" onclick="ins('z̄')">
+        <span class="kl">z̄</span>
+      </div>
+      <div class="kb-key" onclick="ins('[[□]]')" title="Matriks">
+        <span class="kl small" style="font-size:10px">[□]</span>
+      </div>
+      <!-- Baris 4 -->
+      <div class="kb-key" onclick="ins('exp(')">
+        <span class="kl small">exp</span>
+      </div>
+      <div class="kb-key" onclick="callFunc2()">
+        <span class="kl small">f(□,□)</span>
+        <span class="ksub">panggil</span>
+      </div>
+      <div class="kb-key" onclick="ins('ln(')">
+        <span class="kl">ln</span>
+      </div>
+      <div class="kb-key" onclick="ins('(□/□)')" title="Pecahan">
+        <span class="kl small">(□/□)</span>
+      </div>
+      <div class="kb-key" onclick="ins('sign(')">
+        <span class="kl small">sign</span>
+      </div>
+      <div class="kb-key" onclick="ins('|□|')" title="Nilai mutlak">
+        <span class="kl small">|□|</span>
+      </div>
+    </div>
+
+    <!-- PANEL 3: abc (huruf) -->
+    <div class="kb-panel abc" id="panel-abc">
+      <!-- Baris 1: a-h -->
+      <div class="kb-key" onclick="ins('a')"><span class="kl">a</span></div>
+      <div class="kb-key" onclick="ins('b')"><span class="kl">b</span></div>
+      <div class="kb-key" onclick="ins('c')"><span class="kl">c</span></div>
+      <div class="kb-key" onclick="ins('d')"><span class="kl">d</span></div>
+      <div class="kb-key" onclick="ins('e')"><span class="kl">e</span></div>
+      <div class="kb-key" onclick="ins('f')"><span class="kl">f</span></div>
+      <div class="kb-key" onclick="ins('g')"><span class="kl">g</span></div>
+      <div class="kb-key" onclick="ins('h')"><span class="kl">h</span></div>
+      <!-- Baris 2: i-p -->
+      <div class="kb-key" onclick="ins('i')"><span class="kl">i</span></div>
+      <div class="kb-key" onclick="ins('j')"><span class="kl">j</span></div>
+      <div class="kb-key" onclick="ins('k')"><span class="kl">k</span></div>
+      <div class="kb-key" onclick="ins('l')"><span class="kl">l</span></div>
+      <div class="kb-key" onclick="ins('m')"><span class="kl">m</span></div>
+      <div class="kb-key" onclick="ins('n')"><span class="kl">n</span></div>
+      <div class="kb-key" onclick="ins('o')"><span class="kl">o</span></div>
+      <div class="kb-key" onclick="ins('p')"><span class="kl">p</span></div>
+      <!-- Baris 3: q-x -->
+      <div class="kb-key" onclick="ins('q')"><span class="kl">q</span></div>
+      <div class="kb-key" onclick="ins('r')"><span class="kl">r</span></div>
+      <div class="kb-key" onclick="ins('s')"><span class="kl">s</span></div>
+      <div class="kb-key" onclick="ins('t')"><span class="kl">t</span></div>
+      <div class="kb-key" onclick="ins('u')"><span class="kl">u</span></div>
+      <div class="kb-key" onclick="ins('v')"><span class="kl">v</span></div>
+      <div class="kb-key" onclick="ins('w')"><span class="kl">w</span></div>
+      <div class="kb-key" onclick="ins('x')"><span class="kl">x</span></div>
+      <!-- Baris 4: y,z + simbol Yunani -->
+      <div class="kb-key" onclick="ins('y')"><span class="kl">y</span></div>
+      <div class="kb-key" onclick="ins('z')"><span class="kl">z</span></div>
+      <div class="kb-key" onclick="ins('α')"><span class="kl">α</span></div>
+      <div class="kb-key" onclick="ins('β')"><span class="kl">β</span></div>
+      <div class="kb-key" onclick="ins('θ')"><span class="kl">θ</span></div>
+      <div class="kb-key" onclick="ins('ρ')"><span class="kl">ρ</span></div>
+      <div class="kb-key" onclick="ins('Φ')"><span class="kl">Φ</span></div>
+      <div class="kb-key" onclick="ins('□')" style="background:transparent;border-color:transparent"></div>
+    </div>
+
+    <!-- PANEL 4: sin/cos/tan/cot (segera hadir) -->
+    <div class="kb-panel trig" id="panel-trig" style="grid-template-columns:repeat(3,1fr);gap:4px">
+      <div class="kb-key disabled-key"><span class="kl small">sin</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">cos</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">tan</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">cot</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">sec</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">csc</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">arcsin</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">arccos</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">arctan</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">sinh</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">cosh</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">tanh</span></div>
+      <div class="kb-key disabled-key span-coming" style="grid-column:span 3">
+        <span class="kl small" style="color:var(--text-soft)">Segera hadir</span>
+      </div>
+    </div>
+
+    <!-- PANEL 5: lim/dx/integral/sigma (segera hadir) -->
+    <div class="kb-panel calc" id="panel-calc" style="grid-template-columns:repeat(3,1fr);gap:4px">
+      <div class="kb-key disabled-key"><span class="kl small">lim</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">d/dx</span></div>
+      <div class="kb-key disabled-key"><span class="kl">∫</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">dy/dx</span></div>
+      <div class="kb-key disabled-key"><span class="kl">Σ</span></div>
+      <div class="kb-key disabled-key"><span class="kl">∞</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">y’</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">dx</span></div>
+      <div class="kb-key disabled-key"><span class="kl small">dy</span></div>
+      <div class="kb-key disabled-key span-coming" style="grid-column:span 3">
+        <span class="kl small" style="color:var(--text-soft)">Segera hadir</span>
+      </div>
+    </div>
+
+  </div><!-- /kb-panels -->
+</div><!-- /calc-page -->
+
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+/* ================================================================
+   STATE
+================================================================ */
+let expr = '';          // ekspresi yang diketik
+let cursor = 0;         // posisi kursor dalam expr
+let lastResult = null;  // hasil terakhir
+let history = [];       // riwayat perhitungan
+let abcMode = false;    // apakah tab abc sedang aktif
+let activeTab = 'op';   // tab aktif saat ini (op / fn)
+let userFuncs = {};     // { name: { params:['x'], body:'...' }, ... }
+
+/* ================================================================
+   ELEMENT REFS
+================================================================ */
+const elExpr   = document.getElementById('calcExpr');
+const elResult = document.getElementById('calcResult');
+const elTabs   = document.getElementById('kbTabs');
+
+/* ================================================================
+   RENDER DISPLAY
+================================================================ */
+function render(){
+  // Tampilkan ekspresi dengan kursor (|)
+  const shown = expr.slice(0,cursor) + '|' + expr.slice(cursor);
+  elExpr.textContent = shown;
+
+  // Preview hasil saat mengetik (live eval)
+  if(expr.trim()){
+    try{
+      const val = evalExpr(expr);
+      if(val !== null && val !== undefined && !isNaN(val)){
+        const str = formatNum(val);
+        elResult.textContent = str;
+        elResult.className = 'calc-result' + (str.length > 14 ? ' xsmall' : str.length > 10 ? ' small' : '');
+      } else {
+        elResult.textContent = lastResult !== null ? formatNum(lastResult) : '0';
+        elResult.className = 'calc-result';
+      }
+    }catch(e){
+      elResult.textContent = lastResult !== null ? formatNum(lastResult) : '0';
+      elResult.className = 'calc-result';
+    }
+  } else {
+    elResult.textContent = lastResult !== null ? formatNum(lastResult) : '0';
+    elResult.className = 'calc-result';
+  }
+}
+
+function formatNum(n){
+  if(typeof n !== 'number') return String(n);
+  if(!isFinite(n)) return n > 0 ? '∞' : '-∞';
+  // Bulatkan floating point error
+  const rounded = parseFloat(n.toPrecision(12));
+  // Format ribuan dengan titik, desimal dengan koma (Indonesia)
+  return rounded.toLocaleString('id-ID', {maximumFractionDigits: 10});
+}
+
+/* ================================================================
+   EVALUASI EKSPRESI
+================================================================ */
+function evalExpr(raw){
+  // Normalisasi simbol
+  let s = raw
+    .replace(/×/g, '*')
+    .replace(/÷/g, '/')
+    .replace(/−/g, '-')
+    .replace(/,/g, '.')        // koma desimal → titik
+    .replace(/π/g, 'Math.PI')
+    .replace(/log₁₀\(/g, 'Math.log10(')
+    .replace(/log₂\(/g, 'Math.log2(')
+    .replace(/log\(/g, 'Math.log10(')   // log tanpa basis = log10
+    .replace(/ln\(/g, 'Math.log(')
+    .replace(/exp\(/g, 'Math.exp(')
+    .replace(/√\(/g, 'Math.sqrt(')
+    .replace(/sin\(/g, 'Math.sin(')
+    .replace(/cos\(/g, 'Math.cos(')
+    .replace(/tan\(/g, 'Math.tan(')
+    .replace(/\|([^|]+)\|/g, 'Math.abs($1)')
+    .replace(/(\d+)!/g, (m,n)=>factorial(parseInt(n)))
+    .replace(/e(?!\d)/g, 'Math.E')
+    .replace(/%/g, '/100');
+
+  // Resolve fungsi user: f(3) → evalExpr dengan x=3
+  for(const [fname, fdef] of Object.entries(userFuncs)){
+    if(fdef.params.length === 1){
+      const re = new RegExp(fname + '\\(([^)]+)\\)', 'g');
+      s = s.replace(re, (_, arg) => {
+        const aVal = evalExprRaw(arg);
+        if(aVal === null) return 'NaN';
+        let b = fdef.body.replace(/,/g,'.').replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+        b = b.replace(new RegExp('\\b' + fdef.params[0] + '\\b', 'g'), '(' + aVal + ')');
+        try { return String(Function('"use strict"; return (' + b + ')')()) } catch(e){ return 'NaN'; }
+      });
+    } else if(fdef.params.length === 2){
+      const re = new RegExp(fname + '\\(([^,)]+),([^)]+)\\)', 'g');
+      s = s.replace(re, (_, a1, a2) => {
+        const v1 = evalExprRaw(a1), v2 = evalExprRaw(a2);
+        if(v1 === null || v2 === null) return 'NaN';
+        let b = fdef.body.replace(/,/g,'.').replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+        b = b.replace(new RegExp('\\b' + fdef.params[0] + '\\b', 'g'), '(' + v1 + ')');
+        b = b.replace(new RegExp('\\b' + fdef.params[1] + '\\b', 'g'), '(' + v2 + ')');
+        try { return String(Function('"use strict"; return (' + b + ')')()) } catch(e){ return 'NaN'; }
+      });
+    }
+  }
+
+  // Kalikan implisit: 2( → 2*(
+  s = s.replace(/(\d)\(/g, '$1*(');
+
+  // Buang karakter yang tidak aman
+  if(/[a-wyzA-Z_$]/i.test(s.replace(/Math\./g,'').replace(/PI|E|abs|sqrt|log|exp|sin|cos|tan|log10|log2/g,''))) return null;
+
+  // eslint-disable-next-line no-new-func
+  return Function('"use strict"; return (' + s + ')')();
+}
+
+function evalExprRaw(raw){
+  let s = raw.trim()
+    .replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/,/g,'.')
+    .replace(/π/g,'Math.PI').replace(/log₁₀\(/g,'Math.log10(').replace(/log₂\(/g,'Math.log2(')
+    .replace(/ln\(/g,'Math.log(').replace(/exp\(/g,'Math.exp(').replace(/√\(/g,'Math.sqrt(')
+    .replace(/e(?!\d)/g,'Math.E');
+  s = s.replace(/(\d)\(/g,'$1*(');
+  try { return Function('"use strict"; return (' + s + ')')(); } catch(e){ return null; }
+}
+
+function factorial(n){
+  if(n < 0 || !Number.isInteger(n)) return NaN;
+  if(n > 170) return Infinity;
+  let r = 1;
+  for(let i=2;i<=n;i++) r*=i;
+  return r;
+}
+
+/* ================================================================
+   AKSI KEYBOARD
+================================================================ */
+window.ins = function(ch){
+  // Ganti placeholder □ dengan posisi kursor
+  expr = expr.slice(0,cursor) + ch + expr.slice(cursor);
+  cursor += ch.length;
+  render();
+};
+
+window.backspace = function(){
+  if(cursor > 0){
+    expr = expr.slice(0,cursor-1) + expr.slice(cursor);
+    cursor--;
+    render();
+  }
+};
+
+window.clearAll = function(){
+  expr = ''; cursor = 0; lastResult = null;
+  elResult.textContent = '0';
+  elResult.className = 'calc-result';
+  elExpr.textContent = '';
+};
+
+window.moveCursor = function(dir){
+  cursor = Math.max(0, Math.min(expr.length, cursor + dir));
+  render();
+};
+
+window.calculate = function(){
+  if(!expr.trim()) return;
+  try{
+    const val = evalExpr(expr);
+    if(val === null || isNaN(val) || !isFinite(val)){
+      showToast('Ekspresi tidak valid');
+      return;
+    }
+    // Simpan ke riwayat
+    history.unshift({ expr: expr, result: val, time: Date.now() });
+    if(history.length > 50) history.pop();
+
+    lastResult = val;
+    const str = formatNum(val);
+    elExpr.textContent = expr + ' =';
+    elResult.textContent = str;
+    elResult.className = 'calc-result' + (str.length > 14 ? ' xsmall' : str.length > 10 ? ' small' : '');
+
+    // Set ekspresi jadi hasil supaya bisa lanjut menghitung
+    expr = String(val).replace('.',',');
+    cursor = expr.length;
+  }catch(e){
+    showToast('Ekspresi tidak dapat dihitung');
+  }
+};
+
+/* ================================================================
+   TAB SWITCHING
+================================================================ */
+window.switchTab = function(tab, el){
+  if(abcMode){ toggleAbc(); }          // tutup abc dulu kalau terbuka
+  activeTab = tab;
+  document.querySelectorAll('.kb-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.kb-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+};
+
+window.toggleAbc = function(){
+  abcMode = !abcMode;
+  const btn = document.getElementById('abcBtn');
+  const abcPanel = document.getElementById('panel-abc');
+
+  if(abcMode){
+    // Sembunyikan panel aktif, tampilkan abc
+    document.querySelectorAll('.kb-panel').forEach(p=>p.classList.remove('active'));
+    abcPanel.classList.add('active');
+    btn.style.background = 'var(--surface-2)';
+    btn.style.borderRadius = '8px';
+    // Hilangkan aktif dari tab lain
+    document.querySelectorAll('.kb-tab').forEach(t=>t.classList.remove('active'));
+  } else {
+    // Kembali ke tab sebelumnya
+    abcPanel.classList.remove('active');
+    document.getElementById('panel-'+activeTab).classList.add('active');
+    btn.style.background = '';
+    // Kembalikan aktif ke tab sebelumnya
+    const prevTab = document.querySelector('.kb-tab[data-tab="'+activeTab+'"]');
+    if(prevTab) prevTab.classList.add('active');
+  }
+};
+
+/* ================================================================
+   RIWAYAT
+================================================================ */
+window.showHistory = function(){
+  if(history.length === 0){ showToast('Belum ada riwayat'); return; }
+
+  // Buat modal sederhana
+  let existing = document.getElementById('histModal');
+  if(existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'histModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.5);
+    display:flex;align-items:flex-end;
+  `;
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;
+                width:100%;max-height:60vh;overflow-y:auto;padding:20px 16px 32px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <b style="font-size:15px">Riwayat</b>
+        <div style="display:flex;gap:8px">
+          <button onclick="clearHistory()" style="font-size:12px;background:transparent;border:1px solid var(--border);
+            border-radius:8px;padding:5px 10px;color:var(--danger);cursor:pointer">Hapus semua</button>
+          <button onclick="document.getElementById('histModal').remove()"
+            style="font-size:12px;background:transparent;border:1px solid var(--border);
+            border-radius:8px;padding:5px 10px;color:var(--text);cursor:pointer">Tutup</button>
+        </div>
+      </div>
+      ${history.map((h,i)=>`
+        <div onclick="useHistory(${i})" style="padding:10px 12px;border-radius:10px;
+          background:var(--surface-2);margin-bottom:8px;cursor:pointer">
+          <div style="font-size:13px;color:var(--text-soft)">${h.expr}</div>
+          <div style="font-size:18px;font-weight:700;color:var(--text);font-family:'Poppins',sans-serif">
+            = ${formatNum(h.result)}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+};
+
+window.useHistory = function(i){
+  const h = history[i];
+  expr = String(h.result).replace('.',',');
+  cursor = expr.length;
+  lastResult = h.result;
+  document.getElementById('histModal')?.remove();
+  render();
+};
+
+window.clearHistory = function(){
+  history = [];
+  document.getElementById('histModal')?.remove();
+  showToast('Riwayat dihapus');
+};
+
+/* ================================================================
+   FUNGSI USER-DEFINED
+================================================================ */
+window.openFuncDef = function(type){
+  var is2 = type === 'fxy';
+  var paramLabel = is2 ? 'x, y' : 'x';
+  var existing = userFuncs['f'];
+  var existingBody = existing ? existing.body : '';
+  var placeholder = is2 ? 'x^2 + y^2' : 'x^2 + 1';
+  var contoh = is2 ? 'x\u00d7y + x\u2212y' : 'x^2 + 2\u00d7x + 1';
+
+  var modal = document.getElementById('funcDefModal');
+  if(modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'funcDefModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px';
+
+  var deleteBtn = existing
+    ? '<button onclick="deleteFuncDef()" style="width:100%;margin-top:8px;padding:8px;border-radius:10px;border:none;background:transparent;color:var(--danger);font-size:13px;cursor:pointer">Hapus definisi f</button>'
+    : '';
+
+  modal.innerHTML =
+    '<div style="background:var(--surface);border-radius:16px;width:100%;max-width:340px;padding:20px 18px 18px">' +
+      '<div style="font-size:15px;font-weight:700;margin-bottom:4px">Definisi Fungsi</div>' +
+      '<div style="font-size:13px;color:var(--text-soft);margin-bottom:14px">Definisikan <b>f(' + paramLabel + ')</b> \u2014 gunakan variabel <b>' + paramLabel + '</b> dalam rumus.</div>' +
+      '<div style="font-size:13px;color:var(--text-soft);margin-bottom:6px">f(' + paramLabel + ') =</div>' +
+      '<input id="funcBodyInput" type="text" placeholder="' + placeholder + '" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface-2);color:var(--text);font-size:15px;outline:none;font-family:Inter,sans-serif">' +
+      '<div style="font-size:11px;color:var(--text-soft);margin-top:6px;margin-bottom:14px">Contoh: <code style="background:var(--surface-2);padding:1px 5px;border-radius:4px">' + contoh + '</code></div>' +
+      '<div style="display:flex;gap:8px">' +
+        '<button onclick="saveFuncDef(' + is2 + ')" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--orange);color:#fff;font-size:14px;font-weight:600;cursor:pointer">Simpan</button>' +
+        '<button onclick="document.getElementById(\'funcDefModal\').remove()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-size:14px;cursor:pointer">Batal</button>' +
+      '</div>' +
+      deleteBtn +
+    '</div>';
+
+  modal.addEventListener('click', function(e){ if(e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+  var inp = document.getElementById('funcBodyInput');
+  if(inp){ inp.value = existingBody; setTimeout(function(){ inp.focus(); }, 50); }
+};
+
+window.saveFuncDef = function(is2){
+  const body = document.getElementById('funcBodyInput').value.trim();
+  if(!body){ showToast('Isi rumus dulu'); return; }
+  userFuncs['f'] = { params: is2 ? ['x','y'] : ['x'], body };
+  document.getElementById('funcDefModal').remove();
+  showToast('f(' + (is2 ? 'x,y' : 'x') + ') = ' + body + ' ✓');
+};
+
+window.deleteFuncDef = function(){
+  delete userFuncs['f'];
+  document.getElementById('funcDefModal').remove();
+  showToast('Definisi f dihapus');
+};
+
+window.callFunc = function(){
+  if(!userFuncs['f']){ showToast('Definisi f(x) belum ada — tekan tombol f(x)'); return; }
+  ins('f(');
+};
+
+window.callFunc2 = function(){
+  if(!userFuncs['f']){ showToast('Definisi f(x,y) belum ada — tekan tombol f(x,y)'); return; }
+  ins('f(');
+};
+
+window.insAbs = function(){
+  expr = expr.slice(0,cursor) + '||' + expr.slice(cursor);
+  cursor += 1; // kursor masuk ke dalam ||
+  render();
+};
+
+/* ================================================================
+   DUKUNGAN KEYBOARD FISIK (laptop/hp dengan keyboard eksternal)
+================================================================ */
+document.addEventListener('keydown', function(e){
+  // Abaikan kalau modal riwayat sedang terbuka
+  if(document.getElementById('histModal')) return;
+
+  const k = e.key;
+
+  if(k === 'h' && e.ctrlKey){ e.preventDefault(); showHistory(); return; }
+  if(k === 'Backspace'){ e.preventDefault(); backspace(); return; }
+  if(k === 'ArrowLeft'){ e.preventDefault(); moveCursor(-1); return; }
+  if(k === 'ArrowRight'){ e.preventDefault(); moveCursor(1); return; }
+  if(k === 'Enter' || k === '='){ e.preventDefault(); calculate(); return; }
+  if(k === 'Escape'){ e.preventDefault(); clearAll(); return; }
+  if(/^[0-9]$/.test(k)){ ins(k); return; }
+  if(k === '.' || k === ','){ ins(','); return; }
+  if(k === '+'){ ins('+'); return; }
+  if(k === '-'){ ins('−'); return; }
+  if(k === '*'){ ins('×'); return; }
+  if(k === '/'){ e.preventDefault(); ins('÷'); return; }
+  if(k === '('){ ins('('); return; }
+  if(k === ')'){ ins(')'); return; }
+  if(k === '%'){ ins('%'); return; }
+});
+
+/* ================================================================
+   INIT
+================================================================ */
+render();
+</script>
+</body>
+</html>

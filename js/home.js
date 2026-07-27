@@ -49,9 +49,11 @@ const FEATURES = [
   { id:'catatan', title:'Catatan', desc:'Tulis, format & ekspor catatanmu', cat:['dokumen'], icon:ICONS.notes, active:true, page:'pages/catatan.html' },
   { id:'cek-karakter', title:'Cek Panjang Karakter', desc:'Karakter, kalimat & paragraf', cat:['perhitungan','dokumen'], icon:ICONS.ruler, active:true, page:'pages/cek-karakter.html' },
   { id:'kalkulator-statistik', title:'Statistik', desc:'Mean, median, modus & lebih', cat:['perhitungan'], icon:ICONS.stats, active:true, page:'pages/statistik.html' },
+  { id:'kalkulator-modern', title:'Kalkulator Modern', desc:'Dasar & ilmiah dalam satu keyboard', cat:['perhitungan'], icon:ICONS.calc, active:true, page:'pages/kalkulator-modern.html' },
   { id:'cek-palet-warna', title:'Cek Palet Warna', desc:'Ekstrak 10 warna dominan dari gambar', cat:['perhitungan'], icon:ICONS.palette, active:true, page:'pages/cek-palet-warna.html' },
   { id:'pencarian-ip', title:'Pencarian IP', desc:'Lokasi & info detail suatu IP/domain', cat:['lainnya'], icon:ICONS.globe, active:true, page:'pages/pencarian-ip.html' },
   { id:'konversi-biner', title:'Konversi Biner', desc:'Text ⇄ Biner, Desimal, HEX & Oktal', cat:['perhitungan','programming'], icon:ICONS.binary, active:true, page:'pages/konversi-biner.html' },
+  { id:'hapus-latar', title:'Hapus Latar Belakang', desc:'Hapus background foto otomatis pakai AI', cat:['lainnya'], icon:ICONS.bg, active:true, page:'pages/hapus-latar-belakang.html' },
   { id:'aplikasi-premium', title:'Aplikasi Premium', desc:'CapCut Pro, Canva Pro & Zoom Pro', cat:['lainnya'], icon:ICONS.premium, active:true, page:'pages/aplikasi-premium.html' },
   { id:'kode-qr', title:'Kode QR', desc:'Buat & scan kode QR (kamera/unggah)', cat:['lainnya'], icon:ICONS.qr, active:true, page:'pages/kode-qr.html' },
   { id:'base64', title:'Base64 Encode & Decode', desc:'Konversi teks ke/dari Base64', cat:['programming'], icon:ICONS.code, active:true, page:'pages/base64.html' },
@@ -62,9 +64,7 @@ const FEATURES = [
   { id:'scan-dokumen', title:'Scan Dokumen', desc:'Segera hadir', cat:['dokumen'], icon:ICONS.scan, active:false },
   { id:'todolist', title:'To Do List Modern', desc:'Segera hadir', cat:['penjadwalan'], icon:ICONS.todo, active:false },
   { id:'alarm', title:'Alarm dan Pengingat', desc:'Segera hadir', cat:['penjadwalan'], icon:ICONS.alarm, active:false },
-  { id:'kalkulator-ilmiah', title:'Kalkulator Ilmiah', desc:'Segera hadir', cat:['perhitungan'], icon:ICONS.calc, active:false },
-  { id:'kalkulator-modern', title:'Kalkulator Modern', desc:'Segera hadir', cat:['perhitungan'], icon:ICONS.calc, active:false },
-  { id:'hapus-latar', title:'Hapus Latar Belakang', desc:'Hapus background foto otomatis pakai AI', cat:['lainnya'], icon:ICONS.bg, active:true, page:'pages/hapus-latar-belakang.html' },
+  { id:'kalkulator-ilmiah', title:'Kalkulator Ilmiah', desc:'Segera hadir', cat:['perhitungan'], icon:ICONS.calc, active:false }
 ];
 
 let currentCat = 'semua';
