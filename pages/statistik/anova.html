@@ -9,6 +9,15 @@
 <style>
 .formula-desc{ font-size:13px; color:var(--text-soft); line-height:1.6; }
 
+.info-btn{
+  width:26px; height:26px; min-width:26px; border-radius:50%; border:1.5px solid var(--border);
+  background:transparent; color:var(--text-soft); font-size:13px; font-weight:800; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; margin-left:auto;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.info-btn:hover, .info-btn.active{ background:var(--orange); border-color:var(--orange); color:#fff; }
+
+
 .at-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -2px; }
 .at-table{ border-collapse:collapse; width:100%; min-width:100%; }
 .at-table th, .at-table td{
@@ -93,11 +102,12 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
   </button>
   <h2>ANOVA</h2>
+  <button class="info-btn" onclick="toggleInfo()" title="Info">?</button>
 </div>
 
 <div class="page-body">
 
-  <div class="formula-block" style="text-align:left;padding:16px">
+  <div class="formula-block hidden" id="infoBlock" style="text-align:left;padding:16px">
     <div class="formula-desc">
       Analisis Ragam (ANOVA) Rancangan Acak Lengkap (RAL) digunakan untuk menguji apakah beberapa perlakuan memberikan pengaruh yang berbeda nyata terhadap suatu variabel yang diamati. Isi tabel di bawah dengan data hasil ulangan setiap perlakuan, lalu tekan "Hitung ANOVA".
     </div>
@@ -167,6 +177,11 @@
 <script src="../../js/util.js"></script>
 <script>
 applyStoredTheme();
+
+function toggleInfo(){
+  document.getElementById('infoBlock').classList.toggle('hidden');
+  document.querySelector('.info-btn').classList.toggle('active');
+}
 
 // ---------------- State ----------------
 // rows: [{ label: 'M0', values: [3,3,4,2] }, ...]
