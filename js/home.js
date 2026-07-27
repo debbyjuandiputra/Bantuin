@@ -64,7 +64,7 @@ const FEATURES = [
   { id:'alarm', title:'Alarm dan Pengingat', desc:'Segera hadir', cat:['penjadwalan'], icon:ICONS.alarm, active:false },
   { id:'kalkulator-ilmiah', title:'Kalkulator Ilmiah', desc:'Segera hadir', cat:['perhitungan'], icon:ICONS.calc, active:false },
   { id:'kalkulator-modern', title:'Kalkulator Modern', desc:'Segera hadir', cat:['perhitungan'], icon:ICONS.calc, active:false },
-  { id:'hapus-latar', title:'Hapus Latar Belakang', desc:'Segera hadir', cat:['lainnya'], icon:ICONS.bg, active:false },
+  { id:'hapus-latar', title:'Hapus Latar Belakang', desc:'Hapus background foto otomatis pakai AI', cat:['lainnya'], icon:ICONS.bg, active:true, page:'pages/hapus-latar-belakang.html' },
 ];
 
 let currentCat = 'semua';

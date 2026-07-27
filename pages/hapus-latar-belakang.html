@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Bantuin — Hapus Latar Belakang</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.upload-area{
+  border:2px dashed var(--border); border-radius:var(--radius); padding:32px 16px;
+  text-align:center; cursor:pointer; transition:.2s; background:var(--surface-2);
+}
+.upload-area:hover,.upload-area.dragover{ border-color:var(--orange); background:rgba(245,137,27,.06); }
+.upload-area svg{ margin-bottom:10px; color:var(--text-soft); }
+.upload-area p{ margin:0; color:var(--text-soft); font-size:13.5px; }
+.upload-area b{ color:var(--orange); }
+
+.preview-wrap{
+  position:relative; margin-top:14px; border-radius:14px; overflow:hidden;
+  background-image:
+    linear-gradient(45deg, var(--surface-2) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--surface-2) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--surface-2) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--surface-2) 75%);
+  background-size:20px 20px;
+  background-position:0 0, 0 10px, 10px -10px, -10px 0px;
+  border:1px solid var(--border);
+  display:none;
+}
+.preview-wrap img{ width:100%; display:block; max-height:340px; object-fit:contain; }
+.preview-wrap.show{ display:block; }
+
+.progress-wrap{ margin:14px 0; }
+.progress-wrap .bar-bg{ background:var(--surface-2); border-radius:99px; height:6px; width:100%; overflow:hidden; }
+.progress-wrap .bar-fg{ background:var(--orange); height:6px; border-radius:99px; width:0; transition:width .4s; }
+.progress-label{ text-align:center; font-size:12px; color:var(--text-soft); margin-top:8px; }
+
+.download-row{ margin-top:16px; padding-top:14px; border-top:1px solid var(--border); }
+.download-row .btn{ display:inline-flex; width:100%; justify-content:center; }
+.download-row .btn svg{ flex-shrink:0; }
+.download-hint{ text-align:center; font-size:11.5px; color:var(--text-soft); margin-top:8px; }
+.retry-btn{
+  width:100%; margin-top:10px; border:1px solid var(--border); background:var(--surface-2);
+  color:var(--text); border-radius:10px; padding:10px 0; font-weight:600; font-size:13.5px;
+}
+.info-note{ font-size:11.5px; color:var(--text-soft); text-align:center; margin-top:10px; }
+
+/* Badge sisa kuota */
+.quota-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:99px; padding:5px 12px; font-size:12px;
+  color:var(--text-soft); margin-bottom:14px;
+}
+.quota-badge span{ font-weight:600; color:var(--orange); }
+.quota-badge.low span{ color:var(--danger); }
+</style>
+</head>
+<body>
+<div class="page-head">
+  <button class="back-btn" onclick="history.back()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Hapus Latar Belakang</h2>
+</div>
+
+<div class="page-body">
+  <div class="card">
+
+    <!-- Badge kuota (muncul setelah berhasil proses) -->
+    <div class="quota-badge hidden" id="quotaBadge">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Sisa kuota bulan ini: <span id="quotaNum">—</span> gambar
+    </div>
+
+    <div class="upload-area" id="uploadArea" onclick="fileInput.click()"
+         ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')"
+         ondrop="event.preventDefault();this.classList.remove('dragover');handleFiles(event.dataTransfer.files)">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+      <p><b>Pilih gambar</b></p>
+      <p style="margin-top:4px;font-size:11.5px">PNG, JPG, WEBP · Maks 8 MB</p>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+
+    <div class="form-msg" id="uploadMsg"></div>
+
+    <div class="progress-wrap hidden" id="progressWrap">
+      <div class="bar-bg"><div class="bar-fg" id="progressBar"></div></div>
+      <div class="progress-label" id="progressLabel">Mengirim gambar ke server...</div>
+    </div>
+
+    <div class="preview-wrap" id="previewWrap">
+      <img id="resultImg" alt="hasil hapus latar belakang">
+    </div>
+  </div>
+
+  <div class="card hidden" id="resultCard">
+    <div class="download-row">
+      <button class="btn" onclick="downloadResult()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Unduh Gambar (PNG)
+      </button>
+      <!-- <p class="download-hint">Latar belakang jadi transparan, siap dipakai di mana saja</p> -->
+    </div>
+    <button class="retry-btn" onclick="resetTool()">Proses Gambar Lain</button>
+  </div>
+
+  <p class="info-note">Gambar dikirim ke server hanya untuk diproses, lalu langsung dihapus. Tidak disimpan permanen. Kuota gratis 50 gambar/bulan, reset otomatis tiap bulan.</p>
+</div>
+
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script src="../js/supabase-config.js"></script>
+<script>
+applyStoredTheme();
+
+// ── Ganti ini dengan URL Edge Function kamu ──────────────────────────────
+// Format: https://<project-ref>.supabase.co/functions/v1/remove-background
+// Nilai SUPABASE_URL sudah ada di supabase-config.js, tinggal tambahkan path-nya.
+const EDGE_FN_URL = SUPABASE_URL + '/functions/v1/remove-background';
+// ─────────────────────────────────────────────────────────────────────────
+
+const fileInput    = document.getElementById('fileInput');
+const uploadMsg    = document.getElementById('uploadMsg');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar  = document.getElementById('progressBar');
+const progressLabel= document.getElementById('progressLabel');
+const previewWrap  = document.getElementById('previewWrap');
+const resultImg    = document.getElementById('resultImg');
+const resultCard   = document.getElementById('resultCard');
+const uploadArea   = document.getElementById('uploadArea');
+const quotaBadge   = document.getElementById('quotaBadge');
+const quotaNum     = document.getElementById('quotaNum');
+
+let resultBlob = null;
+
+function setProgress(pct, label){
+  progressBar.style.width = pct + '%';
+  if(label) progressLabel.textContent = label;
+}
+
+window.handleFiles = async function(files){
+  const file = files && files[0];
+  if(!file) return;
+
+  uploadMsg.textContent = '';
+  resultCard.classList.add('hidden');
+  previewWrap.classList.remove('show');
+  quotaBadge.classList.add('hidden');
+
+  if(!file.type.startsWith('image/')){
+    uploadMsg.textContent = 'File harus berupa gambar.'; return;
+  }
+  if(file.size > 8 * 1024 * 1024){
+    uploadMsg.textContent = 'Ukuran gambar maksimal 8 MB.'; return;
+  }
+
+  uploadArea.classList.add('hidden');
+  progressWrap.classList.remove('hidden');
+  setProgress(10, 'Mengirim gambar ke server...');
+
+  try{
+    const form = new FormData();
+    form.append('image_file', file);
+
+    setProgress(30, 'Memproses gambar...');
+
+    const res = await fetch(EDGE_FN_URL, {
+      method: 'POST',
+      body: form
+      // Tidak perlu Authorization header karena fungsi di-deploy --no-verify-jwt
+    });
+
+    setProgress(80, 'Menerima hasil...');
+
+    if(!res.ok){
+      // Coba parse pesan error dari server
+      let errMsg = 'Gagal memproses gambar. Coba lagi nanti.';
+      try{
+        const errJson = await res.json();
+        if(errJson.error) errMsg = errJson.error;
+      }catch(_){}
+
+      // Pesan khusus untuk kehabisan kuota
+      if(res.status === 402) errMsg = 'Kuota remove.bg bulan ini sudah habis. Kuota akan reset awal bulan depan.';
+
+      throw new Error(errMsg);
+    }
+
+    // Ambil info sisa kuota dari header (remove.bg mengirimkannya)
+    const remaining = res.headers.get('X-Credits-Charged')
+      ? null // Edge Function tidak meneruskan header ini secara default
+      : res.headers.get('X-RateLimit-Remaining');
+
+    const blob = await res.blob();
+    setProgress(100, 'Selesai!');
+
+    resultBlob = blob;
+    const url = URL.createObjectURL(blob);
+    resultImg.src = url;
+
+    // Tampilkan badge kuota kalau ada info-nya
+    // (remove.bg mengirim X-Credits-Remaining — perlu diteruskan dari Edge Fn)
+    const creditsRemaining = res.headers.get('X-Credits-Remaining');
+    if(creditsRemaining !== null){
+      quotaNum.textContent = creditsRemaining;
+      quotaBadge.classList.remove('hidden');
+      if(parseInt(creditsRemaining) <= 5) quotaBadge.classList.add('low');
+    }
+
+    setTimeout(()=>{
+      progressWrap.classList.add('hidden');
+      setProgress(0, '');
+      previewWrap.classList.add('show');
+      resultCard.classList.remove('hidden');
+      resultCard.scrollIntoView({behavior:'smooth', block:'nearest'});
+    }, 400);
+
+  }catch(err){
+    console.error('Hapus latar belakang gagal:', err);
+    progressWrap.classList.add('hidden');
+    setProgress(0, '');
+    uploadArea.classList.remove('hidden');
+
+    const msg = (err && err.message) || '';
+    uploadMsg.textContent = msg || 'Terjadi kesalahan. Pastikan koneksi internet stabil lalu coba lagi.';
+    showToast('Gagal menghapus latar belakang');
+  }
+};
+
+window.downloadResult = function(){
+  if(!resultBlob) return;
+  downloadBlob(resultBlob, 'bantuin-hapus-latar-belakang.png');
+  showToast('Gambar berhasil diunduh');
+};
+
+window.resetTool = function(){
+  resultBlob = null;
+  resultImg.src = '';
+  previewWrap.classList.remove('show');
+  resultCard.classList.add('hidden');
+  uploadArea.classList.remove('hidden');
+  fileInput.value = '';
+  uploadMsg.textContent = '';
+};
+</script>
+</body>
+</html>
