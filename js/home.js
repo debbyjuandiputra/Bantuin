@@ -272,7 +272,7 @@ function closeKontakModal(){ document.getElementById('kontakModal').classList.re
 function closeLoginPromoModal(){ document.getElementById('loginPromoModal').classList.remove('show'); }
 
 // ---------------- Modal Apa yang Baru (tampil sekali per perangkat) ----------------
-const WHATSNEW_KEY = 'bantuin_whatsnew_seen_v5';
+const WHATSNEW_KEY = 'bantuin_whatsnew_seen_v6';
 
 function closeWhatsNewModal(){
   document.getElementById('whatsNewModal').classList.remove('show');
