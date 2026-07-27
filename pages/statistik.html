@@ -42,6 +42,7 @@ const STAT_ICONS = {
   bar:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="20"/><rect x="4" y="10" width="4" height="10"/><rect x="10" y="5" width="4" height="15"/><rect x="16" y="13" width="4" height="7"/></svg>`,
   anova:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M6 20V10l6-6 6 6v10"/><path d="M10 20v-5h4v5"/></svg>`,
   manova: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
+  zscore: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
 };
 
 // Daftar fitur statistik
@@ -57,6 +58,8 @@ const STAT_FEATURES = [
   // Uji Hipotesis
   { id:'anova', title:'ANOVA', desc:'Analisis ragam rancangan acak lengkap', cat:'hipotesis', active:true, page:'statistik/anova.html', icon:STAT_ICONS.anova },
   { id:'manova', title:'MANOVA', desc:'Analisis ragam multivariat (banyak variabel terikat)', cat:'hipotesis', active:true, page:'statistik/manova.html', icon:STAT_ICONS.manova },
+  // Deskriptif lanjutan
+  { id:'zscore', title:'Z-Score & Std. Deviasi', desc:'Z-Score, σ populasi & s sampel', cat:'deskriptif', active:true, page:'statistik/z-score.html', icon:STAT_ICONS.zscore },
 ];
 
 let currentSubCat = 'semua';

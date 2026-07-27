@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — Z-Score & Standar Deviasi</title>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+/* ---- Formula block (konsisten dgn mean/median/modus) ---- */
+.formula-block{
+  background:var(--surface-2); border-radius:14px; padding:20px 16px;
+  text-align:center; margin-bottom:18px; position:relative;
+}
+.info-btn{
+  width:26px; height:26px; min-width:26px; border-radius:50%; border:1.5px solid var(--border);
+  background:transparent; color:var(--text-soft); font-size:13px; font-weight:800; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; margin-left:auto;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.info-btn:hover, .info-btn.active{ background:var(--orange); border-color:var(--orange); color:#fff; }
+.formula-title{
+  font-size:13px; font-weight:700; color:var(--text-soft); margin-bottom:10px; letter-spacing:.4px;
+}
+.formula-main{
+  font-size:26px; font-weight:700; font-family:'Poppins',sans-serif;
+  color:var(--orange); line-height:1.4;
+}
+.formula-fraction{
+  display:inline-flex; flex-direction:column; align-items:center;
+  vertical-align:middle; margin:0 4px;
+}
+.formula-fraction .num{ border-bottom:2.5px solid var(--orange); padding:0 6px 3px; }
+.formula-fraction .den{ padding:3px 6px 0; }
+.formula-desc{ font-size:13px; color:var(--text-soft); margin-top:10px; line-height:1.6; }
+.formula-legend{
+  display:flex; flex-wrap:wrap; gap:8px 18px; justify-content:center;
+  font-size:12.5px; color:var(--text-soft); margin-top:8px;
+}
+.formula-legend span b{ color:var(--orange); font-style:italic; }
+
+/* ---- Toggle sub-formula (tersembunyi default) ---- */
+.formula-detail{ display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+.formula-detail.show{ display:block; }
+.formula-sub{ margin-bottom:14px; }
+.formula-sub:last-child{ margin-bottom:0; }
+.formula-sub .lbl{ font-size:12px; font-weight:700; color:var(--text-soft); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; }
+
+/* ---- Mode toggle (Populasi / Sampel) ---- */
+.mode-toggle{
+  display:flex; background:var(--surface-2); border-radius:12px; padding:4px; margin-bottom:14px;
+}
+.mode-toggle button{
+  flex:1; padding:9px 0; border:none; border-radius:9px; background:transparent;
+  font-weight:600; font-size:13px; color:var(--text-soft); transition:.15s;
+}
+.mode-toggle button.active{ background:var(--orange); color:#fff; }
+
+/* ---- Input rows (sama dgn mean.html) ---- */
+.data-inputs{ display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+.data-row{ display:flex; align-items:center; gap:8px; }
+.data-row label{
+  font-size:12.5px; color:var(--text-soft); font-style:italic; font-weight:600;
+  min-width:24px; text-align:right; flex-shrink:0;
+}
+.data-row input{
+  flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px;
+  background:var(--surface); color:var(--text); font-size:14px; outline:none; transition:border-color .2s;
+}
+.data-row input:focus{ border-color:var(--orange); }
+.data-row .rm-btn{
+  width:32px; height:32px; border-radius:8px; border:none;
+  background:var(--surface-2); color:var(--text-soft); font-size:18px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .15s;
+}
+.data-row .rm-btn:hover{ background:var(--danger); color:#fff; }
+
+.add-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.add-btn{
+  flex:1; min-width:80px; padding:9px 0; border-radius:10px; border:1.5px dashed var(--border);
+  background:transparent; color:var(--text-soft); font-size:13px; font-weight:600; cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.add-btn:hover{ border-color:var(--orange); color:var(--orange); }
+
+.n-row{ display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+.n-row label{ font-size:13px; color:var(--text-soft); font-style:italic; font-weight:600; white-space:nowrap; }
+.n-row input[type="number"]{
+  width:80px; padding:8px 10px; border:1.5px solid var(--border); border-radius:10px;
+  background:var(--surface); color:var(--text); font-size:14px; font-weight:700;
+  text-align:center; outline:none; transition:border-color .2s;
+}
+.n-row input[type="number"]:focus{ border-color:var(--orange); }
+.n-set-btn{
+  padding:8px 16px; border-radius:10px; border:none; background:var(--orange);
+  color:#fff; font-size:13px; font-weight:700; cursor:pointer; transition:opacity .15s;
+}
+.n-set-btn:hover{ opacity:.85; }
+.n-hint{ font-size:11.5px; color:var(--text-soft); }
+
+/* ---- Hasil ---- */
+.result-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+.result-box{
+  background:var(--surface-2); border-radius:12px; padding:14px; text-align:center;
+}
+.result-box.full{ grid-column:1/-1; }
+.result-label{ font-size:11.5px; color:var(--text-soft); margin-bottom:4px; }
+.result-value{ font-size:26px; font-weight:800; font-family:'Poppins',sans-serif; color:var(--orange); }
+.result-formula{ font-size:11.5px; color:var(--text-soft); margin-top:5px; word-break:break-all; line-height:1.5; }
+
+/* ---- Tabel Z-Score ---- */
+.zscore-table{ width:100%; border-collapse:collapse; margin-top:12px; font-size:12.5px; }
+.zscore-table th{
+  background:var(--surface-2); color:var(--text-soft); font-weight:600;
+  padding:8px 8px; text-align:left; border-bottom:1px solid var(--border);
+}
+.zscore-table td{ padding:7px 8px; border-bottom:1px solid var(--border); }
+.zscore-table td:not(:first-child){ text-align:right; font-family:'Poppins',sans-serif; }
+.zscore-table tr.highlight td{ color:var(--orange); font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../statistik.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Z-Score & Std. Deviasi</h2>
+  <button class="info-btn" onclick="toggleInfo()" title="Info">?</button>
+</div>
+
+<div class="page-body">
+
+  <!-- Rumus: tersembunyi di balik tombol ? -->
+  <div class="formula-block hidden" id="infoBlock">
+    <div class="formula-title">RUMUS UTAMA</div>
+
+    <!-- Z-Score -->
+    <div class="formula-main">
+      <span style="font-style:italic">z</span>
+      <span style="font-size:20px;color:var(--text);font-weight:500;margin:0 8px">=</span>
+      <span class="formula-fraction">
+        <span class="num"><span style="font-style:italic">x</span> − <span style="font-style:italic">μ</span></span>
+        <span class="den"><span style="font-style:italic">σ</span></span>
+      </span>
+    </div>
+    <div class="formula-desc">
+      Z-Score menunjukkan seberapa jauh suatu nilai menyimpang dari rata-rata, diukur dalam satuan standar deviasi.
+    </div>
+
+    <!-- Detail rumus -->
+    <div class="formula-detail show" id="formulaDetail">
+
+      <!-- Standar Deviasi Populasi -->
+      <div class="formula-sub">
+        <div class="lbl">Standar Deviasi Populasi (σ)</div>
+        <div class="formula-main" style="font-size:22px">
+          <span style="font-style:italic">σ</span>
+          <span style="font-size:18px;color:var(--text);font-weight:500;margin:0 6px">=</span>
+          <span style="font-style:italic">√</span>
+          <span class="formula-fraction">
+            <span class="num">Σ(<span style="font-style:italic">xᵢ</span> − <span style="font-style:italic">μ</span>)²</span>
+            <span class="den"><span style="font-style:italic">N</span></span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Standar Deviasi Sampel -->
+      <div class="formula-sub">
+        <div class="lbl">Standar Deviasi Sampel (s)</div>
+        <div class="formula-main" style="font-size:22px">
+          <span style="font-style:italic">s</span>
+          <span style="font-size:18px;color:var(--text);font-weight:500;margin:0 6px">=</span>
+          <span style="font-style:italic">√</span>
+          <span class="formula-fraction">
+            <span class="num">Σ(<span style="font-style:italic">xᵢ</span> − <span style="font-style:italic">x̄</span>)²</span>
+            <span class="den"><span style="font-style:italic">n</span> − 1</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="formula-legend" style="margin-top:12px">
+        <span><b>z</b> = z-score</span>
+        <span><b>x</b> = nilai data</span>
+        <span><b>μ / x̄</b> = rata-rata</span>
+        <span><b>σ / s</b> = standar deviasi</span>
+        <span><b>N</b> = banyak data populasi</span>
+        <span><b>n−1</b> = derajat kebebasan sampel</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="card">
+    <h3>Masukkan Data</h3>
+
+    <!-- Mode populasi / sampel -->
+    <div class="mode-toggle">
+      <button class="active" id="modePopBtn" onclick="setMode('populasi')">Populasi</button>
+      <button id="modeSmpBtn" onclick="setMode('sampel')">Sampel (n−1)</button>
+    </div>
+
+    <div class="n-row">
+      <label>n =</label>
+      <input type="number" id="nInput" min="1" max="200" value="1" placeholder="n">
+      <button class="n-set-btn" onclick="setN()">Set</button>
+      <span class="n-hint">atau tekan Enter</span>
+    </div>
+
+    <div class="data-inputs" id="dataInputs"></div>
+
+    <div class="add-row">
+      <button class="add-btn" onclick="addOne()">+ 1 data</button>
+      <button class="add-btn" onclick="addFive()">+ 5 data</button>
+      <button class="add-btn" onclick="addTen()">+ 10 data</button>
+    </div>
+
+    <div class="form-msg" id="calcMsg" style="margin-top:10px"></div>
+
+    <button class="btn" style="margin-top:14px" onclick="calculate()">Hitung</button>
+    <button class="btn secondary" style="margin-top:8px" onclick="resetAll()">Reset</button>
+  </div>
+
+  <!-- Hasil -->
+  <div class="card hidden" id="resultCard">
+    <h3>Hasil</h3>
+    <div class="result-grid">
+      <div class="result-box">
+        <div class="result-label">Rata-rata (x̄)</div>
+        <div class="result-value" id="resMean">0</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label" id="sdLabel">Std. Deviasi (σ)</div>
+        <div class="result-value" id="resSD">0</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label" id="varLabel">Variansi (σ²)</div>
+        <div class="result-value" id="resVar">0</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Jumlah data (n)</div>
+        <div class="result-value" id="resN">0</div>
+      </div>
+    </div>
+
+    <!-- Tabel Z-Score per data -->
+    <div style="margin-top:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--text-soft);margin-bottom:6px">Z-Score Per Data</div>
+      <div style="overflow-x:auto">
+        <table class="zscore-table">
+          <thead>
+            <tr>
+              <th>i</th>
+              <th style="text-align:right">xᵢ</th>
+              <th style="text-align:right">xᵢ − x̄</th>
+              <th style="text-align:right">(xᵢ − x̄)²</th>
+              <th style="text-align:right">z-score</th>
+            </tr>
+          </thead>
+          <tbody id="zscoreBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <button class="btn secondary" style="margin-top:14px" onclick="copyResults()">Salin Semua Hasil</button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/supabase-config.js"></script>
+<script src="../../js/store.js"></script>
+<script src="../../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+let dataCount = 0;
+let currentMode = 'populasi'; // 'populasi' = bagi N, 'sampel' = bagi n-1
+
+/* ---- Toggle rumus ---- */
+function toggleInfo(){
+  document.getElementById('infoBlock').classList.toggle('hidden');
+  document.querySelector('.info-btn').classList.toggle('active');
+}
+
+/* ---- Mode populasi / sampel ---- */
+function setMode(mode){
+  currentMode = mode;
+  document.getElementById('modePopBtn').classList.toggle('active', mode === 'populasi');
+  document.getElementById('modeSmpBtn').classList.toggle('active', mode === 'sampel');
+  const isPop = mode === 'populasi';
+  document.getElementById('sdLabel').textContent  = isPop ? 'Std. Deviasi (σ)' : 'Std. Deviasi (s)';
+  document.getElementById('varLabel').textContent = isPop ? 'Variansi (σ²)'    : 'Variansi (s²)';
+  // Re-hitung jika hasil sudah tampil
+  if(!document.getElementById('resultCard').classList.contains('hidden')) calculate();
+}
+
+/* ---- Set n ---- */
+function setN(){
+  const val = parseInt(document.getElementById('nInput').value, 10);
+  if(isNaN(val) || val < 1) return;
+  const capped = Math.min(val, 200);
+  document.getElementById('nInput').value = capped;
+  const current = document.querySelectorAll('#dataInputs .data-row').length;
+  if(capped > current){
+    for(let i = 0; i < capped - current; i++) addRow(false);
+  } else if(capped < current){
+    const rows = document.querySelectorAll('#dataInputs .data-row');
+    for(let i = rows.length - 1; i >= capped; i--) rows[i].remove();
+  }
+  syncNDisplay();
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('nInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') setN();
+  });
+});
+
+function addRow(focusLast = true){
+  dataCount++;
+  const wrap = document.getElementById('dataInputs');
+  const row = document.createElement('div');
+  row.className = 'data-row';
+  row.id = 'row-' + dataCount;
+  const idx = dataCount;
+  row.innerHTML = `
+    <label>x<sub style="font-size:9px">${idx}</sub></label>
+    <input type="number" id="xi-${idx}" placeholder="Nilai ke-${idx}" step="any" oninput="syncNDisplay()">
+    <button class="rm-btn" onclick="removeRow(${idx})" title="Hapus">×</button>
+  `;
+  wrap.appendChild(row);
+  syncNDisplay();
+  if(focusLast) document.getElementById('xi-' + idx).focus();
+}
+
+function removeRow(idx){
+  const row = document.getElementById('row-' + idx);
+  if(row) row.remove();
+  syncNDisplay();
+}
+
+function syncNDisplay(){
+  const count = document.querySelectorAll('#dataInputs .data-row').length;
+  document.getElementById('nInput').value = count;
+}
+
+function addOne(){ addRow(); }
+function addFive(){
+  const cur = document.querySelectorAll('#dataInputs .data-row').length;
+  const n = cur === 1 ? 4 : 5;
+  for(let i = 0; i < n; i++) addRow(i === n - 1);
+}
+function addTen(){
+  const cur = document.querySelectorAll('#dataInputs .data-row').length;
+  const n = cur === 1 ? 9 : 10;
+  for(let i = 0; i < n; i++) addRow(i === n - 1);
+}
+
+function getValues(){
+  const inputs = document.querySelectorAll('#dataInputs input[type="number"]');
+  const vals = [];
+  inputs.forEach(inp => {
+    const v = parseFloat(inp.value);
+    if(!isNaN(v)) vals.push(v);
+  });
+  return vals;
+}
+
+function fmt(n){
+  if(Number.isInteger(n)) return n.toString();
+  return parseFloat(n.toFixed(6)).toString();
+}
+
+/* ---- Hitung ---- */
+function calculate(){
+  const vals = getValues();
+  const msg = document.getElementById('calcMsg');
+  const isSample = currentMode === 'sampel';
+
+  if(vals.length === 0){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Masukkan minimal 1 nilai data.';
+    return;
+  }
+  if(isSample && vals.length < 2){
+    msg.style.color = 'var(--danger)';
+    msg.textContent = 'Mode Sampel membutuhkan minimal 2 data.';
+    return;
+  }
+  msg.textContent = '';
+
+  const n    = vals.length;
+  const mean = vals.reduce((a, b) => a + b, 0) / n;
+  const diffs = vals.map(v => v - mean);
+  const sqDiffs = diffs.map(d => d * d);
+  const sumSqDiff = sqDiffs.reduce((a, b) => a + b, 0);
+  const divisor = isSample ? n - 1 : n;
+  const variance = sumSqDiff / divisor;
+  const sd = Math.sqrt(variance);
+  const zScores = sd === 0 ? vals.map(() => 0) : diffs.map(d => d / sd);
+
+  document.getElementById('resMean').textContent = fmt(mean);
+  document.getElementById('resSD').textContent   = fmt(sd);
+  document.getElementById('resVar').textContent  = fmt(variance);
+  document.getElementById('resN').textContent    = n;
+
+  // Tabel z-score
+  const tbody = document.getElementById('zscoreBody');
+  const maxZ  = Math.max(...zScores.map(Math.abs));
+  tbody.innerHTML = vals.map((v, i) => {
+    const isMax = Math.abs(zScores[i]) === maxZ && maxZ > 0;
+    return `<tr class="${isMax ? 'highlight' : ''}">
+      <td>${i + 1}</td>
+      <td>${fmt(v)}</td>
+      <td>${fmt(diffs[i])}</td>
+      <td>${fmt(sqDiffs[i])}</td>
+      <td>${fmt(zScores[i])}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('resultCard').classList.remove('hidden');
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+/* ---- Salin semua hasil ---- */
+function copyResults(){
+  const mean = document.getElementById('resMean').textContent;
+  const sd   = document.getElementById('resSD').textContent;
+  const varr = document.getElementById('resVar').textContent;
+  const n    = document.getElementById('resN').textContent;
+  const rows = [...document.querySelectorAll('#zscoreBody tr')].map(tr => {
+    const tds = [...tr.querySelectorAll('td')].map(td => td.textContent);
+    return tds.join('\t');
+  }).join('\n');
+  const text = `Rata-rata: ${mean}\nStd. Deviasi: ${sd}\nVariansi: ${varr}\nJumlah data: ${n}\n\nZ-Score per data:\ni\txᵢ\txᵢ−x̄\t(xᵢ−x̄)²\tz-score\n${rows}`;
+  copyText(text);
+}
+
+/* ---- Reset ---- */
+function resetAll(){
+  document.getElementById('dataInputs').innerHTML = '';
+  dataCount = 0;
+  document.getElementById('calcMsg').textContent = '';
+  document.getElementById('resultCard').classList.add('hidden');
+  addRow();
+}
+
+addRow();
+</script>
+</body>
+</html>

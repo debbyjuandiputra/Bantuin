@@ -19,6 +19,18 @@
   background:var(--bg); color:var(--text); font-size:14px; outline:none;
 }
 
+.logo-shape-row{ display:flex; align-items:center; gap:10px; margin:8px 0 14px; flex-wrap:wrap; }
+.logo-shape-row label{ font-size:13px; color:var(--text-soft); font-weight:600; flex-shrink:0; }
+.shape-opts{ display:flex; gap:8px; }
+.shape-opt{
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  padding:8px 12px; border-radius:10px; border:1.5px solid var(--border);
+  background:transparent; cursor:pointer; transition:border-color .15s, background .15s;
+  font-size:11.5px; color:var(--text-soft); font-weight:600;
+}
+.shape-opt.active{ border-color:var(--orange); background:rgba(245,137,27,.08); color:var(--orange); }
+.shape-opt svg{ width:24px; height:24px; }
+
 .scan-tab-row{ display:flex; gap:8px; margin-bottom:14px; background:var(--surface-2); padding:4px; border-radius:12px; }
 .scan-tab-row button{
   flex:1; padding:9px 0; border:none; border-radius:9px; background:transparent; font-weight:600;
@@ -90,6 +102,24 @@
         </div>
         <input type="file" id="qrLogoInput" class="hidden" accept="image/*">
         <button type="button" class="btn secondary hidden" id="qrLogoClearBtn" style="margin-top:8px" onclick="clearLogo()">Hapus Logo</button>
+        <!-- Bentuk logo -->
+        <div class="logo-shape-row hidden" id="logoShapeRow">
+          <!-- <label>Bentuk logo</label> -->
+          <div class="shape-opts">
+            <button type="button" class="shape-opt active" id="shapeSquare" onclick="setLogoShape('square')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+              Persegi
+            </button>
+            <button type="button" class="shape-opt" id="shapeRect" onclick="setLogoShape('rect')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
+              Persegi panjang
+            </button>
+            <button type="button" class="shape-opt" id="shapeCircle" onclick="setLogoShape('circle')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+              Lingkaran
+            </button>
+          </div>
+        </div>
       </div>
 
       <button class="btn" onclick="generateQR()">Buat Kode QR</button>
@@ -171,6 +201,15 @@ let qrInstance = null;
 let lastQrValue = '';
 let finalQrCanvas = null;   // canvas final yang ditampilkan & diunduh (QR + watermark + logo)
 let logoImgData = null;     // dataURL logo yang dipilih user
+let logoShape = 'square';   // 'square' | 'rect' | 'circle'
+
+function setLogoShape(shape){
+  logoShape = shape;
+  ['square','rect','circle'].forEach(s => {
+    document.getElementById('shape' + s.charAt(0).toUpperCase() + s.slice(1))
+      .classList.toggle('active', s === shape);
+  });
+}
 
 // ---- Muat gambar watermark (base64, sekali saja) ----
 let __wmImgCache = null;
@@ -204,6 +243,7 @@ document.getElementById('qrLogoInput').addEventListener('change', function(){
     logoImgData = e.target.result;
     document.getElementById('qrLogoLabel').textContent = file.name;
     document.getElementById('qrLogoClearBtn').classList.remove('hidden');
+    document.getElementById('logoShapeRow').classList.remove('hidden');
   };
   reader.onerror = () => {
     showToast('Gagal membaca file logo');
@@ -216,6 +256,8 @@ function clearLogo(){
   document.getElementById('qrLogoInput').value = '';
   document.getElementById('qrLogoLabel').textContent = 'Ketuk untuk pilih logo (PNG/JPG)';
   document.getElementById('qrLogoClearBtn').classList.add('hidden');
+  document.getElementById('logoShapeRow').classList.add('hidden');
+  setLogoShape('square');
 }
 
 async function generateQR(){
@@ -305,23 +347,44 @@ async function composeFinalQR(rawCanvas, qrSize, hasLogo){
 
   // Logo di tengah QR (dengan kotak putih pembatas biar kontras & tetap kebaca)
   if(logo){
-    const logoSize = Math.round(qrSize * 0.22);
-    const logoX = PAD + (qrSize - logoSize) / 2;
-    const logoY = PAD + (qrSize - logoSize) / 2;
-    const padBox = Math.round(logoSize * 0.12);
+    const isRect   = logoShape === 'rect';
+    const isCircle = logoShape === 'circle';
 
+    // Ukuran kotak logo: rect lebih lebar, sisanya persegi
+    const logoW = isRect ? Math.round(qrSize * 0.34) : Math.round(qrSize * 0.22);
+    const logoH = isRect ? Math.round(qrSize * 0.18) : Math.round(qrSize * 0.22);
+    const logoX = PAD + (qrSize - logoW) / 2;
+    const logoY = PAD + (qrSize - logoH) / 2;
+    const padBox = Math.round(Math.min(logoW, logoH) * 0.12);
+    const radius = isCircle ? (Math.min(logoW, logoH) / 2 + padBox) : 4 * SCALE;
+
+    // Kotak putih / lingkaran putih di belakang logo
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(logoX - padBox, logoY - padBox, logoSize + padBox * 2, logoSize + padBox * 2);
+    if(isCircle){
+      ctx.beginPath();
+      ctx.arc(PAD + qrSize/2, PAD + qrSize/2, radius, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillRect(logoX - padBox, logoY - padBox, logoW + padBox * 2, logoH + padBox * 2);
+    }
 
+    // Clip sesuai bentuk lalu gambar logo
     ctx.save();
     ctx.beginPath();
-    ctx.rect(logoX, logoY, logoSize, logoSize);
+    if(isCircle){
+      const cx = PAD + qrSize/2;
+      const cy = PAD + qrSize/2;
+      const r  = Math.min(logoW, logoH) / 2;
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    } else {
+      ctx.rect(logoX, logoY, logoW, logoH);
+    }
     ctx.clip();
-    // gambar logo memenuhi kotak, dipotong tengah biar proporsional
-    const ratio = Math.max(logoSize / logo.width, logoSize / logo.height);
+
+    const ratio = Math.max(logoW / logo.width, logoH / logo.height);
     const drawW = logo.width * ratio;
     const drawH = logo.height * ratio;
-    ctx.drawImage(logo, logoX + (logoSize - drawW)/2, logoY + (logoSize - drawH)/2, drawW, drawH);
+    ctx.drawImage(logo, logoX + (logoW - drawW)/2, logoY + (logoH - drawH)/2, drawW, drawH);
     ctx.restore();
   }
 

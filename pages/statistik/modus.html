@@ -8,9 +8,18 @@
 <link rel="stylesheet" href="../../css/style.css">
 <style>
 .formula-block{
-  background:var(--surface-2); border-radius:14px; padding:20px 16px;
-  text-align:center; margin-bottom:18px;
+  background:var(--surface-2); border-radius:14px; padding:16px;
+  text-align:center; margin-bottom:18px; position:relative;
 }
+.info-btn{
+  width:26px; height:26px; min-width:26px; border-radius:50%; border:1.5px solid var(--border);
+  background:transparent; color:var(--text-soft); font-size:13px; font-weight:800; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; margin-left:auto;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.info-btn:hover, .info-btn.active{ background:var(--orange); border-color:var(--orange); color:#fff; }
+.formula-detail{ margin-top:0; padding-top:0; }
+.formula-detail.show{ display:block; }
 .formula-main{
   font-size:26px; font-weight:700; font-family:'Poppins',sans-serif;
   color:var(--orange); line-height:1.4;
@@ -91,27 +100,30 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
   </button>
   <h2>Modus</h2>
+  <button class="info-btn" onclick="toggleInfo()" title="Info">?</button>
 </div>
 
 <div class="page-body">
 
   <!-- Rumus -->
-  <div class="formula-block">
-    <div class="formula-main">
-      <span style="font-style:italic">Mo</span>
-      <span style="font-size:20px;color:var(--text);font-weight:500;margin:0 10px">=</span>
-      <span style="font-size:18px;font-style:italic;color:var(--text)">nilai dengan frekuensi</span>
-      <br>
-      <span style="font-size:18px;font-style:italic;color:var(--text)">kemunculan terbanyak</span>
-    </div>
-    <div class="formula-desc">
-      Modus adalah nilai yang paling sering muncul dalam sekumpulan data.
-      Data bisa memiliki lebih dari satu modus (bimodal / multimodal),
-      atau tidak memiliki modus jika semua nilai muncul sama banyak.
-    </div>
-    <div class="formula-legend">
-      <span><b>Mo</b> = modus</span>
-      <span><b>f</b> = frekuensi kemunculan</span>
+  <div class="formula-block hidden" id="infoBlock">
+    <div class="formula-detail show" id="formulaDetail">
+      <div class="formula-main">
+        <span style="font-style:italic">Mo</span>
+        <span style="font-size:20px;color:var(--text);font-weight:500;margin:0 10px">=</span>
+        <span style="font-size:18px;font-style:italic;color:var(--text)">nilai dengan frekuensi</span>
+        <br>
+        <span style="font-size:18px;font-style:italic;color:var(--text)">kemunculan terbanyak</span>
+      </div>
+      <div class="formula-desc">
+        Modus adalah nilai yang paling sering muncul dalam sekumpulan data.
+        Data bisa memiliki lebih dari satu modus (bimodal / multimodal),
+        atau tidak memiliki modus jika semua nilai muncul sama banyak.
+      </div>
+      <div class="formula-legend">
+        <span><b>Mo</b> = modus</span>
+        <span><b>f</b> = frekuensi kemunculan</span>
+      </div>
     </div>
   </div>
 
@@ -165,6 +177,11 @@
 <script src="../../js/util.js"></script>
 <script>
 applyStoredTheme();
+
+function toggleInfo(){
+  document.getElementById('infoBlock').classList.toggle('hidden');
+  document.querySelector('.info-btn').classList.toggle('active');
+}
 
 let dataCount = 0;
 
