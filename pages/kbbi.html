@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Bantuin — KBBI VI Daring</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+/* ============================================================
+   KBBI PAGE — Ejaan EYD Edisi V · KBBI VI Daring
+============================================================ */
+
+/* ---- Hero Search ---- */
+.kbbi-hero{
+  background: linear-gradient(135deg, var(--navy) 0%, #2a3f6b 100%);
+  padding: 28px 16px 24px;
+  margin-bottom: 0;
+}
+.kbbi-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  background: rgba(245,137,27,.18); border:1px solid rgba(245,137,27,.35);
+  border-radius:99px; padding:5px 12px; margin-bottom:14px;
+}
+.kbbi-badge span{ font-size:11px; font-weight:700; color:var(--orange-light); letter-spacing:.4px; text-transform:uppercase; }
+
+.kbbi-hero h1{
+  font-size:22px; color:#fff; margin:0 0 6px; letter-spacing:-.2px;
+}
+.kbbi-hero p{
+  font-size:12.5px; color:rgba(255,255,255,.6); margin:0 0 18px; line-height:1.5;
+}
+
+/* Search wrapper */
+.search-wrap{
+  position:relative;
+}
+.search-input{
+  width:100%; padding:14px 50px 14px 16px; border-radius:14px; border:none;
+  background:#fff; color:#1F2430; font-size:15px; font-family:'Inter',sans-serif;
+  outline:none; box-shadow:0 4px 20px rgba(0,0,0,.25);
+}
+.search-input::placeholder{ color:#9BA2B4; }
+.search-btn{
+  position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  width:38px; height:38px; border-radius:10px; border:none;
+  background: var(--orange); color:#fff; display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.search-btn svg{ width:18px; height:18px; }
+.search-btn:active{ background:var(--orange-dark); }
+
+/* Filter row */
+.filter-row{
+  display:flex; gap:8px; overflow-x:auto; padding:14px 16px 0;
+  scrollbar-width:none;
+}
+.filter-row::-webkit-scrollbar{ display:none; }
+.filter-chip{
+  flex-shrink:0; padding:7px 14px; border-radius:99px; border:1.5px solid var(--border);
+  background:var(--surface); font-size:12.5px; font-weight:600; color:var(--text-soft);
+  cursor:pointer; white-space:nowrap; transition:.15s;
+}
+.filter-chip.active{
+  border-color:var(--orange); background:rgba(245,137,27,.1); color:var(--orange);
+}
+.filter-chip:active{ transform:scale(.97); }
+
+/* Autocomplete dropdown */
+.autocomplete-wrap{ position:relative; }
+.autocomplete-list{
+  position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:500;
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  box-shadow:var(--shadow); overflow:hidden; max-height:240px; overflow-y:auto;
+  display:none;
+}
+.autocomplete-list.show{ display:block; }
+.autocomplete-item{
+  padding:12px 16px; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:10px;
+  border-bottom:1px solid var(--border);
+}
+.autocomplete-item:last-child{ border-bottom:none; }
+.autocomplete-item:active{ background:var(--surface-2); }
+.autocomplete-item svg{ width:16px; height:16px; color:var(--text-soft); flex-shrink:0; }
+.autocomplete-highlight{ color:var(--orange); font-weight:700; }
+
+/* ---- Random words ---- */
+.rnd-section{ padding:16px 16px 0; }
+.rnd-title{
+  font-size:12px; font-weight:700; color:var(--text-soft); text-transform:uppercase;
+  letter-spacing:.5px; margin-bottom:10px;
+}
+.rnd-grid{
+  display:flex; flex-wrap:wrap; gap:8px;
+}
+.rnd-word{
+  padding:7px 13px; border-radius:99px; background:var(--surface);
+  border:1px solid var(--border); font-size:13px; font-weight:600;
+  color:var(--text); cursor:pointer; transition:.15s;
+}
+.rnd-word:active{ border-color:var(--orange); color:var(--orange); transform:scale(.97); }
+
+/* ---- Result area ---- */
+.result-area{ padding:16px 16px 40px; }
+
+/* Entry card */
+.entry-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  box-shadow:var(--shadow); overflow:hidden; margin-bottom:14px;
+}
+.entry-head{
+  padding:18px 16px 14px; border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,var(--navy) 0%,#2a3f6b 100%);
+}
+.entry-type-badge{
+  display:inline-block; padding:3px 10px; border-radius:99px; font-size:10.5px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;
+  background:rgba(245,137,27,.25); color:var(--orange-light); border:1px solid rgba(245,137,27,.3);
+}
+.entry-word{
+  font-size:26px; font-family:'Poppins',sans-serif; font-weight:700; color:#fff;
+  letter-spacing:-.3px; margin-bottom:4px;
+}
+.entry-pron{
+  font-size:13px; color:rgba(255,255,255,.65); font-style:italic; margin-bottom:8px;
+}
+.entry-kelas{
+  display:flex; flex-wrap:wrap; gap:6px;
+}
+.kelas-tag{
+  padding:4px 10px; border-radius:99px; font-size:11px; font-weight:700;
+  background:rgba(255,255,255,.15); color:rgba(255,255,255,.9); border:1px solid rgba(255,255,255,.2);
+}
+
+.entry-body{ padding:16px; }
+
+/* Makna section */
+.makna-item{
+  padding:12px 0; border-bottom:1px solid var(--border);
+}
+.makna-item:last-child{ border-bottom:none; }
+.makna-num{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; border-radius:99px; background:var(--orange);
+  color:#fff; font-size:11px; font-weight:700; flex-shrink:0; margin-right:8px;
+  margin-bottom:4px;
+}
+.makna-label{
+  display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;
+}
+.bidang-tag{
+  padding:2px 8px; border-radius:99px; font-size:10.5px; font-weight:700;
+  background:rgba(47,163,107,.12); color:#2FA36B; border:1px solid rgba(47,163,107,.2);
+}
+.ragam-tag{
+  padding:2px 8px; border-radius:99px; font-size:10.5px; font-weight:700;
+  background:rgba(245,137,27,.1); color:var(--orange-dark); border:1px solid rgba(245,137,27,.2);
+}
+.makna-def{
+  font-size:14px; line-height:1.6; color:var(--text); margin-bottom:6px;
+}
+.makna-contoh{
+  font-size:13px; color:var(--text-soft); font-style:italic; line-height:1.5;
+  padding:8px 12px; background:var(--surface-2); border-radius:10px; border-left:3px solid var(--orange);
+}
+.makna-contoh::before{ content:'"'; }
+.makna-contoh::after{ content:'"'; }
+
+/* Section titles */
+.sec-title{
+  font-size:12px; font-weight:800; color:var(--text-soft); text-transform:uppercase;
+  letter-spacing:.5px; margin:16px 0 10px; display:flex; align-items:center; gap:6px;
+}
+.sec-title::after{
+  content:''; flex:1; height:1px; background:var(--border);
+}
+
+/* Etimologi */
+.etim-box{
+  background:var(--surface-2); border-radius:12px; padding:12px 14px;
+  font-size:13.5px; line-height:1.6; color:var(--text);
+}
+
+/* Turunan & Gabungan chips */
+.word-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.word-chip{
+  padding:7px 13px; border-radius:99px; background:var(--surface-2);
+  border:1px solid var(--border); font-size:13px; font-weight:600;
+  color:var(--text); cursor:pointer; transition:.15s;
+}
+.word-chip:active{ border-color:var(--orange); color:var(--orange); }
+
+/* Peribahasa / Idiom / Ungkapan */
+.phrase-item{
+  padding:12px 0; border-bottom:1px solid var(--border);
+}
+.phrase-item:last-child{ border-bottom:none; }
+.phrase-text{
+  font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px;
+}
+.phrase-def{
+  font-size:13px; color:var(--text-soft); line-height:1.5;
+}
+
+/* Tesaurus */
+.tesaurus-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+.tes-chip{
+  padding:6px 12px; border-radius:99px; background:var(--surface-2);
+  border:1px solid var(--border); font-size:12.5px; font-weight:600; color:var(--text-soft);
+  cursor:pointer; transition:.15s;
+}
+.tes-chip:active{ border-color:var(--orange); color:var(--orange); }
+
+/* Varian */
+.varian-list{ display:flex; flex-wrap:wrap; gap:8px; }
+.varian-chip{
+  padding:6px 12px; border-radius:99px; background:var(--surface-2);
+  border:1px solid var(--border); font-size:13px; color:var(--text);
+}
+
+/* Loading skeleton */
+.skeleton-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:20px; margin-bottom:14px; overflow:hidden;
+}
+.skel{
+  background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 50%,var(--surface-2) 75%);
+  background-size:200% 100%; animation:skel-shine 1.5s infinite; border-radius:8px;
+}
+@keyframes skel-shine{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* Not found */
+.not-found{
+  text-align:center; padding:40px 20px;
+}
+.not-found svg{ width:48px; height:48px; color:var(--border); margin-bottom:12px; }
+.not-found h3{ font-size:17px; margin-bottom:6px; }
+.not-found p{ font-size:13px; color:var(--text-soft); line-height:1.5; margin:0; }
+
+/* Toast */
+#kbbi-toast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:#1F2430; color:#fff; padding:10px 20px; border-radius:99px;
+  font-size:13px; font-weight:600; z-index:9999; opacity:0; transition:.25s; pointer-events:none;
+}
+
+/* Responsive tweak */
+@media(max-width:360px){
+  .entry-word{ font-size:22px; }
+  .kbbi-hero h1{ font-size:19px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="history.back()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>KBBI VI Daring</h2>
+</div>
+
+<div style="padding-top:58px">
+
+  <!-- Hero + Search -->
+  <div class="kbbi-hero">
+    <h1>Kamus Besar Bahasa Indonesia</h1>
+    <div class="autocomplete-wrap">
+      <div class="search-wrap">
+        <input class="search-input" type="text" id="searchInput"
+               placeholder="Cari kata, misalnya: makan, berlari…"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+               oninput="onSearchInput(this.value)"
+               onkeydown="onSearchKeydown(event)">
+        <button class="search-btn" onclick="doSearch()" aria-label="Cari">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </div>
+      <div class="autocomplete-list" id="autocompleteList"></div>
+    </div>
+  </div>
+
+  <!-- Filter chips -->
+  <div class="filter-row" id="filterRow">
+    <div class="filter-chip active" data-filter="semua" onclick="setFilter('semua',this)">Semua</div>
+    <div class="filter-chip" data-filter="entri-dasar" onclick="setFilter('entri-dasar',this)">Entri Dasar</div>
+    <div class="filter-chip" data-filter="turunan" onclick="setFilter('turunan',this)">Kata Turunan</div>
+    <div class="filter-chip" data-filter="peribahasa" onclick="setFilter('peribahasa',this)">Peribahasa</div>
+    <div class="filter-chip" data-filter="idiom" onclick="setFilter('idiom',this)">Idiom</div>
+    <div class="filter-chip" data-filter="ungkapan" onclick="setFilter('ungkapan',this)">Ungkapan</div>
+  </div>
+
+  <!-- Random words -->
+  <div class="rnd-section" id="rndSection">
+    <div class="rnd-title">Jelajahi kata hari ini</div>
+    <div class="rnd-grid" id="rndGrid">
+      <!-- diisi JS -->
+    </div>
+  </div>
+
+  <!-- Result area -->
+  <div class="result-area" id="resultArea" style="display:none"></div>
+
+</div>
+
+<div id="kbbi-toast"></div>
+
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+// ============================================================
+// DATA & CONFIG
+// ============================================================
+
+// 100+ kata unik Indonesia untuk random pool
+const KATA_POOL = [
+  'abadi','abang','abjad','abrasi','absurd','abyss','acak','acuan','adab',
+  'adil','adonan','agak','agama','agen','agung','ahli','aib','ainul',
+  'ajal','ajar','akad','akal','akar','akaun','akbar','akhlak','akibat',
+  'akrab','aksara','aktual','akur','alam','alang','alasan','alih','alim',
+  'aliran','alma','alpa','alur','amalan','amanah','ambisi','ambruk','ameliorasi',
+  'ampuh','anasir','ancam','andal','angin','angkuh','animo','anjak',
+  'antologi','apriori','arif','arogan','arsip','asali','asas','asketis',
+  'aspirasi','asumsi','ateisme','audiensi','autentik','avonturir','awam',
+  'azas','babak','badai','bahari','bahtera','bakti','balada','balaghah',
+  'banter','batu','bayang','bedah','benalu','benang','bendung','bercanda',
+  'bergejolak','berlaga','bertakwa','bhineka','bijak','bisa','bodoh',
+  'bohong','bongkar','borjuis','bosan','brainstorm','brikolase','budak',
+  'bundar','burung','cahaya','cairan','canggih','celah','cemerlang',
+  'cerdas','cerna','cetak','cipta','citra','cobaan','damai','darurat',
+  'dedikasi','demokratis','dendam','destilasi','deviasi','dikotomi',
+  'dinamis','dirham','diskursus','dusta','egois','ekosistem','elaborasi',
+  'elemen','emosi','empiris','eskalasi','etika','eufemisme','evaluasi',
+  'fadilah','fakir','falsafah','fantasi','fasih','fatwa','fisiologi',
+  'fitrah','fleksibel','gagasan','gejolak','gelombang','gemilang','giat',
+  'global','gnosis','hadirin','hakikat','harmoni','hasrat','hayat',
+  'hegemoni','hermeneutik','hikmat','hipokrit','ikhlas','imajinatif',
+  'integratif','interaksi','inovasi','intuisi','ironi','jihad','jiwa',
+  'keberanian','kebijaksanaan','kedaulatan','keislaman','kemerdekaan',
+  'kendali','khazanah','kiblat','kritis','luhur','makna','mandiri',
+  'mulia','nalar','nurani','pancasila','patriotisme','peradaban',
+  'persatuan','proaktif','rasional','refleksi','revolusi','sintesis',
+  'spiritualitas','toleransi','transendental','ulayat','universal',
+  'utopia','visi','wawasan','xenofobia','yatim','zakat','zanzibar'
+];
+
+let activeFilter = 'semua';
+let lastQuery = '';
+let autocompleteTimer = null;
+let isSearching = false;
+
+// ---- Ambil 30 kata random unik setiap load ----
+function getRandomWords(pool, n){
+  const shuffled = [...pool].sort(()=>Math.random()-.5);
+  return shuffled.slice(0, n);
+}
+
+function renderRandomWords(){
+  const words = getRandomWords(KATA_POOL, 30);
+  const grid = document.getElementById('rndGrid');
+  grid.innerHTML = words.map(w =>
+    `<div class="rnd-word" onclick="searchWord('${w}')">${w}</div>`
+  ).join('');
+}
+
+// ============================================================
+// FILTER
+// ============================================================
+function setFilter(filter, el){
+  activeFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  if(lastQuery) doSearch();
+}
+
+// ============================================================
+// AUTOCOMPLETE
+// ============================================================
+function onSearchInput(val){
+  clearTimeout(autocompleteTimer);
+  val = val.trim();
+  if(val.length < 2){ closeAutocomplete(); return; }
+  autocompleteTimer = setTimeout(() => showAutocomplete(val), 200);
+}
+
+function showAutocomplete(query){
+  const q = query.toLowerCase();
+  const matches = KATA_POOL.filter(w => w.startsWith(q) || w.includes(q))
+    .slice(0,8);
+  const list = document.getElementById('autocompleteList');
+  if(!matches.length){ list.classList.remove('show'); return; }
+  list.innerHTML = matches.map(w => {
+    const idx = w.toLowerCase().indexOf(q);
+    const hi = idx >= 0
+      ? w.slice(0,idx) + `<span class="autocomplete-highlight">${w.slice(idx,idx+q.length)}</span>` + w.slice(idx+q.length)
+      : w;
+    return `<div class="autocomplete-item" onclick="searchWord('${w}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      ${hi}
+    </div>`;
+  }).join('');
+  list.classList.add('show');
+}
+
+function closeAutocomplete(){
+  document.getElementById('autocompleteList').classList.remove('show');
+}
+
+document.addEventListener('click', e => {
+  if(!e.target.closest('.autocomplete-wrap')) closeAutocomplete();
+});
+
+function onSearchKeydown(e){
+  if(e.key === 'Enter'){ closeAutocomplete(); doSearch(); }
+  if(e.key === 'Escape') closeAutocomplete();
+}
+
+// ============================================================
+// SEARCH
+// ============================================================
+function searchWord(word){
+  document.getElementById('searchInput').value = word;
+  closeAutocomplete();
+  doSearch();
+}
+
+async function doSearch(){
+  const query = document.getElementById('searchInput').value.trim();
+  if(!query){ showToast('Masukkan kata terlebih dahulu.'); return; }
+  if(isSearching) return;
+
+  lastQuery = query;
+  isSearching = true;
+  closeAutocomplete();
+
+  // Sembunyikan random words, tampilkan result area
+  document.getElementById('rndSection').style.display = 'none';
+  const area = document.getElementById('resultArea');
+  area.style.display = 'block';
+  area.innerHTML = renderSkeleton();
+
+  try{
+    const result = await queryKBBI(query, activeFilter);
+    area.innerHTML = '';
+    renderResult(result, area, query);
+  }catch(err){
+    area.innerHTML = renderNotFound(query, err.message);
+  }finally{
+    isSearching = false;
+  }
+}
+
+// ============================================================
+// KBBI Query — kbbi.raf555.dev (gratis, tanpa API key)
+// Mirror resmi dari KBBI Aplikasi v6.x, update Oktober 2025
+// ============================================================
+
+const KBBI_BASE = 'https://kbbi.raf555.dev/api/v1';
+
+async function queryKBBI(kata, filter){
+  const encoded = encodeURIComponent(kata.trim().toLowerCase());
+  const response = await fetch(`${KBBI_BASE}/entry/${encoded}`);
+
+  if(response.status === 404){
+    throw new Error(`Kata "${kata}" tidak ditemukan dalam KBBI VI.`);
+  }
+  if(!response.ok){
+    throw new Error('Gagal menghubungi server KBBI. Coba lagi.');
+  }
+
+  const raw = await response.json();
+
+  // raw: { lemma, entries: [ { entry, baseWord, pronunciation, definitions, derivedWords,
+  //         compoundWords, proverbs, metaphors, variants, nonStandardWords, entryVariants } ] }
+  if(!raw || !raw.entries || !raw.entries.length){
+    throw new Error(`Kata "${kata}" tidak ditemukan dalam KBBI VI.`);
+  }
+
+  return adaptRaf555(kata, raw, filter);
+}
+
+// Adapter: ubah format kbbi.raf555.dev → format internal renderResult
+function adaptRaf555(kata, raw, filter){
+  const entries = raw.entries || [];
+  const main = entries[0] || {};
+
+  // ---- kelas kata & makna dari definitions ----
+  const kelasSet = new Set();
+  const maknaList = [];
+
+  (main.definitions || []).forEach((def, i) => {
+    const labels = def.labels || [];
+    labels.forEach(l => { if(l.kind === 'Kelas Kata') kelasSet.add(l.name); });
+
+    const bidang = labels.find(l => l.kind === 'Bidang');
+    const ragam  = labels.find(l => l.kind === 'Ragam' || l.kind === 'Label');
+
+    maknaList.push({
+      nomor   : i + 1,
+      definisi: def.definition || '',
+      bidang  : bidang ? bidang.name : null,
+      ragam   : ragam  ? ragam.name  : null,
+      contoh  : (def.usageExamples || []).join('; ') || null
+    });
+  });
+
+  // ---- kata turunan ----
+  const turunan = (main.derivedWords || []).map(w => {
+    const kelas = (w.definitions||[]).flatMap(d =>
+      (d.labels||[]).filter(l=>l.kind==='Kelas Kata').map(l=>l.name)
+    );
+    const makna = (w.definitions||[]).map(d=>d.definition).filter(Boolean).join('; ');
+    return { kata: w.entry || w, kelas_kata: [...new Set(kelas)], makna_singkat: makna };
+  });
+
+  // ---- gabungan kata (compoundWords) ----
+  const gabungan = (main.compoundWords || []).map(w => {
+    const makna = (w.definitions||[]).map(d=>d.definition).filter(Boolean).join('; ');
+    return { frase: w.entry || w, makna };
+  });
+
+  // ---- peribahasa & idiom (proverbs & metaphors) ----
+  const peribahasa = (main.proverbs || []).map(p => ({
+    teks : p.entry || p,
+    makna: (p.definitions||[]).map(d=>d.definition).filter(Boolean).join('; ')
+  }));
+  const idiom = (main.metaphors || []).map(m => ({
+    teks : m.entry || m,
+    makna: (m.definitions||[]).map(d=>d.definition).filter(Boolean).join('; ')
+  }));
+
+  // ---- varian ----
+  const varian = [
+    ...(main.variants || []).map(v => v.entry || v),
+    ...(main.nonStandardWords || []).map(v => v.entry || v)
+  ].filter(Boolean);
+
+  // ---- tesaurus: sinonim dari referensi definisi ----
+  const sinonim = (main.definitions || [])
+    .map(d => d.referencedLemma).filter(Boolean);
+
+  // ---- entri tambahan (makna ganda entri berbeda, misalnya apel 1 & apel 2) ----
+  const ungkapan = entries.slice(1).flatMap(e2 =>
+    (e2.definitions||[]).map(d => ({
+      teks : e2.entry,
+      makna: d.definition || ''
+    }))
+  );
+
+  // ---- filter chip ----
+  // kalau filter aktif bukan 'semua', kosongkan bagian yang tidak relevan
+  const showTurunan    = filter === 'semua' || filter === 'turunan';
+  const showPeribahasa = filter === 'semua' || filter === 'peribahasa';
+  const showIdiom      = filter === 'semua' || filter === 'idiom';
+  const showUngkapan   = filter === 'semua' || filter === 'ungkapan';
+  const showDasar      = filter === 'semua' || filter === 'entri-dasar';
+
+  return {
+    kata,
+    ditemukan: true,
+    entri_dasar: showDasar ? {
+      kata      : main.entry || kata,
+      pelafalan : main.pronunciation
+                    ? main.entry   // entry sudah pakai titik suku kata, gunakan sbg pelafalan
+                    : main.entry,
+      kelas_kata: [...kelasSet],
+      label_ragam: null,
+      etimologi : null,            // API ini belum expose etimologi
+      makna     : maknaList
+    } : null,
+    kata_turunan : showTurunan    ? turunan    : [],
+    gabungan_kata: showDasar      ? gabungan   : [],
+    peribahasa   : showPeribahasa ? peribahasa : [],
+    idiom        : showIdiom      ? idiom      : [],
+    ungkapan     : showUngkapan   ? ungkapan   : [],
+    varian,
+    tesaurus: {
+      sinonim,
+      antonim: [],
+      kata_terkait: (main.entryVariants || []).map(v => v.entry || v).filter(Boolean)
+    },
+    catatan_ejaan: (main.nonStandardWords||[]).length
+      ? `Bentuk tidak baku: ${(main.nonStandardWords||[]).map(v=>v.entry||v).join(', ')}`
+      : null
+  };
+}
+
+// ============================================================
+// RENDER RESULT
+// ============================================================
+function renderResult(data, container, query){
+  const e = data.entri_dasar;
+  if(!e){ container.innerHTML = renderNotFound(query); return; }
+
+  let html = '';
+
+  // ---- ENTRI DASAR ----
+  html += `<div class="entry-card">
+    <div class="entry-head">
+      <div class="entry-type-badge">Entri Dasar</div>
+      <div class="entry-word">${esc(e.kata || query)}</div>
+      ${e.pelafalan ? `<div class="entry-pron">${esc(e.pelafalan)}</div>` : ''}
+      <div class="entry-kelas">
+        ${(e.kelas_kata||[]).map(k=>`<span class="kelas-tag">${esc(k)}</span>`).join('')}
+        ${e.label_ragam ? `<span class="kelas-tag" style="background:rgba(245,137,27,.2);border-color:rgba(245,137,27,.3)">${esc(e.label_ragam)}</span>` : ''}
+      </div>
+    </div>
+    <div class="entry-body">`;
+
+  // Makna
+  if(e.makna && e.makna.length){
+    html += `<div class="sec-title">Makna & Definisi</div>`;
+    e.makna.forEach(m => {
+      html += `<div class="makna-item">
+        <div class="makna-label">
+          <span class="makna-num">${m.nomor}</span>
+          ${m.bidang ? `<span class="bidang-tag">${esc(m.bidang)}</span>` : ''}
+          ${m.ragam  ? `<span class="ragam-tag">${esc(m.ragam)}</span>`  : ''}
+        </div>
+        <div class="makna-def">${esc(m.definisi)}</div>
+        ${m.contoh ? `<div class="makna-contoh">${esc(m.contoh)}</div>` : ''}
+      </div>`;
+    });
+  }
+
+  // Etimologi
+  if(e.etimologi){
+    html += `<div class="sec-title">Etimologi</div>
+    <div class="etim-box">${esc(e.etimologi)}</div>`;
+  }
+
+  // Catatan ejaan
+  if(data.catatan_ejaan){
+    html += `<div class="sec-title">Catatan Ejaan EYD V</div>
+    <div class="etim-box" style="border-left:3px solid var(--orange);padding-left:14px">${esc(data.catatan_ejaan)}</div>`;
+  }
+
+  html += `</div></div>`; // end entry-card
+
+  // ---- KATA TURUNAN ----
+  if(data.kata_turunan && data.kata_turunan.length){
+    html += `<div class="entry-card">
+      <div class="entry-head">
+        <div class="entry-type-badge">Kata Turunan</div>
+        <div class="entry-word" style="font-size:18px">dari ${esc(e.kata || query)}</div>
+      </div>
+      <div class="entry-body">`;
+    data.kata_turunan.forEach(t => {
+      html += `<div class="phrase-item">
+        <div class="phrase-text">
+          <span class="word-chip" style="cursor:pointer" onclick="searchWord('${esc(t.kata)}')">${esc(t.kata)}</span>
+          <span style="margin-left:8px;font-size:11.5px;color:var(--text-soft);font-style:italic">${(t.kelas_kata||[]).join(', ')}</span>
+        </div>
+        <div class="phrase-def" style="margin-top:6px">${esc(t.makna_singkat||'')}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // ---- GABUNGAN KATA ----
+  if(data.gabungan_kata && data.gabungan_kata.length){
+    html += `<div class="entry-card">
+      <div class="entry-head">
+        <div class="entry-type-badge">Gabungan Kata</div>
+        <div class="entry-word" style="font-size:18px">Frasa & Kompositum</div>
+      </div>
+      <div class="entry-body">`;
+    data.gabungan_kata.forEach(g => {
+      html += `<div class="phrase-item">
+        <div class="phrase-text">${esc(g.frase)}</div>
+        <div class="phrase-def">${esc(g.makna)}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // ---- PERIBAHASA ----
+  if(data.peribahasa && data.peribahasa.length){
+    html += buildPhraseCard('Peribahasa', data.peribahasa);
+  }
+
+  // ---- IDIOM ----
+  if(data.idiom && data.idiom.length){
+    html += buildPhraseCard('Idiom', data.idiom);
+  }
+
+  // ---- UNGKAPAN ----
+  if(data.ungkapan && data.ungkapan.length){
+    html += buildPhraseCard('Ungkapan', data.ungkapan);
+  }
+
+  // ---- VARIAN ----
+  if(data.varian && data.varian.length){
+    html += `<div class="entry-card"><div class="entry-body">
+      <div class="sec-title">Varian & Ejaan Lain</div>
+      <div class="varian-list">
+        ${data.varian.map(v=>`<span class="varian-chip">${esc(v)}</span>`).join('')}
+      </div>
+    </div></div>`;
+  }
+
+  // ---- TESAURUS ----
+  if(data.tesaurus && (
+    (data.tesaurus.sinonim||[]).length ||
+    (data.tesaurus.antonim||[]).length ||
+    (data.tesaurus.kata_terkait||[]).length
+  )){
+    html += `<div class="entry-card"><div class="entry-body">
+      <div class="sec-title">Tesaurus</div>`;
+    if((data.tesaurus.sinonim||[]).length){
+      html += `<div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Sinonim</div>
+        <div class="tesaurus-grid">
+          ${data.tesaurus.sinonim.map(w=>`<span class="tes-chip" onclick="searchWord('${esc(w)}')">${esc(w)}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+    if((data.tesaurus.antonim||[]).length){
+      html += `<div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Antonim</div>
+        <div class="tesaurus-grid">
+          ${data.tesaurus.antonim.map(w=>`<span class="tes-chip" style="background:rgba(224,71,61,.07);border-color:rgba(224,71,61,.2);color:var(--danger)" onclick="searchWord('${esc(w)}')">${esc(w)}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+    if((data.tesaurus.kata_terkait||[]).length){
+      html += `<div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-soft);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Kata Terkait</div>
+        <div class="tesaurus-grid">
+          ${data.tesaurus.kata_terkait.map(w=>`<span class="tes-chip" onclick="searchWord('${esc(w)}')">${esc(w)}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  // Tombol cari ulang / reset
+  html += `<button class="btn secondary" style="margin-top:8px" onclick="resetSearch()">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Kembali & Cari Lagi
+  </button>`;
+
+  container.innerHTML = html;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function buildPhraseCard(judul, items){
+  return `<div class="entry-card">
+    <div class="entry-head">
+      <div class="entry-type-badge">${esc(judul)}</div>
+      <div class="entry-word" style="font-size:18px">${esc(judul)}</div>
+    </div>
+    <div class="entry-body">
+      ${items.map(it=>`<div class="phrase-item">
+        <div class="phrase-text">${esc(it.teks)}</div>
+        <div class="phrase-def">${esc(it.makna)}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// SKELETON & NOT FOUND
+// ============================================================
+function renderSkeleton(){
+  return `<div class="skeleton-card">
+    <div class="skel" style="height:14px;width:60px;margin-bottom:12px"></div>
+    <div class="skel" style="height:32px;width:70%;margin-bottom:8px"></div>
+    <div class="skel" style="height:14px;width:40%;margin-bottom:20px"></div>
+    <div class="skel" style="height:12px;width:100%;margin-bottom:8px"></div>
+    <div class="skel" style="height:12px;width:90%;margin-bottom:8px"></div>
+    <div class="skel" style="height:12px;width:80%"></div>
+  </div>
+  <div class="skeleton-card">
+    <div class="skel" style="height:14px;width:50px;margin-bottom:10px"></div>
+    <div class="skel" style="height:60px;width:100%"></div>
+  </div>`;
+}
+
+function renderNotFound(query, msg){
+  return `<div class="entry-card"><div class="entry-body">
+    <div class="not-found">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="8" x2="14" y2="14"/><line x1="14" y1="8" x2="8" y2="14"/></svg>
+      <h3>Kata tidak ditemukan</h3>
+      <p>${esc(msg||`"${query}" tidak ada dalam KBBI VI Daring.`)}<br>Coba periksa ejaan atau cari kata lain.</p>
+    </div>
+    <button class="btn secondary" style="margin-top:8px" onclick="resetSearch()">Cari Kata Lain</button>
+  </div></div>`;
+}
+
+// ============================================================
+// RESET
+// ============================================================
+function resetSearch(){
+  document.getElementById('searchInput').value = '';
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('rndSection').style.display = 'block';
+  lastQuery = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function esc(str){
+  if(str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg){
+  const t = document.getElementById('kbbi-toast');
+  t.textContent = msg; t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{
+    t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(20px)';
+  }, 2000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderRandomWords();
+</script>
+</body>
+</html>
