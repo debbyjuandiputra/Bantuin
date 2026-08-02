@@ -41,6 +41,7 @@ const STAT_ICONS = {
   pie:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>`,
   bar:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="20"/><rect x="4" y="10" width="4" height="10"/><rect x="10" y="5" width="4" height="15"/><rect x="16" y="13" width="4" height="7"/></svg>`,
   anova:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M6 20V10l6-6 6 6v10"/><path d="M10 20v-5h4v5"/></svg>`,
+  ancova: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l6-6 6 6v12"/><circle cx="18" cy="6" r="3"/><path d="M15 21v-6h4v6"/></svg>`,
   manova: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
   zscore: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
 };
@@ -57,6 +58,7 @@ const STAT_FEATURES = [
   { id:'diagram-batang',    title:'Diagram Batang',    desc:'Visualisasi data sebagai bar chart', cat:'analisis', active:true, page:'statistik/diagram-batang.html',    icon:STAT_ICONS.bar },
   // Uji Hipotesis
   { id:'anova', title:'ANOVA', desc:'Analisis ragam rancangan acak lengkap', cat:'hipotesis', active:true, page:'statistik/anova.html', icon:STAT_ICONS.anova },
+  { id:'ancova', title:'ANCOVA', desc:'Analisis kovarian, kendalikan pengaruh kovariat X', cat:'hipotesis', active:true, page:'statistik/ancova.html', icon:STAT_ICONS.ancova },
   { id:'manova', title:'MANOVA', desc:'Analisis ragam multivariat (banyak variabel terikat)', cat:'hipotesis', active:true, page:'statistik/manova.html', icon:STAT_ICONS.manova },
   // Deskriptif lanjutan
   { id:'zscore', title:'Z-Score & Std. Deviasi', desc:'Z-Score, σ populasi & s sampel', cat:'deskriptif', active:true, page:'statistik/z-score.html', icon:STAT_ICONS.zscore },

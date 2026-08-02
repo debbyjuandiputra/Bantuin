@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bantuin — ANCOVA</title>
+<link rel="icon" type="image/png" href="../../assets/favicon.png">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+.formula-desc{ font-size:13px; color:var(--text-soft); line-height:1.6; }
+
+.info-btn{
+  width:26px; height:26px; min-width:26px; border-radius:50%; border:1.5px solid var(--border);
+  background:transparent; color:var(--text-soft); font-size:13px; font-weight:800; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; margin-left:auto;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.info-btn:hover, .info-btn.active{ background:var(--orange); border-color:var(--orange); color:#fff; }
+
+
+.at-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -2px; }
+.at-table{ border-collapse:collapse; width:100%; min-width:100%; }
+.at-table th, .at-table td{
+  border:1px solid var(--border); padding:0; text-align:center; white-space:nowrap;
+}
+.at-table th{
+  background:var(--surface-2); font-size:11.5px; color:var(--text-soft); font-weight:700;
+  padding:8px 6px;
+}
+.at-col-h{ display:flex; align-items:center; justify-content:center; gap:6px; }
+.at-col-h button{
+  width:18px; height:18px; min-width:18px; border-radius:6px; border:1px solid var(--border);
+  background:transparent; color:var(--text-soft); font-size:12px; line-height:1; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .15s, color .15s, border-color .15s;
+}
+.at-col-h button:hover{ background:var(--danger); border-color:var(--danger); color:#fff; }
+.at-table td.at-label{
+  background:var(--surface-2); padding:0;
+}
+.at-table td.at-label input{
+  width:74px; border:none; background:transparent; color:var(--text); font-size:13px;
+  font-weight:700; text-align:center; padding:9px 4px; outline:none;
+}
+.at-table td.at-cell{ padding:4px 3px; }
+.at-table td.at-cell .xy-wrap{ display:flex; flex-direction:column; gap:2px; align-items:center; }
+.at-table td.at-cell .xy-row{ display:flex; align-items:center; gap:3px; }
+.at-table td.at-cell .xy-row span{ font-size:9.5px; font-weight:800; color:var(--text-soft); width:11px; }
+.at-table td.at-cell input{
+  width:54px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-size:12.5px;
+  text-align:center; padding:5px 3px; outline:none;
+}
+.at-table td.at-cell input:focus{ border-color:var(--orange); }
+.at-table td.at-rm{ padding:0; background:var(--surface-2); }
+.at-table td.at-rm button{
+  width:100%; height:100%; min-height:48px; border:none; background:transparent;
+  color:var(--text-soft); font-size:16px; cursor:pointer;
+}
+.at-table td.at-rm button:hover{ color:var(--danger); }
+.at-table th.at-rm-h{ padding:6px; }
+.at-table th.at-rm-h button{
+  width:24px; height:24px; border-radius:7px; border:1px solid var(--border); background:transparent;
+  color:var(--text-soft); font-size:13px; line-height:1; cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+}
+.at-table th.at-rm-h button:hover{ background:var(--danger); border-color:var(--danger); color:#fff; }
+
+.at-actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.at-actions .add-btn{
+  flex:1; min-width:120px; padding:9px 0; border-radius:10px; border:1.5px dashed var(--border);
+  background:transparent; color:var(--text-soft); font-size:12.5px; font-weight:600; cursor:pointer;
+  transition:border-color .2s, color .2s;
+}
+.at-actions .add-btn:hover{ border-color:var(--orange); color:var(--orange); }
+
+.res-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.res-box{ background:var(--surface-2); border-radius:12px; padding:12px; text-align:center; }
+.res-box .lbl{ font-size:11px; color:var(--text-soft); margin-bottom:4px; }
+.res-box .val{ font-size:19px; font-weight:800; font-family:'Poppins',sans-serif; color:var(--orange); }
+
+.res-table{ border-collapse:collapse; width:100%; margin-top:6px; }
+.res-table th, .res-table td{
+  border:1px solid var(--border); padding:8px 6px; text-align:center; font-size:12.5px;
+}
+.res-table th{ background:var(--surface-2); color:var(--text-soft); font-weight:700; font-size:11px; }
+.res-table td.ket-star{ font-weight:800; color:var(--orange); }
+
+.mat-title{ font-size:12.5px; font-weight:700; color:var(--text); margin:14px 0 4px; }
+.mat-title small{ color:var(--text-soft); font-weight:500; }
+
+.ket-legend{ font-size:11.5px; color:var(--text-soft); margin-top:10px; line-height:1.8; }
+.ket-legend b{ color:var(--text); }
+
+.explain-step{
+  background:var(--surface-2); border-radius:12px; padding:14px; margin-bottom:10px;
+}
+.explain-step h4{
+  font-size:13px; margin:0 0 8px; color:var(--orange); font-family:'Poppins',sans-serif;
+}
+.explain-step .line{ font-size:12.5px; color:var(--text); line-height:1.8; word-break:break-word; }
+.explain-step .line .lead{ color:var(--text-soft); }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <button class="back-btn" onclick="window.location.href='../statistik.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>ANCOVA</h2>
+  <button class="info-btn" onclick="toggleInfo()" title="Info">?</button>
+</div>
+
+<div class="page-body">
+
+  <div class="formula-block hidden" id="infoBlock" style="text-align:left;padding:16px">
+    <div class="formula-desc">
+      Analisis Kovarian (ANCOVA) satu arah digunakan untuk menguji perbedaan pengaruh beberapa perlakuan terhadap variabel terikat (Y), setelah pengaruh variabel pengiring/kovariat (X) dikendalikan secara statistik. Isi tabel di bawah dengan pasangan data X (kovariat) dan Y (terikat) untuk setiap ulangan pada tiap perlakuan, lalu tekan "Hitung ANCOVA".
+    </div>
+  </div>
+
+  <!-- Input tabel -->
+  <div class="card">
+    <h3>Tabel Data</h3>
+    <!-- <p class="desc">Isi nilai X (kovariat) dan Y (terikat) pada tiap sel.</p> -->
+    <div class="at-scroll">
+      <table class="at-table" id="atTable"></table>
+    </div>
+
+    <div class="at-actions">
+      <button class="add-btn" onclick="addColumn()">+ Ulangan (kolom)</button>
+      <button class="add-btn" onclick="addRow()">+ Perlakuan (baris)</button>
+    </div>
+
+    <div class="form-msg" id="calcMsg" style="margin-top:10px"></div>
+
+    <button class="btn" style="margin-top:14px" onclick="calculate()">Hitung ANCOVA</button>
+    <button class="btn secondary" style="margin-top:8px" onclick="resetAll()">Reset</button>
+  </div>
+
+  <!-- Hasil -->
+  <div class="card hidden" id="resultCard">
+    <h3>Hasil ANCOVA</h3>
+
+    <div class="res-grid">
+      <div class="res-box"><div class="lbl">Koef. Regresi (b)</div><div class="val" id="valB">-</div></div>
+      <div class="res-box"><div class="lbl">Keragaman Y Dijelaskan X</div><div class="val" id="valR2">-</div></div>
+    </div>
+
+    <div class="at-scroll">
+      <table class="res-table">
+        <thead>
+          <tr>
+            <th>SK</th><th>DB</th><th>JK Y.x</th><th>KT Y.x</th><th>Fhit</th>
+            <th>Ftab 0.05</th><th>Ftab 0.01</th><th>Ket</th>
+          </tr>
+        </thead>
+        <tbody id="ancovaBody"></tbody>
+      </table>
+    </div>
+
+    <div class="ket-legend">
+      <div><b>TN</b> = Berbeda Tidak Nyata (Fhitung ≤ Ftabel 0.05)</div>
+      <div><b>*</b> = Berbeda Nyata (Fhitung &gt; Ftabel 0.05)</div>
+      <div><b>**</b> = Berbeda Sangat Nyata (Fhitung &gt; Ftabel 0.01)</div>
+    </div>
+
+    <div class="mat-title">Rata-rata Terkoreksi <small>(disesuaikan terhadap kovariat X)</small></div>
+    <div class="at-scroll">
+      <table class="res-table" id="meanTable"></table>
+    </div>
+
+    <button class="btn secondary" style="margin-top:14px" onclick="copyResult()">Salin Hasil</button>
+  </div>
+
+  <!-- Penjelasan -->
+  <div class="card hidden" id="explainCard">
+    <h3>Cara Perhitungan</h3>
+    <div id="explainBody"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/supabase-config.js"></script>
+<script src="../../js/store.js"></script>
+<script src="../../js/util.js"></script>
+<script>
+applyStoredTheme();
+
+function toggleInfo(){
+  document.getElementById('infoBlock').classList.toggle('hidden');
+  document.querySelector('.info-btn').classList.toggle('active');
+}
+
+// ---------------- State ----------------
+// rows: [{ label:'M0', values:[{x:'',y:''}, ...] }, ...]
+let rows = [
+  { label:'M0', values:[{x:'',y:''}, {x:'',y:''}, {x:'',y:''}] },
+  { label:'M1', values:[{x:'',y:''}, {x:'',y:''}, {x:'',y:''}] },
+];
+
+function colCount(){ return rows.length ? rows[0].values.length : 0; }
+
+function renderTable(){
+  const nCol = colCount();
+  const t = document.getElementById('atTable');
+  let html = '<thead><tr><th>Perlakuan</th>';
+  for(let c=0;c<nCol;c++){
+    html += `<th>
+      <div class="at-col-h">
+        <span>Ulangan ${romanize(c+1)}</span>
+        <button onclick="removeColumn(${c})" title="Hapus kolom">×</button>
+      </div>
+    </th>`;
+  }
+  html += `<th class="at-rm-h"></th></tr></thead><tbody>`;
+
+  rows.forEach((r, ri) => {
+    html += `<tr>`;
+    html += `<td class="at-label"><input type="text" value="${escapeHtml(r.label)}" oninput="rows[${ri}].label=this.value"></td>`;
+    r.values.forEach((v, ci) => {
+      html += `<td class="at-cell">
+        <div class="xy-wrap">
+          <div class="xy-row"><span>X</span><input type="number" step="any" value="${v.x}" placeholder="0" oninput="rows[${ri}].values[${ci}].x=this.value"></div>
+          <div class="xy-row"><span>Y</span><input type="number" step="any" value="${v.y}" placeholder="0" oninput="rows[${ri}].values[${ci}].y=this.value"></div>
+        </div>
+      </td>`;
+    });
+    html += `<td class="at-rm"><button onclick="removeRow(${ri})" title="Hapus baris">×</button></td>`;
+    html += `</tr>`;
+  });
+
+  html += `</tbody>`;
+  t.innerHTML = html;
+}
+
+function romanize(n){
+  const map = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
+  return map[n-1] || n;
+}
+
+function addColumn(){
+  rows.forEach(r => r.values.push({x:'',y:''}));
+  renderTable();
+}
+
+function removeColumn(ci){
+  if(colCount() <= 2){
+    showMsg('Minimal harus ada 2 ulangan.', true);
+    return;
+  }
+  rows.forEach(r => r.values.splice(ci, 1));
+  renderTable();
+}
+
+function addRow(){
+  const n = colCount() || 2;
+  rows.push({ label: 'M' + rows.length, values: Array.from({length:n}, () => ({x:'',y:''})) });
+  renderTable();
+}
+
+function removeRow(idx){
+  if(rows.length <= 2){
+    showMsg('Minimal harus ada 2 perlakuan.', true);
+    return;
+  }
+  rows.splice(idx, 1);
+  renderTable();
+}
+
+function showMsg(text, isError){
+  const msg = document.getElementById('calcMsg');
+  msg.style.color = isError ? 'var(--danger)' : 'var(--success)';
+  msg.textContent = text;
+}
+
+function resetAll(){
+  rows = [
+    { label:'M0', values:[{x:'',y:''}, {x:'',y:''}, {x:'',y:''}] },
+    { label:'M1', values:[{x:'',y:''}, {x:'',y:''}, {x:'',y:''}] },
+  ];
+  renderTable();
+  document.getElementById('calcMsg').textContent = '';
+  document.getElementById('resultCard').classList.add('hidden');
+  document.getElementById('explainCard').classList.add('hidden');
+}
+
+// ---------------- Tabel F (Fisher-Snedecor) ----------------
+// Baris = df2 (galat), kolom = df1 (perlakuan) 1..10
+const F_DF1 = [1,2,3,4,5,6,7,8,9,10];
+const F_DF2_ROWS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,40,60,120,1000];
+
+const F005 = {
+1:[161.4,199.5,215.7,224.6,230.2,234.0,236.8,238.9,240.5,241.9],
+2:[18.51,19.00,19.16,19.25,19.30,19.33,19.35,19.37,19.38,19.40],
+3:[10.13,9.55,9.28,9.12,9.01,8.94,8.89,8.85,8.81,8.79],
+4:[7.71,6.94,6.59,6.39,6.26,6.16,6.09,6.04,6.00,5.96],
+5:[6.61,5.79,5.41,5.19,5.05,4.95,4.88,4.82,4.77,4.74],
+6:[5.99,5.14,4.76,4.53,4.39,4.28,4.21,4.15,4.10,4.06],
+7:[5.59,4.74,4.35,4.12,3.97,3.87,3.79,3.73,3.68,3.64],
+8:[5.32,4.46,4.07,3.84,3.69,3.58,3.50,3.44,3.39,3.35],
+9:[5.12,4.26,3.86,3.63,3.48,3.37,3.29,3.23,3.18,3.14],
+10:[4.96,4.10,3.71,3.48,3.33,3.22,3.14,3.07,3.02,2.98],
+11:[4.84,3.98,3.59,3.36,3.20,3.09,3.01,2.95,2.90,2.85],
+12:[4.75,3.89,3.49,3.26,3.11,3.00,2.91,2.85,2.80,2.75],
+13:[4.67,3.81,3.41,3.18,3.03,2.92,2.83,2.77,2.71,2.67],
+14:[4.60,3.74,3.34,3.11,2.96,2.85,2.76,2.70,2.65,2.60],
+15:[4.54,3.68,3.29,3.06,2.90,2.79,2.71,2.64,2.59,2.54],
+16:[4.49,3.63,3.24,3.01,2.85,2.74,2.66,2.59,2.54,2.49],
+17:[4.45,3.59,3.20,2.96,2.81,2.70,2.61,2.55,2.49,2.45],
+18:[4.41,3.55,3.16,2.93,2.77,2.66,2.58,2.51,2.46,2.41],
+19:[4.38,3.52,3.13,2.90,2.74,2.63,2.54,2.48,2.42,2.38],
+20:[4.35,3.49,3.10,2.87,2.71,2.60,2.51,2.45,2.39,2.35],
+21:[4.32,3.47,3.07,2.84,2.68,2.57,2.49,2.42,2.37,2.32],
+22:[4.30,3.44,3.05,2.82,2.66,2.55,2.46,2.40,2.34,2.30],
+23:[4.28,3.42,3.03,2.80,2.64,2.53,2.44,2.37,2.32,2.27],
+24:[4.26,3.40,3.01,2.78,2.62,2.51,2.42,2.36,2.30,2.25],
+25:[4.24,3.39,2.99,2.76,2.60,2.49,2.40,2.34,2.28,2.24],
+26:[4.23,3.37,2.98,2.74,2.59,2.47,2.39,2.32,2.27,2.22],
+27:[4.21,3.35,2.96,2.73,2.57,2.46,2.37,2.31,2.25,2.20],
+28:[4.20,3.34,2.95,2.71,2.56,2.45,2.36,2.29,2.24,2.19],
+29:[4.18,3.33,2.93,2.70,2.55,2.43,2.35,2.28,2.22,2.18],
+30:[4.17,3.32,2.92,2.69,2.53,2.42,2.33,2.27,2.21,2.16],
+40:[4.08,3.23,2.84,2.61,2.45,2.34,2.25,2.18,2.12,2.08],
+60:[4.00,3.15,2.76,2.53,2.37,2.25,2.17,2.10,2.04,1.99],
+120:[3.92,3.07,2.68,2.45,2.29,2.17,2.09,2.02,1.96,1.91],
+1000:[3.84,3.00,2.60,2.37,2.21,2.10,2.01,1.94,1.88,1.83],
+};
+
+const F001 = {
+1:[4052,4999.5,5403,5625,5764,5859,5928,5981,6022,6056],
+2:[98.50,99.00,99.17,99.25,99.30,99.33,99.36,99.37,99.39,99.40],
+3:[34.12,30.82,29.46,28.71,28.24,27.91,27.67,27.49,27.35,27.23],
+4:[21.20,18.00,16.69,15.98,15.52,15.21,14.98,14.80,14.66,14.55],
+5:[16.26,13.27,12.06,11.39,10.97,10.67,10.46,10.29,10.16,10.05],
+6:[13.75,10.92,9.78,9.15,8.75,8.47,8.26,8.10,7.98,7.87],
+7:[12.25,9.55,8.45,7.85,7.46,7.19,6.99,6.84,6.72,6.62],
+8:[11.26,8.65,7.59,7.01,6.63,6.37,6.18,6.03,5.91,5.81],
+9:[10.56,8.02,6.99,6.42,6.06,5.80,5.61,5.47,5.35,5.26],
+10:[10.04,7.56,6.55,5.99,5.64,5.39,5.20,5.06,4.94,4.85],
+11:[9.65,7.21,6.22,5.67,5.32,5.07,4.89,4.74,4.63,4.54],
+12:[9.33,6.93,5.95,5.41,5.06,4.82,4.64,4.50,4.39,4.30],
+13:[9.07,6.70,5.74,5.21,4.86,4.62,4.44,4.30,4.19,4.10],
+14:[8.86,6.51,5.56,5.04,4.69,4.46,4.28,4.14,4.03,3.94],
+15:[8.68,6.36,5.42,4.89,4.56,4.32,4.14,4.00,3.89,3.80],
+16:[8.53,6.23,5.29,4.77,4.44,4.20,4.03,3.89,3.78,3.69],
+17:[8.40,6.11,5.18,4.67,4.34,4.10,3.93,3.79,3.68,3.59],
+18:[8.29,6.01,5.09,4.58,4.25,4.01,3.84,3.71,3.60,3.51],
+19:[8.18,5.93,5.01,4.50,4.17,3.94,3.77,3.63,3.52,3.43],
+20:[8.10,5.85,4.94,4.43,4.10,3.87,3.70,3.56,3.46,3.37],
+21:[8.02,5.78,4.87,4.37,4.04,3.81,3.64,3.51,3.40,3.31],
+22:[7.95,5.72,4.82,4.31,3.99,3.76,3.59,3.45,3.35,3.26],
+23:[7.88,5.66,4.76,4.26,3.94,3.71,3.54,3.41,3.30,3.21],
+24:[7.82,5.61,4.72,4.22,3.90,3.67,3.50,3.36,3.26,3.17],
+25:[7.77,5.57,4.68,4.18,3.85,3.63,3.46,3.32,3.22,3.13],
+26:[7.72,5.53,4.64,4.14,3.82,3.59,3.42,3.29,3.18,3.09],
+27:[7.68,5.49,4.60,4.11,3.78,3.56,3.39,3.26,3.15,3.06],
+28:[7.64,5.45,4.57,4.07,3.75,3.53,3.36,3.23,3.12,3.03],
+29:[7.60,5.42,4.54,4.04,3.73,3.50,3.33,3.20,3.09,3.00],
+30:[7.56,5.39,4.51,4.02,3.70,3.47,3.30,3.17,3.07,2.98],
+40:[7.31,5.18,4.31,3.83,3.51,3.29,3.12,2.99,2.89,2.80],
+60:[7.08,4.98,4.13,3.65,3.34,3.12,2.95,2.82,2.72,2.63],
+120:[6.85,4.79,3.95,3.48,3.17,2.96,2.79,2.66,2.56,2.47],
+1000:[6.63,4.61,3.78,3.32,3.02,2.80,2.64,2.51,2.41,2.32],
+};
+
+function lookupF(table, df1, df2){
+  const d1 = Math.min(Math.max(Math.round(df1),1), 10);
+  let d2 = Math.round(df2);
+  if(d2 < 1) d2 = 1;
+
+  if(F_DF2_ROWS.includes(d2)){
+    return table[d2][d1-1];
+  }
+  if(d2 > 1000){
+    return table[1000][d1-1];
+  }
+  // interpolasi linear antar dua baris df2 terdekat
+  let lower = F_DF2_ROWS[0], upper = F_DF2_ROWS[F_DF2_ROWS.length-1];
+  for(let i=0;i<F_DF2_ROWS.length-1;i++){
+    if(F_DF2_ROWS[i] < d2 && d2 < F_DF2_ROWS[i+1]){
+      lower = F_DF2_ROWS[i]; upper = F_DF2_ROWS[i+1]; break;
+    }
+  }
+  const vLow = table[lower][d1-1], vHigh = table[upper][d1-1];
+  const frac = (d2 - lower) / (upper - lower);
+  return vLow + (vHigh - vLow) * frac;
+}
+
+// ---------------- Format angka ----------------
+function fmt(n, dec){
+  if(!isFinite(n)) return '-';
+  dec = dec === undefined ? 2 : dec;
+  return Number(n.toFixed(dec)).toString();
+}
+
+// ---------------- Hitung ANCOVA ----------------
+function calculate(){
+  const t = rows.length;                 // banyak perlakuan
+  const r = colCount();                  // banyak ulangan
+  const msg = document.getElementById('calcMsg');
+
+  // Validasi
+  let allFilled = true;
+  const dataMatrix = rows.map(row => row.values.map(v => {
+    const nx = parseFloat(v.x), ny = parseFloat(v.y);
+    if(v.x === '' || v.x === null || isNaN(nx)) allFilled = false;
+    if(v.y === '' || v.y === null || isNaN(ny)) allFilled = false;
+    return { x:nx, y:ny };
+  }));
+
+  if(t < 2 || r < 2){
+    showMsg('Minimal 2 perlakuan dan 2 ulangan diperlukan.', true);
+    return;
+  }
+  if(!allFilled){
+    showMsg('Lengkapi semua sel data X dan Y terlebih dahulu.', true);
+    return;
+  }
+  msg.textContent = '';
+
+  const N = t * r;
+
+  // Total & rerata tiap perlakuan (X dan Y)
+  const sumX_i = dataMatrix.map(vals => vals.reduce((a,v)=>a+v.x,0));
+  const sumY_i = dataMatrix.map(vals => vals.reduce((a,v)=>a+v.y,0));
+  const meanX_i = sumX_i.map(s => s / r);
+  const meanY_i = sumY_i.map(s => s / r);
+
+  const grandX = sumX_i.reduce((a,b)=>a+b,0);
+  const grandY = sumY_i.reduce((a,b)=>a+b,0);
+  const meanXGrand = grandX / N;
+  const meanYGrand = grandY / N;
+
+  // JK Total (tak terkoreksi)
+  let sumX2 = 0, sumY2 = 0, sumXY = 0;
+  dataMatrix.forEach(vals => vals.forEach(v => { sumX2 += v.x*v.x; sumY2 += v.y*v.y; sumXY += v.x*v.y; }));
+  const Txx = sumX2 - (grandX*grandX)/N;
+  const Tyy = sumY2 - (grandY*grandY)/N;
+  const Txy = sumXY - (grandX*grandY)/N;
+
+  // JK Dalam Kelompok (Galat), tak terkoreksi
+  let Exx = 0, Eyy = 0, Exy = 0;
+  dataMatrix.forEach((vals, i) => {
+    let sx2=0, sy2=0, sxy=0;
+    vals.forEach(v => { sx2 += v.x*v.x; sy2 += v.y*v.y; sxy += v.x*v.y; });
+    Exx += sx2 - (sumX_i[i]*sumX_i[i])/r;
+    Eyy += sy2 - (sumY_i[i]*sumY_i[i])/r;
+    Exy += sxy - (sumX_i[i]*sumY_i[i])/r;
+  });
+
+  // JK Perlakuan (tak terkoreksi), dengan selisih
+  const Bxx = Txx - Exx;
+  const Byy = Tyy - Eyy;
+  const Bxy = Txy - Exy;
+
+  // Koefisien regresi dalam-kelompok
+  const b = Exy / Exx;
+
+  // JK Y terkoreksi
+  const EyyX = Eyy - (Exy*Exy)/Exx;               // Galat terkoreksi
+  const TyyX = Tyy - (Txy*Txy)/Txx;                // Total terkoreksi
+  const ByyX = TyyX - EyyX;                        // Perlakuan terkoreksi (selisih)
+
+  // Derajat bebas
+  const dbPerlakuan = t - 1;
+  const dbGalat = N - t - 1;
+  const dbTotal = N - 2;
+
+  const KTPerlakuan = ByyX / dbPerlakuan;
+  const KTGalat = EyyX / dbGalat;
+
+  const Fhit = KTPerlakuan / KTGalat;
+  const Ftab05 = lookupF(F005, dbPerlakuan, dbGalat);
+  const Ftab01 = lookupF(F001, dbPerlakuan, dbGalat);
+
+  let ket = 'TN';
+  if(Fhit > Ftab01) ket = '**';
+  else if(Fhit > Ftab05) ket = '*';
+
+  // Proporsi keragaman Y (dalam kelompok) yang dijelaskan oleh X
+  const R2 = Eyy !== 0 ? (1 - EyyX/Eyy) * 100 : 0;
+
+  // Rata-rata terkoreksi tiap perlakuan
+  const meanYadj_i = meanY_i.map((my, i) => my - b*(meanX_i[i] - meanXGrand));
+
+  // -------- Render hasil --------
+  document.getElementById('valB').textContent = fmt(b, 4);
+  document.getElementById('valR2').textContent = fmt(R2, 2) + '%';
+
+  document.getElementById('ancovaBody').innerHTML = `
+    <tr>
+      <td>Perlakuan</td><td>${dbPerlakuan}</td><td>${fmt(ByyX)}</td><td>${fmt(KTPerlakuan)}</td>
+      <td>${fmt(Fhit)}</td><td>${fmt(Ftab05)}</td><td>${fmt(Ftab01)}</td>
+      <td class="ket-star">${ket}</td>
+    </tr>
+    <tr>
+      <td>Galat</td><td>${dbGalat}</td><td>${fmt(EyyX)}</td><td>${fmt(KTGalat)}</td>
+      <td>-</td><td>-</td><td>-</td><td>-</td>
+    </tr>
+    <tr>
+      <td>Total</td><td>${dbTotal}</td><td>${fmt(TyyX)}</td><td>-</td>
+      <td>-</td><td>-</td><td>-</td><td>-</td>
+    </tr>
+  `;
+
+  let meanHtml = '<thead><tr><th>Perlakuan</th><th>Rerata X</th><th>Rerata Y</th><th>Rerata Y Terkoreksi</th></tr></thead><tbody>';
+  rows.forEach((row, i) => {
+    meanHtml += `<tr><td>${escapeHtml(row.label)}</td><td>${fmt(meanX_i[i])}</td><td>${fmt(meanY_i[i])}</td><td><b>${fmt(meanYadj_i[i])}</b></td></tr>`;
+  });
+  meanHtml += '</tbody>';
+  document.getElementById('meanTable').innerHTML = meanHtml;
+
+  document.getElementById('resultCard').classList.remove('hidden');
+
+  // -------- Penjelasan langkah demi langkah --------
+  const totalsLine = rows.map((row,i) => `${escapeHtml(row.label)}: ΣX = ${fmt(sumX_i[i])}, ΣY = ${fmt(sumY_i[i])}`).join('<br>');
+  const meansLine = rows.map((row,i) => `${escapeHtml(row.label)}: X̄ = ${fmt(meanX_i[i])}, Ȳ = ${fmt(meanY_i[i])}`).join('<br>');
+
+  document.getElementById('explainBody').innerHTML = `
+    <div class="explain-step">
+      <h4>1. Total &amp; Rerata per Perlakuan</h4>
+      <div class="line">${totalsLine}</div>
+      <div class="line" style="margin-top:6px">${meansLine}</div>
+      <div class="line" style="margin-top:6px"><span class="lead">Total Umum</span>: ΣX = ${fmt(grandX)}, ΣY = ${fmt(grandY)}</div>
+      <div class="line"><span class="lead">Rerata Umum</span>: X̄ = ${fmt(meanXGrand)}, Ȳ = ${fmt(meanYGrand)}</div>
+    </div>
+
+    <div class="explain-step">
+      <h4>2. Jumlah Kuadrat &amp; Hasil Kali Total (Tak Terkoreksi)</h4>
+      <div class="line">Txx = Σx² − (Σx)²/N = ${fmt(sumX2,2)} − ${fmt(grandX*grandX,2)}/${N} = <b>${fmt(Txx)}</b></div>
+      <div class="line">Tyy = Σy² − (Σy)²/N = ${fmt(sumY2,2)} − ${fmt(grandY*grandY,2)}/${N} = <b>${fmt(Tyy)}</b></div>
+      <div class="line">Txy = Σxy − (Σx)(Σy)/N = ${fmt(sumXY,2)} − (${fmt(grandX)})(${fmt(grandY)})/${N} = <b>${fmt(Txy)}</b></div>
+    </div>
+
+    <div class="explain-step">
+      <h4>3. Jumlah Kuadrat &amp; Hasil Kali Dalam Kelompok (Galat)</h4>
+      <div class="line">Exx = Σᵢ[Σx²ᵢ − (Σxᵢ)²/r] = <b>${fmt(Exx)}</b></div>
+      <div class="line">Eyy = Σᵢ[Σy²ᵢ − (Σyᵢ)²/r] = <b>${fmt(Eyy)}</b></div>
+      <div class="line">Exy = Σᵢ[Σxyᵢ − (Σxᵢ)(Σyᵢ)/r] = <b>${fmt(Exy)}</b></div>
+    </div>
+
+    <div class="explain-step">
+      <h4>4. Jumlah Kuadrat &amp; Hasil Kali Perlakuan (Selisih)</h4>
+      <div class="line">Bxx = Txx − Exx = ${fmt(Txx)} − ${fmt(Exx)} = <b>${fmt(Bxx)}</b></div>
+      <div class="line">Byy = Tyy − Eyy = ${fmt(Tyy)} − ${fmt(Eyy)} = <b>${fmt(Byy)}</b></div>
+      <div class="line">Bxy = Txy − Exy = ${fmt(Txy)} − ${fmt(Exy)} = <b>${fmt(Bxy)}</b></div>
+    </div>
+
+    <div class="explain-step">
+      <h4>5. Koefisien Regresi Dalam-Kelompok (b)</h4>
+      <div class="line">b = Exy ÷ Exx = ${fmt(Exy)} ÷ ${fmt(Exx)} = <b>${fmt(b,4)}</b></div>
+      <div class="line" style="margin-top:6px;color:var(--text-soft)">b menunjukkan besarnya perubahan Y untuk setiap kenaikan 1 satuan X, dihitung dari keragaman dalam kelompok (bebas pengaruh perlakuan).</div>
+    </div>
+
+    <div class="explain-step">
+      <h4>6. Jumlah Kuadrat Y Terkoreksi Kovariat</h4>
+      <div class="line">JK Galat terkoreksi = Eyy − (Exy)²/Exx</div>
+      <div class="line">= ${fmt(Eyy)} − (${fmt(Exy)})²/${fmt(Exx)} = <b>${fmt(EyyX)}</b>, db = (N − t) − 1 = ${N - t} − 1 = <b>${dbGalat}</b></div>
+      <div class="line" style="margin-top:6px">JK Total terkoreksi = Tyy − (Txy)²/Txx</div>
+      <div class="line">= ${fmt(Tyy)} − (${fmt(Txy)})²/${fmt(Txx)} = <b>${fmt(TyyX)}</b>, db = N − 2 = ${N} − 2 = <b>${dbTotal}</b></div>
+      <div class="line" style="margin-top:6px">JK Perlakuan terkoreksi = JK Total terkoreksi − JK Galat terkoreksi</div>
+      <div class="line">= ${fmt(TyyX)} − ${fmt(EyyX)} = <b>${fmt(ByyX)}</b>, db = t − 1 = ${t} − 1 = <b>${dbPerlakuan}</b></div>
+    </div>
+
+    <div class="explain-step">
+      <h4>7. Kuadrat Tengah, F Hitung &amp; F Tabel</h4>
+      <div class="line">KT Perlakuan = JK Perlakuan.x ÷ db = ${fmt(ByyX)} ÷ ${dbPerlakuan} = <b>${fmt(KTPerlakuan)}</b></div>
+      <div class="line">KT Galat = JK Galat.x ÷ db = ${fmt(EyyX)} ÷ ${dbGalat} = <b>${fmt(KTGalat)}</b></div>
+      <div class="line" style="margin-top:6px">Fhitung = KT Perlakuan ÷ KT Galat = ${fmt(KTPerlakuan)} ÷ ${fmt(KTGalat)} = <b>${fmt(Fhit)}</b></div>
+      <div class="line" style="margin-top:6px">Ftabel diperoleh dari tabel distribusi F dengan db pembilang = ${dbPerlakuan} dan db penyebut = ${dbGalat}:</div>
+      <div class="line">Ftabel (0.05) = <b>${fmt(Ftab05)}</b>, Ftabel (0.01) = <b>${fmt(Ftab01)}</b></div>
+      <div class="line" style="margin-top:6px;color:var(--text-soft)">*Nilai diambil dari tabel F baku, dengan interpolasi linear jika db penyebut tidak tercantum persis.</div>
+      <div class="line" style="margin-top:6px">
+        Karena Fhitung (${fmt(Fhit)}) ${ket==='**' ? '&gt; Ftabel 0.01, maka rata-rata terkoreksi antar perlakuan berbeda <b>sangat nyata (**)</b>' : ket==='*' ? '&gt; Ftabel 0.05 tetapi ≤ Ftabel 0.01, maka rata-rata terkoreksi antar perlakuan berbeda <b>nyata (*)</b>' : '≤ Ftabel 0.05, maka rata-rata terkoreksi antar perlakuan <b>tidak berbeda nyata (TN)</b>'}.
+      </div>
+    </div>
+
+    <div class="explain-step">
+      <h4>8. Rata-rata Terkoreksi (Adjusted Means)</h4>
+      <div class="line">Ȳᵢ.adj = Ȳᵢ − b(X̄ᵢ − X̄grand)</div>
+      ${rows.map((row,i) => `<div class="line">${escapeHtml(row.label)}: ${fmt(meanY_i[i])} − ${fmt(b,4)}(${fmt(meanX_i[i])} − ${fmt(meanXGrand)}) = <b>${fmt(meanYadj_i[i])}</b></div>`).join('')}
+      <div class="line" style="margin-top:6px;color:var(--text-soft)">Rata-rata terkoreksi adalah rata-rata Y tiap perlakuan setelah disesuaikan seolah-olah semua kelompok memiliki rata-rata kovariat X yang sama (X̄grand).</div>
+    </div>
+  `;
+
+  document.getElementById('explainCard').classList.remove('hidden');
+}
+
+function copyResult(){
+  const b = document.getElementById('valB').textContent;
+  const r2 = document.getElementById('valR2').textContent;
+  const rowsText = Array.from(document.querySelectorAll('#ancovaBody tr')).map(tr =>
+    Array.from(tr.children).map(td => td.textContent).join(' | ')
+  ).join('\n');
+  const meanText = Array.from(document.querySelectorAll('#meanTable tr')).map(tr =>
+    Array.from(tr.children).map(td => td.textContent).join(' | ')
+  ).join('\n');
+  copyText(`Koef. Regresi (b) = ${b}\nKeragaman Y dijelaskan X = ${r2}\n\nSK | DB | JK Y.x | KT Y.x | Fhit | Ftab0.05 | Ftab0.01 | Ket\n${rowsText}\n\nRata-rata Terkoreksi:\n${meanText}`);
+}
+
+renderTable();
+</script>
+</body>
+</html>
