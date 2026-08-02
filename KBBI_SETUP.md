@@ -1,24 +1,28 @@
-# Setup KBBI VI Daring — Edge Function
+# Setup KBBI VI Daring — 100% GRATIS
 
-Fitur KBBI menggunakan Supabase Edge Function sebagai proxy
-ke Anthropic API. Ini memastikan API key tidak pernah
-terekspos ke browser/WebView.
+Fitur KBBI sekarang **sepenuhnya gratis**, tidak butuh API key
+berbayar apapun. Sumber datanya adalah API publik
+`kbbi.raf555.dev` (mirror resmi dari Aplikasi KBBI v6.x).
+
+Ada 2 lapis pengambilan data supaya pencarian tidak gampang gagal:
+
+1. **Lapis 1 (utama):** lewat Supabase Edge Function `kbbi-proxy`
+   milik project Bantuin sendiri — ini hanya proxy sederhana ke
+   `kbbi.raf555.dev`, tujuannya menghindari kemungkinan koneksi
+   langsung dari WebView diblokir (CORS/network policy Android).
+2. **Lapis 2 (cadangan):** kalau lapis 1 gagal atau timeout,
+   browser/WebView akan fetch langsung ke `kbbi.raf555.dev`.
+
+Kalau kedua lapis gagal (misalnya user tidak ada koneksi internet
+sama sekali), aplikasi akan menampilkan pesan error yang jelas,
+bukan lagi generic "Failed to fetch".
 
 ---
 
-## Langkah-langkah
+## Langkah-langkah (opsional, untuk deploy ulang Edge Function)
 
-### 1. Dapatkan Anthropic API Key
-
-Daftar/login di https://console.anthropic.com
-→ API Keys → Create Key
-Salin key yang dihasilkan (dimulai dengan `sk-ant-...`)
-
----
-
-### 2. Deploy Edge Function
-
-Pastikan Supabase CLI sudah terinstall dan kamu sudah login:
+Edge Function `kbbi-proxy` sudah tidak butuh API key sama sekali.
+Kalau kamu perlu deploy ulang (misal setelah update kode):
 
 ```bash
 # Install CLI (jika belum)
@@ -30,34 +34,30 @@ supabase login
 # Link ke project Bantuin
 supabase link --project-ref kubydmxgxmvyksyywypi
 
-# Set API key Anthropic sebagai secret
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx
-
-# Deploy edge function
+# Deploy edge function (tidak perlu set secret apapun lagi)
 supabase functions deploy kbbi-proxy --no-verify-jwt
 ```
 
 ---
 
-### 3. Verifikasi
+## Verifikasi
 
-Setelah deploy berhasil, test dengan curl:
+Test proxy dengan curl:
 
 ```bash
 curl -X POST \
   https://kubydmxgxmvyksyywypi.supabase.co/functions/v1/kbbi-proxy \
   -H "Content-Type: application/json" \
-  -d '{"kata":"makan","filter":"semua"}'
+  -d '{"kata":"makan"}'
 ```
 
-Jika berhasil, akan muncul JSON data KBBI untuk kata "makan".
+Atau langsung ke sumber data (tanpa proxy sama sekali):
 
----
+```bash
+curl https://kbbi.raf555.dev/api/v1/entry/makan
+```
 
-### 4. Selesai!
-
-Buka halaman KBBI di aplikasi Bantuin dan coba cari kata.
-Tidak ada perubahan kode lagi yang diperlukan.
+Keduanya gratis dan tidak butuh API key.
 
 ---
 
@@ -65,8 +65,9 @@ Tidak ada perubahan kode lagi yang diperlukan.
 
 | Error | Penyebab | Solusi |
 |-------|----------|--------|
-| `Failed to fetch` | Edge function belum di-deploy | Jalankan langkah 2 |
-| `API key belum dikonfigurasi` | Secret belum di-set | Jalankan `supabase secrets set` |
-| `Respons AI tidak valid` | Model timeout | Coba lagi, atau cek log di Supabase Dashboard |
+| "Tidak bisa terhubung ke server KBBI" | Kedua lapis (proxy & fallback) gagal | Cek koneksi internet perangkat |
+| "Koneksi lambat/terputus" | Timeout 8 detik terlampaui | Coba lagi, biasanya jaringan lambat |
+| Kata tidak ditemukan | Memang tidak ada di KBBI VI, atau salah eja | Cek ejaan kata |
 
-Log bisa dilihat di: https://supabase.com/dashboard/project/kubydmxgxmvyksyywypi/functions
+Log Edge Function bisa dilihat di:
+https://supabase.com/dashboard/project/kubydmxgxmvyksyywypi/functions

@@ -453,24 +453,69 @@ async function doSearch(){
 }
 
 // ============================================================
-// KBBI Query — kbbi.raf555.dev (gratis, tanpa API key)
-// Mirror resmi dari KBBI Aplikasi v6.x, update Oktober 2025
+// KBBI Query — 100% GRATIS, tanpa API key, tanpa biaya apapun
+// Sumber data: kbbi.raf555.dev (mirror resmi Aplikasi KBBI v6.x)
+//
+// Strategi 2 lapis supaya tidak gampang "Failed to fetch" di WebView:
+//   1) Coba lewat Supabase Edge Function kbbi-proxy (menghindari
+//      kemungkinan CORS/blokir koneksi langsung dari WebView)
+//   2) Kalau proxy gagal/timeout, fallback fetch langsung ke raf555
 // ============================================================
 
 const KBBI_BASE = 'https://kbbi.raf555.dev/api/v1';
+const KBBI_PROXY_URL = 'https://kubydmxgxmvyksyywypi.supabase.co/functions/v1/kbbi-proxy';
+
+function fetchWithTimeout(url, opts, ms){
+  opts = opts || {}; ms = ms || 8000;
+  const ctrl = new AbortController();
+  const t = setTimeout(function(){ ctrl.abort(); }, ms);
+  return fetch(url, Object.assign({}, opts, { signal: ctrl.signal })).finally(function(){ clearTimeout(t); });
+}
 
 async function queryKBBI(kata, filter){
-  const encoded = encodeURIComponent(kata.trim().toLowerCase());
-  const response = await fetch(`${KBBI_BASE}/entry/${encoded}`);
+  const kataBersih = kata.trim().toLowerCase();
+  let raw = null;
+  let lastWasAbort = false;
 
-  if(response.status === 404){
-    throw new Error(`Kata "${kata}" tidak ditemukan dalam KBBI VI.`);
-  }
-  if(!response.ok){
-    throw new Error('Gagal menghubungi server KBBI. Coba lagi.');
+  // --- Lapis 1: lewat Edge Function proxy (gratis) ---
+  try{
+    const res = await fetchWithTimeout(KBBI_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kata: kataBersih })
+    }, 8000);
+
+    if(res.ok){
+      const data = await res.json();
+      if(!data.error) raw = data;
+    }
+  }catch(err){
+    if(err.name === 'AbortError') lastWasAbort = true;
   }
 
-  const raw = await response.json();
+  // --- Lapis 2: fallback fetch langsung ke raf555 (tetap gratis) ---
+  if(!raw){
+    try{
+      const encoded = encodeURIComponent(kataBersih);
+      const response = await fetchWithTimeout(`${KBBI_BASE}/entry/${encoded}`, {}, 8000);
+
+      if(response.status === 404){
+        throw new Error(`Kata "${kata}" tidak ditemukan dalam KBBI VI.`);
+      }
+      if(!response.ok){
+        throw new Error('Gagal menghubungi server KBBI. Coba lagi.');
+      }
+      raw = await response.json();
+    }catch(err){
+      if(err.message && err.message.includes('tidak ditemukan')){
+        throw err;
+      }
+      if(err.name === 'AbortError' || lastWasAbort){
+        throw new Error('Koneksi lambat/terputus. Periksa internet kamu dan coba lagi.');
+      }
+      throw new Error('Tidak bisa terhubung ke server KBBI. Periksa koneksi internet kamu.');
+    }
+  }
 
   // raw: { lemma, entries: [ { entry, baseWord, pronunciation, definitions, derivedWords,
   //         compoundWords, proverbs, metaphors, variants, nonStandardWords, entryVariants } ] }
@@ -739,7 +784,7 @@ function renderResult(data, container, query){
   // Tombol cari ulang / reset
   html += `<button class="btn secondary" style="margin-top:8px" onclick="resetSearch()">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-    Kembali & Cari Lagi
+    Kembali
   </button>`;
 
   container.innerHTML = html;
