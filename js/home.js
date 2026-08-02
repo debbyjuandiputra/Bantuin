@@ -41,7 +41,8 @@ const ICONS = {
   globe:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
   binary:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="8" height="5" rx="1"/><rect x="2" y="13" width="8" height="5" rx="1"/><path d="M14 6h5a2 2 0 0 1 0 4h-5v-4zM14 13h6a2 2 0 0 1 0 5h-6v-5z"/></svg>`,
   qr: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="18" y1="14" x2="18" y2="14.01"/><line x1="14" y1="18" x2="14" y2="18.01"/><line x1="18" y1="18" x2="18" y2="18.01"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="14" y1="21" x2="21" y2="21"/></svg>`,
-  kbbi: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`
+  kbbi: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
+  translate: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 5 11 5 11 3"/><path d="M9 5c0 4.5-2 8.5-5 11"/><path d="M4 12c1.6 2 3.7 3.5 6 4.5"/><path d="M14 21l4-9 4 9"/><path d="M15.5 18h5"/></svg>`
 };
 
 const FEATURES = [
@@ -58,6 +59,7 @@ const FEATURES = [
   { id:'hapus-latar', title:'Hapus Latar Belakang', desc:'Hapus background foto otomatis pakai AI', cat:['lainnya'], icon:ICONS.bg, active:true, page:'pages/hapus-latar-belakang.html' },
   { id:'aplikasi-premium', title:'Aplikasi Premium', desc:'CapCut Pro, Canva Pro & Zoom Pro', cat:['lainnya'], icon:ICONS.premium, active:true, page:'pages/aplikasi-premium.html' },
   { id:'kode-qr', title:'Kode QR', desc:'Buat & scan kode QR (kamera/unggah)', cat:['lainnya'], icon:ICONS.qr, active:true, page:'pages/kode-qr.html' },
+  { id:'translate', title:'Terjemahan', desc:'Terjemahkan 100+ bahasa, lengkap dengan kamus & suara', cat:['lainnya'], icon:ICONS.translate, active:true, page:'pages/translate.html' },
   { id:'base64', title:'Base64 Encode & Decode', desc:'Konversi teks ke/dari Base64', cat:['programming'], icon:ICONS.code, active:true, page:'pages/base64.html' },
   { id:'url-encode', title:'URL Encode & Decode', desc:'Encode & decode karakter URL', cat:['programming'], icon:ICONS.link, active:true, page:'pages/url-encode.html' },
   { id:'uuid-generator', title:'UUID Generator', desc:'Buat ID unik instan', cat:['programming'], icon:ICONS.uuid, active:true, page:'pages/uuid-generator.html' },
