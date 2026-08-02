@@ -115,19 +115,37 @@
       <div class="ip-field"><div class="lbl">Wilayah / State</div><div class="val" id="fRegion">—</div></div>
       <div class="ip-field"><div class="lbl">Kota</div><div class="val" id="fCity">—</div></div>
       <div class="ip-field"><div class="lbl">Kode Pos</div><div class="val" id="fPostal">—</div></div>
+      <div class="ip-field"><div class="lbl">Kode Benua</div><div class="val" id="fContinentCode">—</div></div>
       <div class="ip-field"><div class="lbl">Zona Waktu</div><div class="val" id="fTimezone">—</div></div>
       <div class="ip-field"><div class="lbl">Latitude</div><div class="val" id="fLat">—</div></div>
       <div class="ip-field"><div class="lbl">Longitude</div><div class="val" id="fLon">—</div></div>
+      <div class="ip-field"><div class="lbl">Distrik / Sub-wilayah</div><div class="val" id="fDistrict">—</div></div>
+      <div class="ip-field"><div class="lbl">Ibu Kota Negara</div><div class="val" id="fCapital">—</div></div>
+      <div class="ip-field"><div class="lbl">Kode Telepon Negara</div><div class="val" id="fCallingCode">—</div></div>
+      <div class="ip-field"><div class="lbl">Anggota Uni Eropa</div><div class="val" id="fIsEu">—</div></div>
+      <div class="ip-field full"><div class="lbl">Negara Berbatasan</div><div class="val" id="fBorders">—</div></div>
       <div class="ip-field full"><div class="lbl">Mata Uang</div><div class="val" id="fCurrency">—</div></div>
     </div>
     <div class="note-box">⚠️ Lokasi IP biasanya hanya perkiraan berbasis database geolokasi, bukan alamat rumah yang akurat.</div>
 
+    <div class="section-title">Waktu &amp; Zona</div>
+    <div class="ip-grid">
+      <div class="ip-field full"><div class="lbl">Waktu Lokal Saat Ini</div><div class="val" id="fLocalTime">—</div></div>
+      <div class="ip-field"><div class="lbl">Singkatan Zona</div><div class="val" id="fTzAbbr">—</div></div>
+      <div class="ip-field"><div class="lbl">Selisih UTC</div><div class="val" id="fTzUtc">—</div></div>
+      <div class="ip-field"><div class="lbl">Sedang DST?</div><div class="val" id="fTzDst">—</div></div>
+      <div class="ip-field"><div class="lbl">Offset (detik)</div><div class="val" id="fTzOffset">—</div></div>
+    </div>
+
     <div class="section-title">Informasi Jaringan</div>
     <div class="ip-grid">
       <div class="ip-field"><div class="lbl">Tipe IP</div><div class="val" id="fIpType">—</div></div>
+      <div class="ip-field"><div class="lbl">Versi IP (RDAP)</div><div class="val" id="fIpVersion">—</div></div>
       <div class="ip-field"><div class="lbl">ASN</div><div class="val" id="fAsn">—</div></div>
+      <div class="ip-field"><div class="lbl">Nama ASN</div><div class="val" id="fAsName">—</div></div>
       <div class="ip-field full"><div class="lbl">Organisasi</div><div class="val" id="fOrg">—</div></div>
       <div class="ip-field full"><div class="lbl">ISP</div><div class="val" id="fIsp">—</div></div>
+      <div class="ip-field full"><div class="lbl">AS Lengkap</div><div class="val" id="fAsFull">—</div></div>
       <div class="ip-field full"><div class="lbl">Domain Terkait (PTR)</div><div class="val" id="fPtrDomain">—</div></div>
       <div class="ip-field full"><div class="lbl">Reverse DNS / Hostname</div><div class="val" id="fReverse">—</div></div>
     </div>
@@ -137,10 +155,15 @@
       <div class="ip-field full"><div class="lbl">Nama Jaringan</div><div class="val" id="fNetName">—</div></div>
       <div class="ip-field full"><div class="lbl">CIDR / Range IP</div><div class="val" id="fCidr">—</div></div>
       <div class="ip-field"><div class="lbl">Handle</div><div class="val" id="fHandle">—</div></div>
+      <div class="ip-field"><div class="lbl">Parent Handle</div><div class="val" id="fParentHandle">—</div></div>
       <div class="ip-field"><div class="lbl">Registry (RIR)</div><div class="val" id="fRegistry">—</div></div>
+      <div class="ip-field"><div class="lbl">Tipe Alokasi</div><div class="val" id="fAllocType">—</div></div>
       <div class="ip-field"><div class="lbl">Negara Registrasi</div><div class="val" id="fRegCountry">—</div></div>
       <div class="ip-field"><div class="lbl">Tanggal Registrasi</div><div class="val" id="fRegDate">—</div></div>
+      <div class="ip-field"><div class="lbl">Tanggal Diperbarui Terakhir</div><div class="val" id="fRegChanged">—</div></div>
       <div class="ip-field full"><div class="lbl">Status Alokasi</div><div class="val" id="fRegStatus">—</div></div>
+      <div class="ip-field full"><div class="lbl">Kontak Abuse (WHOIS)</div><div class="val" id="fAbuseContact">—</div></div>
+      <div class="ip-field full"><div class="lbl">Catatan Jaringan</div><div class="val" id="fRemarks">—</div></div>
     </div>
 
     <div class="section-title">Informasi Keamanan</div>
@@ -228,7 +251,7 @@ async function lookupIp(){
     // Enrichment: reverse DNS / hostname & tipe koneksi via ip-api.com (gratis, no-key)
     let extra = {};
     try{
-      const r2 = await fetch(`https://ip-api.com/json/${encodeURIComponent(d.ip)}?fields=status,mobile,proxy,hosting,connectionType,reverse`);
+      const r2 = await fetch(`https://ip-api.com/json/${encodeURIComponent(d.ip)}?fields=status,mobile,proxy,hosting,connectionType,reverse,district,offset,as,asname,isp,org,query`);
       if(r2.ok){ extra = await r2.json(); }
     }catch(_){}
 
@@ -369,17 +392,34 @@ function displayResult(d, ex, originalInput, rdap, dnsRecords){
   set('fCountryCode',cc || '—');
   set('fRegion',     [d.region, d.region_code].filter(Boolean).join(' · ') || '—');
   set('fCity',       d.city || '—');
-  set('fPostal',     d.postal || '—');
+  set('fPostal',     d.postal || ex.zip || '—');
   set('fTimezone',   tz.id || '—');
   set('fLat',        d.latitude != null ? d.latitude : '—');
   set('fLon',        d.longitude != null ? d.longitude : '—');
-  set('fCurrency',   cur.name ? `${cur.name} (${cur.code || ''})` : '—');
+  set('fCurrency',   cur.name ? `${cur.name} (${cur.code || ''})${cur.symbol ? ' · ' + cur.symbol : ''}` : '—');
+
+  // 🌍 Lokasi tambahan
+  set('fContinentCode', d.continent_code || '—');
+  set('fDistrict',      ex.district || '—');
+  set('fCapital',       d.capital || '—');
+  set('fCallingCode',   d.calling_code ? '+' + d.calling_code : '—');
+  setBadge('fIsEu',     typeof d.is_eu === 'boolean' ? d.is_eu : null);
+  set('fBorders',       d.borders ? d.borders.split(',').filter(Boolean).join(', ') : '—');
+
+  // 🕐 Waktu & Zona
+  set('fLocalTime', tz.current_time ? formatLocalTime(tz.current_time) : '—');
+  set('fTzAbbr',    tz.abbr || '—');
+  set('fTzUtc',     tz.utc || '—');
+  setBadge('fTzDst', typeof tz.is_dst === 'boolean' ? tz.is_dst : null);
+  set('fTzOffset',  tz.offset != null ? `${tz.offset} detik` : (ex.offset != null ? `${ex.offset} detik` : '—'));
 
   // 🌐 Jaringan
   set('fIpType',    d.type || (d.ip && d.ip.includes(':') ? 'IPv6' : 'IPv4'));
   set('fAsn',       conn.asn ? `AS${conn.asn}` : '—');
-  set('fOrg',       conn.org || '—');
+  set('fAsName',    ex.asname || '—');
+  set('fOrg',       conn.org || ex.org || '—');
   set('fIsp',       conn.isp || (ex.isp || '—'));
+  set('fAsFull',    ex.as || '—');
   set('fPtrDomain', conn.domain || '—');
   set('fReverse',   ex.reverse || '—');
 
@@ -391,13 +431,22 @@ function displayResult(d, ex, originalInput, rdap, dnsRecords){
     set('fCidr',     cidrs || range || '—');
     set('fCidr2',    cidrs || range || '—');
     set('fHandle',   rdap.handle || '—');
+    set('fParentHandle', rdap.parentHandle || '—');
     set('fRegistry', rdap.port43 || rdap.name || '—');
+    set('fAllocType', rdap.type || '—');
+    set('fIpVersion', rdap.ipVersion || '—');
     set('fRegCountry', rdap.country || cc || '—');
-    const regEvent = (rdap.events || []).find(ev => ev.eventAction === 'registration') || (rdap.events || [])[0];
+    const events = rdap.events || [];
+    const regEvent = events.find(ev => ev.eventAction === 'registration') || events[0];
+    const chgEvent = events.find(ev => ev.eventAction === 'last changed');
     set('fRegDate',  regEvent ? formatSimpleDate(regEvent.eventDate) : '—');
+    set('fRegChanged', chgEvent ? formatSimpleDate(chgEvent.eventDate) : '—');
     set('fRegStatus', (rdap.status || []).join(', ') || '—');
+    set('fAbuseContact', extractAbuseContact(rdap) || '—');
+    const remark = (rdap.remarks || []).map(r => (r.description || []).join(' ')).filter(Boolean).join(' | ');
+    set('fRemarks', remark || '—');
   } else {
-    ['fNetName','fCidr','fCidr2','fHandle','fRegistry','fRegCountry','fRegDate','fRegStatus'].forEach(id => set(id, 'Tidak tersedia'));
+    ['fNetName','fCidr','fCidr2','fHandle','fParentHandle','fRegistry','fAllocType','fIpVersion','fRegCountry','fRegDate','fRegChanged','fRegStatus','fAbuseContact','fRemarks'].forEach(id => set(id, 'Tidak tersedia'));
   }
   set('fAsn2',     conn.asn ? `AS${conn.asn}` : '—');
   set('fAsnOrg',   conn.org || '—');
@@ -429,21 +478,36 @@ function displayResult(d, ex, originalInput, rdap, dnsRecords){
     lokasi: {
       alamat_ip: d.ip || null,
       benua: d.continent || null,
+      kode_benua: d.continent_code || null,
       negara: d.country || null,
       kode_negara: cc || null,
       wilayah: d.region || null,
       kode_wilayah: d.region_code || null,
       kota: d.city || null,
-      kode_pos: d.postal || null,
+      distrik: ex.district || null,
+      kode_pos: d.postal || ex.zip || null,
       zona_waktu: tz.id || null,
       latitude: d.latitude != null ? d.latitude : null,
       longitude: d.longitude != null ? d.longitude : null,
-      mata_uang: cur.name ? { nama: cur.name, kode: cur.code || null } : null
+      ibu_kota_negara: d.capital || null,
+      kode_telepon_negara: d.calling_code || null,
+      anggota_uni_eropa: typeof d.is_eu === 'boolean' ? d.is_eu : null,
+      negara_berbatasan: d.borders || null,
+      mata_uang: cur.name ? { nama: cur.name, kode: cur.code || null, simbol: cur.symbol || null, bentuk_jamak: cur.plural || null } : null
+    },
+    waktu: {
+      waktu_lokal_saat_ini: tz.current_time || null,
+      singkatan_zona: tz.abbr || null,
+      selisih_utc: tz.utc || null,
+      sedang_dst: typeof tz.is_dst === 'boolean' ? tz.is_dst : null,
+      offset_detik: tz.offset != null ? tz.offset : (ex.offset != null ? ex.offset : null)
     },
     jaringan: {
       tipe_ip: d.type || (d.ip && d.ip.includes(':') ? 'IPv6' : 'IPv4'),
       asn: conn.asn ? `AS${conn.asn}` : null,
-      organisasi: conn.org || null,
+      nama_asn: ex.asname || null,
+      as_lengkap: ex.as || null,
+      organisasi: conn.org || ex.org || null,
       isp: conn.isp || ex.isp || null,
       domain_terkait: conn.domain || null,
       reverse_dns: ex.reverse || null
@@ -453,13 +517,22 @@ function displayResult(d, ex, originalInput, rdap, dnsRecords){
       cidr: (rdap.cidr0_cidrs || []).map(c => `${c.v4prefix || c.v6prefix}/${c.length}`).join(', ') || null,
       range_ip: rdap.startAddress && rdap.endAddress ? `${rdap.startAddress} - ${rdap.endAddress}` : null,
       handle: rdap.handle || null,
+      parent_handle: rdap.parentHandle || null,
       registry: rdap.port43 || rdap.name || null,
+      tipe_alokasi: rdap.type || null,
+      versi_ip: rdap.ipVersion || null,
       negara_registrasi: rdap.country || cc || null,
       tanggal_registrasi: (() => {
         const ev = (rdap.events || []).find(e => e.eventAction === 'registration') || (rdap.events || [])[0];
         return ev ? ev.eventDate : null;
       })(),
-      status: rdap.status || []
+      tanggal_diperbarui: (() => {
+        const ev = (rdap.events || []).find(e => e.eventAction === 'last changed');
+        return ev ? ev.eventDate : null;
+      })(),
+      status: rdap.status || [],
+      kontak_abuse: extractAbuseContact(rdap),
+      catatan: (rdap.remarks || []).map(r => (r.description || []).join(' ')).filter(Boolean)
     } : null,
     keamanan: {
       vpn: sec.vpn ?? null,
@@ -504,6 +577,34 @@ function formatSimpleDate(iso){
   const d = new Date(iso);
   if(isNaN(d)) return iso;
   return d.toLocaleDateString('id-ID', { year:'numeric', month:'long', day:'numeric' });
+}
+
+function formatLocalTime(iso){
+  const d = new Date(iso);
+  if(isNaN(d)) return iso;
+  return d.toLocaleString('id-ID', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+
+// Cari kontak email abuse di dalam struktur entities RDAP (termasuk sub-entity bersarang)
+function extractAbuseContact(rdap){
+  if(!rdap || !Array.isArray(rdap.entities)) return null;
+  const findInList = (list) => {
+    for(const ent of (list || [])){
+      if((ent.roles || []).includes('abuse')){
+        const vcard = ent.vcardArray && ent.vcardArray[1];
+        if(Array.isArray(vcard)){
+          const emailEntry = vcard.find(v => v[0] === 'email');
+          if(emailEntry && emailEntry[3]) return emailEntry[3];
+        }
+      }
+      if(Array.isArray(ent.entities)){
+        const found = findInList(ent.entities);
+        if(found) return found;
+      }
+    }
+    return null;
+  };
+  return findInList(rdap.entities);
 }
 
 function renderDnsRecords(records){

@@ -53,13 +53,13 @@ const FEATURES = [
   { id:'kalkulator-statistik', title:'Statistik', desc:'Mean, median, modus & lebih', cat:['perhitungan'], icon:ICONS.stats, active:true, page:'pages/statistik.html' },
   { id:'kalkulator-modern', title:'Kalkulator Modern', desc:'Dasar & ilmiah dalam satu keyboard', cat:['perhitungan'], icon:ICONS.calc, active:true, page:'pages/kalkulator-modern.html' },
   { id:'cek-palet-warna', title:'Cek Palet Warna', desc:'Ekstrak 10 warna dominan dari gambar', cat:['perhitungan'], icon:ICONS.palette, active:true, page:'pages/cek-palet-warna.html' },
-  { id:'kbbi', title:'KBBI VI Daring', desc:'Kamus Bahasa Indonesia · EYD Edisi V', cat:['lainnya'], icon:ICONS.kbbi, active:true, page:'pages/kbbi.html' },
+  { id:'kbbi', title:'KBBI VI Daring', desc:'Kamus Bahasa Indonesia · EYD Edisi V', cat:['kebahasaan'], icon:ICONS.kbbi, active:true, page:'pages/kbbi.html' },
   { id:'pencarian-ip', title:'Pencarian IP', desc:'Lokasi & info detail suatu IP/domain', cat:['lainnya'], icon:ICONS.globe, active:true, page:'pages/pencarian-ip.html' },
   { id:'konversi-biner', title:'Konversi Biner', desc:'Text ⇄ Biner, Desimal, HEX & Oktal', cat:['perhitungan','programming'], icon:ICONS.binary, active:true, page:'pages/konversi-biner.html' },
   { id:'hapus-latar', title:'Hapus Latar Belakang', desc:'Hapus background foto otomatis pakai AI', cat:['lainnya'], icon:ICONS.bg, active:true, page:'pages/hapus-latar-belakang.html' },
   { id:'aplikasi-premium', title:'Aplikasi Premium', desc:'CapCut Pro, Canva Pro & Zoom Pro', cat:['lainnya'], icon:ICONS.premium, active:true, page:'pages/aplikasi-premium.html' },
   { id:'kode-qr', title:'Kode QR', desc:'Buat & scan kode QR (kamera/unggah)', cat:['lainnya'], icon:ICONS.qr, active:true, page:'pages/kode-qr.html' },
-  { id:'translate', title:'Terjemahan', desc:'Terjemahkan 100+ bahasa, lengkap dengan kamus & suara', cat:['lainnya'], icon:ICONS.translate, active:true, page:'pages/translate.html' },
+  { id:'translate', title:'Terjemahan', desc:'Terjemahkan 100+ bahasa, lengkap dengan kamus & suara', cat:['kebahasaan'], icon:ICONS.translate, active:true, page:'pages/translate.html' },
   { id:'base64', title:'Base64 Encode & Decode', desc:'Konversi teks ke/dari Base64', cat:['programming'], icon:ICONS.code, active:true, page:'pages/base64.html' },
   { id:'url-encode', title:'URL Encode & Decode', desc:'Encode & decode karakter URL', cat:['programming'], icon:ICONS.link, active:true, page:'pages/url-encode.html' },
   { id:'uuid-generator', title:'UUID Generator', desc:'Buat ID unik instan', cat:['programming'], icon:ICONS.uuid, active:true, page:'pages/uuid-generator.html' },
@@ -276,7 +276,7 @@ function closeKontakModal(){ document.getElementById('kontakModal').classList.re
 function closeLoginPromoModal(){ document.getElementById('loginPromoModal').classList.remove('show'); }
 
 // ---------------- Modal Apa yang Baru (tampil sekali per perangkat) ----------------
-const WHATSNEW_KEY = 'bantuin_whatsnew_seen_v6';
+const WHATSNEW_KEY = 'bantuin_whatsnew_seen_v7';
 
 function closeWhatsNewModal(){
   document.getElementById('whatsNewModal').classList.remove('show');
