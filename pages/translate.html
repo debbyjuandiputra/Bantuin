@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Bantuin — Terjemahan</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+/* ============================================================
+   TRANSLATE PAGE
+============================================================ */
+.tr-lang-bar{
+  display:flex; align-items:center; gap:8px; padding:14px 16px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  position:sticky; top:58px; z-index:5; margin-top:58px;
+}
+.tr-lang-btn{
+  flex:1; background:var(--surface-2); border:none; border-radius:12px;
+  padding:11px 12px; font-size:13.5px; font-weight:700; color:var(--text);
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  cursor:pointer; min-width:0;
+}
+.tr-lang-btn span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tr-lang-btn:active{ background:var(--border); }
+.tr-swap-btn{
+  width:38px; height:38px; border-radius:11px; border:none; background:transparent;
+  color:var(--orange); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; flex-shrink:0;
+}
+.tr-swap-btn:active{ transform:rotate(180deg); transition:.25s; background:var(--surface-2); }
+
+.tr-body{ padding:12px 16px 100px; max-width:640px; margin:0 auto; }
+
+.tr-panel{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  margin-bottom:10px; overflow:hidden;
+}
+.tr-panel-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px 0;
+}
+.tr-panel-label{ font-size:11px; font-weight:700; color:var(--text-soft); text-transform:uppercase; letter-spacing:.4px; }
+.tr-detected-chip{
+  font-size:11px; font-weight:700; color:var(--orange); background:rgba(245,137,27,.12);
+  padding:3px 9px; border-radius:99px; display:none;
+}
+.tr-textarea{
+  width:100%; border:none; background:transparent; color:var(--text); resize:none;
+  font-size:16px; font-family:'Inter',sans-serif; padding:10px 14px 6px; outline:none;
+  min-height:110px; line-height:1.5;
+}
+.tr-textarea::placeholder{ color:var(--text-soft); }
+.tr-panel-foot{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:6px 8px 10px 14px; border-top:1px solid var(--border); margin-top:6px;
+}
+.tr-charcount{ font-size:11.5px; color:var(--text-soft); }
+.tr-icon-row{ display:flex; gap:2px; }
+.tr-icon-btn{
+  width:34px; height:34px; border:none; background:transparent; color:var(--text-soft);
+  border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.tr-icon-btn:active{ background:var(--surface-2); color:var(--orange); }
+.tr-icon-btn svg{ width:18px; height:18px; }
+.tr-icon-btn.active{ color:var(--orange); }
+
+.tr-result-text{
+  padding:10px 14px 6px; font-size:16px; line-height:1.5; color:var(--text); min-height:110px;
+  white-space:pre-wrap; word-break:break-word;
+}
+.tr-result-text.placeholder{ color:var(--text-soft); }
+.tr-loading-dots{ display:inline-flex; gap:4px; padding:12px 14px; }
+.tr-loading-dots span{
+  width:7px; height:7px; border-radius:50%; background:var(--orange); opacity:.3;
+  animation:trBlink 1.1s infinite ease-in-out;
+}
+.tr-loading-dots span:nth-child(2){ animation-delay:.15s; }
+.tr-loading-dots span:nth-child(3){ animation-delay:.3s; }
+@keyframes trBlink{ 0%,80%,100%{opacity:.25} 40%{opacity:1} }
+
+/* Alternatif */
+.tr-alt-wrap{ padding:2px 14px 12px; display:flex; flex-wrap:wrap; gap:6px; }
+.tr-alt-chip{
+  font-size:12.5px; font-weight:600; color:var(--text); background:var(--surface-2);
+  border:1px solid var(--border); border-radius:99px; padding:6px 12px; cursor:pointer;
+}
+.tr-alt-chip:active{ border-color:var(--orange); color:var(--orange); }
+
+/* Kamus */
+.tr-dict-card{ margin-top:2px; }
+.tr-dict-pos{
+  font-size:12px; font-weight:800; color:var(--orange); text-transform:capitalize;
+  padding:10px 14px 4px;
+}
+.tr-dict-terms{ display:flex; flex-wrap:wrap; gap:6px; padding:0 14px 10px; }
+.tr-dict-term{
+  font-size:12.5px; color:var(--text); background:var(--surface-2); border-radius:8px;
+  padding:5px 10px;
+}
+
+/* Riwayat */
+.tr-history-item{
+  display:flex; flex-direction:column; gap:3px; padding:11px 4px; border-bottom:1px solid var(--border);
+  cursor:pointer;
+}
+.tr-history-item:last-child{ border-bottom:none; }
+.tr-history-item:active{ background:var(--surface-2); }
+.tr-history-langs{ font-size:10.5px; font-weight:700; color:var(--text-soft); text-transform:uppercase; }
+.tr-history-src{ font-size:13px; color:var(--text); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tr-history-tgt{ font-size:12.5px; color:var(--text-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tr-history-empty{ text-align:center; color:var(--text-soft); font-size:12.5px; padding:16px 0; }
+.tr-history-head{
+  display:flex; align-items:center; justify-content:space-between; margin:16px 0 4px;
+}
+.tr-history-head b{ font-size:13px; }
+.tr-clear-history{ font-size:12px; color:var(--danger); background:none; border:none; font-weight:600; cursor:pointer; }
+
+/* Modal pilih bahasa */
+.tr-modal-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50; display:none;
+  align-items:flex-end;
+}
+.tr-modal-overlay.show{ display:flex; }
+.tr-modal-sheet{
+  background:var(--surface); width:100%; max-height:82vh; border-radius:20px 20px 0 0;
+  display:flex; flex-direction:column; animation:trSheetUp .22s ease-out;
+}
+@keyframes trSheetUp{ from{ transform:translateY(100%) } to{ transform:translateY(0) } }
+.tr-modal-head{ padding:14px 16px 8px; }
+.tr-modal-head h3{ font-size:15.5px; margin:0 0 10px; }
+.tr-modal-search{
+  width:100%; padding:11px 14px; border-radius:12px; border:1px solid var(--border);
+  background:var(--surface-2); color:var(--text); font-size:14px; outline:none;
+}
+.tr-modal-search:focus{ border-color:var(--orange); }
+.tr-modal-list{ overflow-y:auto; padding:4px 8px 20px; }
+.tr-modal-item{
+  display:flex; align-items:center; justify-content:space-between; width:100%;
+  padding:12px 10px; border:none; background:transparent; color:var(--text);
+  font-size:14.5px; font-weight:600; text-align:left; border-radius:10px; cursor:pointer;
+}
+.tr-modal-item:active{ background:var(--surface-2); }
+.tr-modal-item.selected{ color:var(--orange); }
+.tr-modal-item.selected svg{ display:inline; }
+.tr-modal-item svg{ width:18px; height:18px; display:none; }
+.tr-modal-empty{ text-align:center; color:var(--text-soft); font-size:13px; padding:24px 0; }
+.tr-modal-recent-label{ font-size:11px; font-weight:700; color:var(--text-soft); text-transform:uppercase; padding:10px 10px 2px; letter-spacing:.4px; }
+
+.tr-info-note{
+  font-size:11.5px; color:var(--text-soft); text-align:center; margin-top:14px; line-height:1.6;
+}
+</style>
+</head>
+<body>
+<div class="page-head">
+  <button class="back-btn" onclick="history.back()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Terjemahan</h2>
+</div>
+
+<div class="tr-lang-bar">
+  <button class="tr-lang-btn" id="srcLangBtn" onclick="openLangModal('source')">
+    <span id="srcLangLabel">Deteksi Bahasa</span>
+  </button>
+  <button class="tr-swap-btn" onclick="swapLanguages()" title="Tukar bahasa">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3v12M17 15l-4-4M17 15l4-4"/><path d="M7 21V9M7 9 3 13M7 9l4 4"/></svg>
+  </button>
+  <button class="tr-lang-btn" id="tgtLangBtn" onclick="openLangModal('target')">
+    <span id="tgtLangLabel">Indonesia</span>
+  </button>
+</div>
+
+<div class="tr-body">
+
+  <div class="tr-panel">
+    <div class="tr-panel-head">
+      <span class="tr-panel-label">Teks Asli</span>
+      <span class="tr-detected-chip" id="detectedChip"></span>
+    </div>
+    <textarea class="tr-textarea" id="srcText" placeholder="Ketik atau tempel teks di sini…" maxlength="5000" oninput="onSrcInput()"></textarea>
+    <div class="tr-panel-foot">
+      <span class="tr-charcount"><span id="charCount">0</span>/5000</span>
+      <div class="tr-icon-row">
+        <button class="tr-icon-btn" id="micBtn" onclick="toggleVoiceInput()" title="Bicara">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+        </button>
+        <button class="tr-icon-btn" onclick="pasteFromClipboard()" title="Tempel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>
+        </button>
+        <button class="tr-icon-btn" id="speakSrcBtn" onclick="speakText('src')" title="Dengarkan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+        </button>
+        <button class="tr-icon-btn" onclick="clearSrcText()" title="Hapus">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tr-panel">
+    <div class="tr-panel-head">
+      <span class="tr-panel-label">Hasil Terjemahan</span>
+    </div>
+    <div id="resultArea">
+      <div class="tr-result-text placeholder" id="resultText">Terjemahan akan muncul di sini</div>
+    </div>
+    <div class="tr-alt-wrap" id="altWrap" style="display:none"></div>
+    <div class="tr-panel-foot">
+      <span></span>
+      <div class="tr-icon-row">
+        <button class="tr-icon-btn" id="speakTgtBtn" onclick="speakText('tgt')" title="Dengarkan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+        </button>
+        <button class="tr-icon-btn" onclick="copyResult()" title="Salin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tr-panel" id="dictCard" style="display:none">
+    <div class="tr-panel-head"><span class="tr-panel-label">Kamus & Sinonim</span></div>
+    <div id="dictBody"></div>
+  </div>
+
+  <div class="tr-history-head">
+    <b>Riwayat Terjemahan</b>
+    <button class="tr-clear-history" onclick="clearHistory()">Hapus semua</button>
+  </div>
+  <div class="tr-panel" style="padding:2px 10px">
+    <div id="historyList"><div class="tr-history-empty">Belum ada riwayat terjemahan.</div></div>
+  </div>
+
+  <!-- <div class="tr-info-note">Ditenagai mesin terjemahan gratis · Mendukung 100+ bahasa</div> -->
+</div>
+
+<!-- Modal pilih bahasa -->
+<div class="tr-modal-overlay" id="langModalOverlay" onclick="if(event.target===this) closeLangModal()">
+  <div class="tr-modal-sheet">
+    <div class="tr-modal-head">
+      <h3 id="langModalTitle">Pilih Bahasa</h3>
+      <input type="text" class="tr-modal-search" id="langSearchInput" placeholder="Cari bahasa…" oninput="renderLangList()" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="tr-modal-list" id="langModalList"></div>
+  </div>
+</div>
+
+<script src="../js/store.js"></script>
+<script src="../js/util.js"></script>
+<script>
+applyStoredTheme();
+</script>
+<script src="translate-langs.js"></script>
+<script src="translate.js"></script>
+</body>
+</html>
