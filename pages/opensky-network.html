@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Bantuin — Jaringan Opensky</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+.osky-wrap{ position:relative; height:calc(100vh - 56px); display:flex; flex-direction:column; }
+#oskyMap{ flex:1; width:100%; background:var(--surface-2); }
+.leaflet-container{ background:var(--surface-2); font-family:inherit; }
+
+.osky-topbar{
+  position:absolute; top:10px; left:10px; right:10px; z-index:1000;
+  display:flex; gap:8px; align-items:center;
+}
+.osky-search{
+  flex:1; background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:10px 14px; font-size:13.5px; color:var(--text); box-shadow:var(--shadow);
+}
+.osky-search:focus{ outline:none; border-color:var(--orange); }
+.osky-round-btn{
+  width:40px; height:40px; flex-shrink:0; border-radius:12px; background:var(--surface);
+  border:1px solid var(--border); box-shadow:var(--shadow); display:flex; align-items:center;
+  justify-content:center; color:var(--text); cursor:pointer;
+}
+.osky-round-btn.active{ background:var(--orange); color:#fff; border-color:var(--orange); }
+.osky-round-btn svg{ width:19px; height:19px; }
+
+.osky-statusbar{
+  position:absolute; top:60px; left:10px; z-index:1000;
+  background:var(--surface); border:1px solid var(--border); border-radius:99px;
+  padding:6px 12px; font-size:11.5px; font-weight:700; color:var(--text-soft);
+  box-shadow:var(--shadow); display:flex; align-items:center; gap:6px;
+}
+.osky-statusbar .dot{ width:7px; height:7px; border-radius:50%; background:var(--text-soft); flex-shrink:0; }
+.osky-statusbar .dot.live{ background:var(--success); box-shadow:0 0 0 0 rgba(47,163,107,.6); animation:oskyPulse 1.6s infinite; }
+.osky-statusbar .dot.err{ background:var(--danger); animation:none; }
+@keyframes oskyPulse{
+  0%{ box-shadow:0 0 0 0 rgba(47,163,107,.55); }
+  70%{ box-shadow:0 0 0 7px rgba(47,163,107,0); }
+  100%{ box-shadow:0 0 0 0 rgba(47,163,107,0); }
+}
+
+.osky-msgbar{
+  position:absolute; top:106px; left:10px; right:10px; z-index:1000;
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:10px 12px; font-size:12px; color:var(--text-soft); box-shadow:var(--shadow);
+  display:none; line-height:1.5;
+}
+.osky-msgbar.show{ display:block; }
+
+.plane-icon{
+  color:var(--orange); filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));
+  transform-origin:center center;
+}
+.plane-icon.ground{ color:var(--text-soft); opacity:.75; }
+.plane-icon.sel{ color:#dc2626; }
+.plane-label{
+  font-size:9.5px; font-weight:800; color:var(--text); background:var(--surface);
+  border:1px solid var(--border); border-radius:5px; padding:1px 4px; white-space:nowrap;
+  box-shadow:0 1px 3px rgba(0,0,0,.15);
+}
+
+.osky-sheet{
+  position:absolute; left:0; right:0; bottom:0; z-index:1100;
+  background:var(--surface); border-radius:20px 20px 0 0; box-shadow:0 -6px 24px rgba(0,0,0,.18);
+  padding:14px 18px 20px; transform:translateY(105%); transition:transform .28s ease;
+  max-height:62vh; overflow-y:auto;
+}
+.osky-sheet.show{ transform:translateY(0); }
+.osky-sheet .grabber{ width:40px; height:4px; border-radius:99px; background:var(--border); margin:0 auto 12px; }
+.osky-sheet .close-x{
+  position:absolute; top:14px; right:16px; color:var(--text-soft); background:none; border:none; cursor:pointer;
+}
+.osky-sheet h3{ font-size:17px; font-weight:800; margin:0 0 2px; color:var(--text); }
+.osky-sheet .sub{ font-size:12.5px; color:var(--text-soft); margin-bottom:12px; }
+.osky-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.osky-field{ background:var(--surface-2); border-radius:12px; padding:10px 12px; }
+.osky-field .lbl{ font-size:10.5px; font-weight:700; color:var(--text-soft); text-transform:uppercase; letter-spacing:.4px; margin-bottom:3px; }
+.osky-field .val{ font-size:13.5px; font-weight:700; color:var(--text); }
+.osky-field.full{ grid-column:1/-1; }
+.osky-badge{ display:inline-block; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:700; }
+.osky-badge.air{ background:rgba(47,163,107,.14); color:var(--success); }
+.osky-badge.ground{ background:rgba(148,163,184,.15); color:var(--text-soft); }
+
+.osky-list-panel{
+  position:absolute; top:0; left:0; right:0; bottom:0; z-index:1050;
+  background:var(--surface); transform:translateX(105%); transition:transform .25s ease;
+  display:flex; flex-direction:column;
+}
+.osky-list-panel.show{ transform:translateX(0); }
+.osky-list-head{
+  display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border);
+}
+.osky-list-head b{ font-size:15px; flex:1; }
+.osky-list-body{ flex:1; overflow-y:auto; padding:8px 10px; }
+.osky-row{
+  display:flex; align-items:center; gap:10px; padding:11px 10px; border-radius:12px; cursor:pointer;
+}
+.osky-row:active{ background:var(--surface-2); }
+.osky-row .ic{ color:var(--orange); flex-shrink:0; }
+.osky-row .ic.ground{ color:var(--text-soft); }
+.osky-row .info{ flex:1; min-width:0; }
+.osky-row .cs{ font-size:13.5px; font-weight:800; color:var(--text); }
+.osky-row .meta{ font-size:11.5px; color:var(--text-soft); }
+.osky-empty{ text-align:center; color:var(--text-soft); font-size:12.5px; padding:30px 10px; }
+
+.osky-loading{
+  position:absolute; inset:0; z-index:1200; background:rgba(0,0,0,.15);
+  display:none; align-items:center; justify-content:center;
+}
+.osky-loading.show{ display:flex; }
+.osky-spinner{
+  width:34px; height:34px; border-radius:50%; border:3px solid rgba(245,137,27,.25);
+  border-top-color:var(--orange); animation:oskySpin .8s linear infinite;
+}
+@keyframes oskySpin{ to{ transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="page-head">
+  <button class="back-btn" onclick="history.back()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </button>
+  <h2>Jaringan Opensky</h2>
+</div>
+
+<div class="osky-wrap">
+  <div id="oskyMap"></div>
+
+  <div class="osky-topbar">
+    <input type="text" id="oskySearch" class="osky-search" placeholder="Cari callsign pesawat (mis. GIA123)"
+           autocomplete="off" autocorrect="off" spellcheck="false" oninput="filterAircraft(this.value)">
+    <div class="osky-round-btn" id="listBtn" onclick="openListPanel()" title="Daftar pesawat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    </div>
+    <div class="osky-round-btn" id="locBtn" onclick="locateMe()" title="Lokasi saya">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+    </div>
+  </div>
+
+  <div class="osky-statusbar" id="statusBar">
+    <span class="dot" id="statusDot"></span>
+    <span id="statusText">Memuat...</span>
+  </div>
+
+  <div class="osky-msgbar" id="msgBar"></div>
+
+  <div class="osky-loading" id="oskyLoading"><div class="osky-spinner"></div></div>
+
+  <div class="osky-list-panel" id="listPanel">
+    <div class="osky-list-head">
+      <button class="back-btn" style="position:static" onclick="closeListPanel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <b id="listTitle">Pesawat Terlihat (0)</b>
+    </div>
+    <div class="osky-list-body" id="listBody"></div>
+  </div>
+
+  <div class="osky-sheet" id="oskySheet">
+    <div class="grabber"></div>
+    <button class="close-x" onclick="closeSheet()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <h3 id="shCallsign">—</h3>
+    <div class="sub" id="shSub">—</div>
+    <div class="osky-grid">
+      <div class="osky-field"><div class="lbl">Status</div><div class="val" id="shStatus">—</div></div>
+      <div class="osky-field"><div class="lbl">Negara Asal</div><div class="val" id="shCountry">—</div></div>
+      <div class="osky-field"><div class="lbl">Ketinggian (Barometrik)</div><div class="val" id="shAltBaro">—</div></div>
+      <div class="osky-field"><div class="lbl">Ketinggian (GPS)</div><div class="val" id="shAltGeo">—</div></div>
+      <div class="osky-field"><div class="lbl">Kecepatan</div><div class="val" id="shSpeed">—</div></div>
+      <div class="osky-field"><div class="lbl">Arah (Heading)</div><div class="val" id="shHeading">—</div></div>
+      <div class="osky-field"><div class="lbl">Kecepatan Vertikal</div><div class="val" id="shVrate">—</div></div>
+      <div class="osky-field"><div class="lbl">Squawk</div><div class="val" id="shSquawk">—</div></div>
+      <div class="osky-field full"><div class="lbl">Kode ICAO24</div><div class="val" id="shIcao">—</div></div>
+      <div class="osky-field"><div class="lbl">Latitude</div><div class="val" id="shLat">—</div></div>
+      <div class="osky-field"><div class="lbl">Longitude</div><div class="val" id="shLon">—</div></div>
+      <div class="osky-field full"><div class="lbl">Update Terakhir</div><div class="val" id="shUpdated">—</div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ==========================================================
+// Jaringan Opensky — flight tracker real-time (adsb.lol API)
+// adsb.lol adalah API publik gratis, support CORS langsung dari
+// browser tanpa perlu proxy — kompatibel dengan ADS-B Exchange.
+// Endpoint: GET /v2/lat/{lat}/lon/{lon}/dist/{nm}
+// ==========================================================
+const ADSB_BASE = 'https://api.adsb.lol/v2';
+const REFRESH_MS = 10000;    // refresh tiap 10 detik
+const MAX_DIST_NM = 250;     // radius dalam nautical miles (max sekali fetch)
+
+let map, planeLayer;
+let planesById = {};
+let refreshTimer = null;
+let selectedIcao = null;
+let searchQuery = '';
+let isFetching = false;
+
+function initMap(){
+  map = L.map('oskyMap', { zoomControl:false, attributionControl:true }).setView([-2.5, 118], 5);
+  L.control.zoom({ position:'bottomright' }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap · Data: adsb.lol (ADS-B Exchange)'
+  }).addTo(map);
+
+  planeLayer = L.layerGroup().addTo(map);
+  map.on('moveend', function(){ scheduleFetch(true); });
+
+  fetchStates();
+  refreshTimer = setInterval(fetchStates, REFRESH_MS);
+
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){ clearInterval(refreshTimer); }
+    else { fetchStates(); refreshTimer = setInterval(fetchStates, REFRESH_MS); }
+  });
+}
+
+let fetchDebounce = null;
+function scheduleFetch(debounced){
+  if(debounced){
+    clearTimeout(fetchDebounce);
+    fetchDebounce = setTimeout(fetchStates, 600);
+  } else {
+    fetchStates();
+  }
+}
+
+// Konversi derajat ke nautical miles (1° ≈ 60 nm)
+function getQueryCenter(){
+  const c = map.getBounds().getCenter();
+  const b = map.getBounds();
+  const latSpan = (b.getNorth() - b.getSouth()) / 2;
+  const lonSpan = (b.getEast() - b.getWest()) / 2;
+  // ambil jarak terbesar (diagonal) dalam nm, maksimal MAX_DIST_NM
+  const distNm = Math.min(Math.max(latSpan, lonSpan) * 60, MAX_DIST_NM);
+  return { lat: c.lat.toFixed(2), lon: c.lng.toFixed(2), dist: Math.ceil(distNm) };
+}
+
+async function fetchStates(){
+  if(isFetching) return;
+  isFetching = true;
+  setStatus('loading');
+  try{
+    const { lat, lon, dist } = getQueryCenter();
+    const url = `${ADSB_BASE}/lat/${lat}/lon/${lon}/dist/${dist}`;
+    const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
+    if(res.status === 429){
+      showMsg('⚠️ Terlalu banyak permintaan. Data akan dicoba lagi otomatis.');
+      setStatus('error'); isFetching = false; return;
+    }
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    hideMsg();
+    renderAircraft(json.ac || []);
+    setStatus('live', (json.ac || []).length);
+  }catch(err){
+    console.error(err);
+    setStatus('error');
+    showMsg('⚠️ Gagal mengambil data pesawat. Periksa koneksi internet, lalu coba geser peta untuk memuat ulang.');
+  }
+  isFetching = false;
+}
+
+// Konversi format adsb.lol ke format internal yang sama dengan sebelumnya
+function renderAircraft(acList){
+  const seen = new Set();
+
+  acList.forEach(ac => {
+    const icao24 = (ac.hex || '').toLowerCase();
+    if(!icao24) return;
+    const lat = ac.lat, lon = ac.lon;
+    if(lat == null || lon == null) return;
+
+    const callsign = (ac.flight || ac.r || '').trim() || '—';
+    const originCountry = ac.ownOp || ac.r || '—';
+    const baroAlt = ac.alt_baro != null ? (ac.alt_baro === 'ground' ? 0 : ac.alt_baro * 0.3048) : null; // ft -> m
+    const geoAlt  = ac.alt_geom != null ? ac.alt_geom * 0.3048 : null;
+    const onGround = ac.alt_baro === 'ground' || ac.gs < 5;
+    const velocity = ac.gs != null ? ac.gs * 0.514444 : null;  // knots -> m/s
+    const trueTrack = ac.track || 0;
+    const vrate = ac.baro_rate != null ? ac.baro_rate * 0.00508 : null;  // ft/min -> m/s
+    const squawk = ac.squawk || null;
+    const lastContact = ac.seen != null ? (Date.now()/1000 - ac.seen) : null;
+
+    seen.add(icao24);
+    const data = { icao24, callsign, originCountry, lat, lon, baroAlt, onGround, velocity, trueTrack, vrate, geoAlt, squawk, lastContact };
+
+    if(planesById[icao24]){
+      planesById[icao24].data = data;
+      planesById[icao24].marker.setLatLng([lat, lon]);
+      updateMarkerIcon(planesById[icao24].marker, data);
+    } else {
+      const marker = L.marker([lat, lon], { icon: makeIcon(data) });
+      marker.on('click', () => openSheet(icao24));
+      marker.addTo(planeLayer);
+      planesById[icao24] = { marker, data };
+    }
+  });
+
+  Object.keys(planesById).forEach(id => {
+    if(!seen.has(id)){
+      planeLayer.removeLayer(planesById[id].marker);
+      delete planesById[id];
+    }
+  });
+
+  applyFilterVisibility();
+  if(document.getElementById('listPanel').classList.contains('show')) renderListPanel();
+  if(selectedIcao && planesById[selectedIcao]) fillSheet(planesById[selectedIcao].data);
+}
+
+// stub renderStates tetap ada supaya tidak ada referensi yang rusak
+function renderStates(states){ /* tidak dipakai, pakai renderAircraft */ }
+
+function renderStateItem(s){
+  const icao24 = s[0];
+  const callsign = (s[1] || '').trim() || '—';
+  const originCountry = s[2];
+  const lon = s[5], lat = s[6];
+  const baroAlt = s[7];
+  const onGround = s[8];
+  const velocity = s[9];
+  const trueTrack = s[10];
+  const vrate = s[11];
+  const geoAlt = s[13];
+  const squawk = s[14];
+  const lastContact = s[4];
+
+  if(lat == null || lon == null) return null;
+  return { icao24, callsign, originCountry, lat, lon, baroAlt, onGround, velocity, trueTrack, vrate, geoAlt, squawk, lastContact };
+}
+
+// ---- biar tidak error kalau masih ada referensi getBoundsParams di tempat lain ----
+function getBoundsParams(){
+  const { lat, lon, dist } = getQueryCenter();
+  return { lamin: lat - dist/60, lomin: lon - dist/60, lamax: +lat + dist/60, lomax: +lon + dist/60 };
+}
+
+function makeIcon(data){
+  const track = data.trueTrack || 0;
+  const groundCls = data.onGround ? ' ground' : '';
+  const selCls = data.icao24 === selectedIcao ? ' sel' : '';
+  const html = `
+    <div style="transform:rotate(${track}deg)">
+      <svg class="plane-icon${groundCls}${selCls}" width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2c-.8 0-1.5.7-1.5 1.5V9L3 13.2v2l7.5-2.3v5.4L8 20v1.6l4-1.2 4 1.2V20l-2.5-1.7v-5.4l7.5 2.3v-2L13.5 9V3.5C13.5 2.7 12.8 2 12 2z"/>
+      </svg>
+    </div>`;
+  return L.divIcon({ html, className:'', iconSize:[26,26], iconAnchor:[13,13] });
+}
+
+function updateMarkerIcon(marker, data){
+  marker.setIcon(makeIcon(data));
+}
+
+function setStatus(state, count){
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'dot';
+  if(state === 'loading'){
+    txt.textContent = 'Memuat data...';
+  } else if(state === 'live'){
+    dot.classList.add('live');
+    txt.textContent = `${count} pesawat · live`;
+  } else if(state === 'error'){
+    dot.classList.add('err');
+    txt.textContent = 'Gagal memuat';
+  }
+}
+
+function showMsg(text){
+  const el = document.getElementById('msgBar');
+  el.textContent = text;
+  el.classList.add('show');
+}
+function hideMsg(){
+  document.getElementById('msgBar').classList.remove('show');
+}
+
+// ---------------- Detail sheet ----------------
+function openSheet(icao24){
+  selectedIcao = icao24;
+  const entry = planesById[icao24];
+  if(!entry) return;
+  Object.values(planesById).forEach(p => updateMarkerIcon(p.marker, p.data));
+  fillSheet(entry.data);
+  document.getElementById('oskySheet').classList.add('show');
+}
+
+function fillSheet(d){
+  document.getElementById('shCallsign').textContent = d.callsign || '—';
+  document.getElementById('shSub').textContent = d.icao24.toUpperCase();
+  document.getElementById('shStatus').innerHTML = d.onGround
+    ? '<span class="osky-badge ground">Di Darat</span>'
+    : '<span class="osky-badge air">Terbang</span>';
+  document.getElementById('shCountry').textContent = d.originCountry || '—';
+  document.getElementById('shAltBaro').textContent = d.baroAlt != null ? `${Math.round(d.baroAlt)} m` : '—';
+  document.getElementById('shAltGeo').textContent = d.geoAlt != null ? `${Math.round(d.geoAlt)} m` : '—';
+  document.getElementById('shSpeed').textContent = d.velocity != null ? `${Math.round(d.velocity * 3.6)} km/j` : '—';
+  document.getElementById('shHeading').textContent = d.trueTrack != null ? `${Math.round(d.trueTrack)}°` : '—';
+  document.getElementById('shVrate').textContent = d.vrate != null ? `${d.vrate > 0 ? '+' : ''}${d.vrate.toFixed(1)} m/s` : '—';
+  document.getElementById('shSquawk').textContent = d.squawk || '—';
+  document.getElementById('shIcao').textContent = d.icao24.toUpperCase();
+  document.getElementById('shLat').textContent = d.lat.toFixed(4);
+  document.getElementById('shLon').textContent = d.lon.toFixed(4);
+  document.getElementById('shUpdated').textContent = d.lastContact ? new Date(d.lastContact * 1000).toLocaleTimeString('id-ID') : '—';
+}
+
+function closeSheet(){
+  document.getElementById('oskySheet').classList.remove('show');
+  selectedIcao = null;
+  Object.values(planesById).forEach(p => updateMarkerIcon(p.marker, p.data));
+}
+
+// ---------------- Pencarian & daftar ----------------
+function filterAircraft(q){
+  searchQuery = q.trim().toUpperCase();
+  applyFilterVisibility();
+}
+
+function applyFilterVisibility(){
+  Object.values(planesById).forEach(p => {
+    const match = !searchQuery || (p.data.callsign || '').toUpperCase().includes(searchQuery);
+    const el = p.marker.getElement();
+    if(el) el.style.opacity = match ? '1' : '0.12';
+  });
+  if(searchQuery){
+    const found = Object.values(planesById).find(p => (p.data.callsign || '').toUpperCase().includes(searchQuery));
+    if(found) map.panTo(found.marker.getLatLng());
+  }
+}
+
+function openListPanel(){
+  renderListPanel();
+  document.getElementById('listPanel').classList.add('show');
+}
+function closeListPanel(){
+  document.getElementById('listPanel').classList.remove('show');
+}
+
+function renderListPanel(){
+  const all = Object.values(planesById).map(p => p.data).sort((a,b) => (a.callsign||'').localeCompare(b.callsign||''));
+  document.getElementById('listTitle').textContent = `Pesawat Terlihat (${all.length})`;
+  const body = document.getElementById('listBody');
+  if(all.length === 0){
+    body.innerHTML = '<div class="osky-empty">Belum ada pesawat terdeteksi di area peta ini. Coba geser atau perkecil zoom peta.</div>';
+    return;
+  }
+  body.innerHTML = all.map(d => `
+    <div class="osky-row" onclick="focusPlane('${d.icao24}')">
+      <svg class="ic${d.onGround ? ' ground' : ''}" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2c-.8 0-1.5.7-1.5 1.5V9L3 13.2v2l7.5-2.3v5.4L8 20v1.6l4-1.2 4 1.2V20l-2.5-1.7v-5.4l7.5 2.3v-2L13.5 9V3.5C13.5 2.7 12.8 2 12 2z"/>
+      </svg>
+      <div class="info">
+        <div class="cs">${escapeHtml(d.callsign || '—')}</div>
+        <div class="meta">${escapeHtml(d.originCountry || '—')} · ${d.onGround ? 'di darat' : Math.round((d.baroAlt||0)) + ' m'} · ${d.velocity != null ? Math.round(d.velocity*3.6) + ' km/j' : '—'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function focusPlane(icao24){
+  const entry = planesById[icao24];
+  if(!entry) return;
+  closeListPanel();
+  map.setView(entry.marker.getLatLng(), Math.max(map.getZoom(), 8));
+  openSheet(icao24);
+}
+
+function locateMe(){
+  if(!navigator.geolocation){ showMsg('Perangkat tidak mendukung deteksi lokasi.'); return; }
+  document.getElementById('oskyLoading').classList.add('show');
+  navigator.geolocation.getCurrentPosition(function(pos){
+    document.getElementById('oskyLoading').classList.remove('show');
+    map.setView([pos.coords.latitude, pos.coords.longitude], 8);
+  }, function(){
+    document.getElementById('oskyLoading').classList.remove('show');
+    showMsg('⚠️ Tidak bisa mengakses lokasi. Izinkan akses lokasi lalu coba lagi.');
+  });
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+initMap();
+</script>
+</body>
+</html>
