@@ -57,7 +57,7 @@ const FEATURES = [
   { id:'pencarian-ip', title:'Pencarian IP', desc:'Lokasi & info detail suatu IP/domain', cat:['lainnya'], icon:ICONS.globe, active:true, page:'pages/pencarian-ip.html' },
   { id:'konversi-biner', title:'Konversi Biner', desc:'Text ⇄ Biner, Desimal, HEX & Oktal', cat:['perhitungan','programming'], icon:ICONS.binary, active:true, page:'pages/konversi-biner.html' },
   { id:'hapus-latar', title:'Hapus Latar Belakang', desc:'Hapus background foto otomatis pakai AI', cat:['lainnya'], icon:ICONS.bg, active:true, page:'pages/hapus-latar-belakang.html' },
-  { id:'aplikasi-premium', title:'Aplikasi Premium', desc:'CapCut Pro, Canva Pro & Zoom Pro', cat:['lainnya'], icon:ICONS.premium, active:true, page:'pages/aplikasi-premium.html' },
+  // { id:'aplikasi-premium', title:'Aplikasi Premium', desc:'CapCut Pro, Canva Pro & Zoom Pro', cat:['lainnya'], icon:ICONS.premium, active:true, page:'pages/aplikasi-premium.html' },
   { id:'kode-qr', title:'Kode QR', desc:'Buat & scan kode QR (kamera/unggah)', cat:['lainnya'], icon:ICONS.qr, active:true, page:'pages/kode-qr.html' },
   { id:'translate', title:'Terjemahan', desc:'Terjemahkan 100+ bahasa, lengkap dengan kamus & suara', cat:['kebahasaan'], icon:ICONS.translate, active:true, page:'pages/translate.html' },
   { id:'base64', title:'Base64 Encode & Decode', desc:'Konversi teks ke/dari Base64', cat:['programming'], icon:ICONS.code, active:true, page:'pages/base64.html' },
